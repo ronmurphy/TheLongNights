@@ -1,0 +1,112 @@
+{
+  "name": "voxelworld-1-vite",
+  "private": true,
+  "version": "0.5.7",
+  "type": "module",
+  "main": "electron.cjs",
+  "homepage": "./",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && npm run copy-assets",
+    "copy-assets": "npm run copy-help && npm run copy-quest-images",
+    "copy-help": "mkdir -p dist/assets/help && cp -r assets/help/*.md dist/assets/help/ 2>/dev/null || true",
+    "copy-quest-images": "mkdir -p dist/assets/quest-images && if [ -d assets/quest-images ]; then cp -r assets/quest-images/* dist/assets/quest-images/ 2>/dev/null || true; fi",
+    "preview": "vite preview",
+    "start": "electron .",
+    "electron": "electron .",
+    "electron-dev": "concurrently \"npm run dev\" \"wait-on http://localhost:5173 && electron .\"",
+    "build-web": "VITE_BASE=/VoxelWorld-1-vite/ npm run build",
+    "build-electron-win": "node bump-version.cjs && npm run build && electron-builder --win",
+    "build-electron-linux": "node bump-version.cjs && npm run build && electron-builder --linux",
+    "build-electron-mac": "node bump-version.cjs && npm run build && electron-builder --mac",
+    "build-wl": "node bump-version.cjs && npm run build && electron-builder --win --linux",
+    "build-all": "node bump-version.cjs && npm run build && electron-builder --win --linux --mac"
+  },
+  "devDependencies": {
+    "@mdi/font": "^7.4.47",
+    "canvas": "^3.2.0",
+    "concurrently": "^9.1.2",
+    "electron": "^38.1.2",
+    "electron-builder": "^26.0.12",
+    "vite": "^7.1.7",
+    "wait-on": "^8.0.1"
+  },
+  "dependencies": {
+    "@electron/remote": "^2.1.3",
+    "cannon-es": "^0.20.0",
+    "drawflow": "^0.0.60",
+    "emoji-datasource-apple": "^16.0.0",
+    "emoji-datasource-google": "^16.0.0",
+    "emoji-datasource-twitter": "^16.0.0",
+    "howler": "^2.2.4",
+    "marked": "^16.4.0",
+    "msgpack-lite": "^0.1.26",
+    "pako": "^2.1.0",
+    "stats.js": "^0.17.0",
+    "three": "^0.180.0",
+    "three-mesh-bvh": "^0.9.1"
+  },
+  "build": {
+    "appId": "com.voxelworld.app",
+    "productName": "VoxelWorld",
+    "artifactName": "${productName}-${version}.${ext}",
+    "directories": {
+      "output": "dist-electron"
+    },
+    "asarUnpack": [
+      "electron-preload.cjs",
+      "dist/fonts/**/*",
+      "dist/art/**/*",
+      "dist/music/**/*",
+      "dist/assets/**/*",
+      "node_modules/emoji-datasource-google/**/*",
+      "node_modules/emoji-datasource-apple/**/*",
+      "node_modules/emoji-datasource-twitter/**/*"
+    ],
+    "files": [
+      "dist/**/*",
+      "node_modules/**/*",
+      "package.json",
+      "electron.cjs",
+      "electron-preload.cjs"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.ico"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "build/icon.icns"
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "icon": "build/icon.png",
+      "category": "Game"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "artifactName": "${productName}-${version}-install.exe"
+    },
+    "portable": {
+      "artifactName": "${productName}-${version}-portable.exe"
+    }
+  }
+}

@@ -1,0 +1,625 @@
+/* :root {
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: light dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #242424;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+} */
+
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/Inter-VariableFont_opsz,wght.ttf') format('truetype');
+  font-weight: 100 900; /* Supports all weights from 100 to 900 */
+  font-style: normal;
+  font-display: swap; /* Show fallback font immediately while custom font loads */
+}
+
+:root {
+  /* Inter font with comprehensive fallbacks for Windows/Linux compatibility */
+  /* Added emoji font support for Windows, macOS, and Linux */
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', 'Liberation Sans', sans-serif, 'Segoe UI Emoji', 'Segoe UI Symbol', 'Apple Color Emoji', 'Noto Color Emoji', 'Android Emoji', 'EmojiSymbols';
+  line-height: 1.5;
+  font-weight: 400;
+  color-scheme: light dark;
+  color: rgba(255, 255, 255, 0.87);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Removed problematic rule that made all text black:
+   * { color: rgb(0, 0, 0) !important; }
+   This was causing text to be invisible on dark backgrounds
+*/
+
+
+a {
+  font-weight: 500;
+}
+
+body {
+  margin: 0;
+  /* Linux-compatible fallback fonts with emoji support */
+  font-family: 'Liberation Sans', 'DejaVu Sans', 'Noto Sans', sans-serif, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji';
+  background: #222;
+  color: #eee;
+}
+
+header {
+  background: #333;
+  padding: 1em;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+nav button {
+  margin-right: 1em;
+  padding: 0.5em 1em;
+  background: #444;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+nav button:last-child {
+  margin-right: 0;
+}
+
+main {
+  display: flex;
+  height: 90vh;
+}
+
+#gameContainer {
+  flex: 2;
+  background: #181818;
+  border-right: 2px solid #333;
+  min-height: 400px;
+  width: 100%;
+  height: 100%;
+}
+
+#workbenchContainer {
+  flex: 1;
+  background: #232323;
+  padding: 1em;
+}
+
+.card {
+  padding: 2em;
+}
+
+.read-the-docs {
+  color: #888;
+}
+
+button {
+  border-radius: 8px;
+  border: 1px solid transparent;
+  /* padding: 0.6em 1.2em; */
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: #1a1a1a;
+  cursor: pointer;
+  transition: border-color 0.25s;
+}
+button:hover {
+  border-color: #646cff;
+}
+button:focus,
+button:focus-visible {
+  outline: 4px auto -webkit-focus-ring-color;
+}
+
+/* Splash Screen Styles */
+#splash-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  opacity: 1;
+  transition: opacity 0.8s ease-out;
+}
+
+#splash-screen.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.splash-content {
+  text-align: center;
+  max-width: 500px;
+  padding: 2em;
+}
+
+.splash-logo {
+  max-width: 80%;
+  height: auto;
+  margin-bottom: 2em;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.02); }
+}
+
+.splash-progress {
+  margin-top: 2em;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 1em;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4CAF50 0%, #8BC34A 100%);
+  width: 0%;
+  transition: width 0.3s ease-out;
+  box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+}
+
+.splash-status {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+  margin: 0;
+  font-family: system-ui, sans-serif;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    color: #213547;
+    background-color: #ffffff;
+  }
+  a:hover {
+    color: #747bff;
+  }
+  button {
+    background-color: #f9f9f9;
+  }
+}
+
+/* Emoji rendering - Universal support via Twemoji */
+img.emoji {
+  height: 1em;
+  width: 1em;
+  margin: 0 .05em 0 .1em;
+  vertical-align: -0.1em;
+  display: inline-block;
+}
+
+/* Ensure emoji render nicely in different contexts */
+.emoji {
+  max-width: none !important;
+  max-height: none !important;
+}
+
+/* Context-specific emoji sizing for hotbar and inventory */
+.hotbar-icon-container img.emoji {
+  width: 36px !important;
+  height: 36px !important;
+  margin: 0 !important;
+  vertical-align: middle !important;
+}
+
+.slot-content img.emoji {
+  width: 36px !important;
+  height: 36px !important;
+  margin: 0 !important;
+  vertical-align: middle !important;
+}
+
+/* ========================================
+   🍳 KITCHEN BENCH STYLES
+   ======================================== */
+
+.kitchen-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50000;
+  animation: fadeIn 0.2s ease;
+}
+
+.kitchen-container {
+  background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  max-width: 90vw;
+  max-height: 85vh;
+  width: 1200px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.kitchen-header {
+  background: linear-gradient(135deg, #4a4a4a 0%, #2a2a2a 100%);
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 2px solid #444;
+}
+
+.kitchen-header h2 {
+  margin: 0;
+  color: #fff;
+  font-size: 1.8em;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.kitchen-header .close-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: white;
+  font-size: 24px;
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.kitchen-header .close-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.1);
+}
+
+.kitchen-content {
+  display: flex;
+  gap: 20px;
+  padding: 20px;
+  flex: 1;
+  overflow: hidden;
+}
+
+.kitchen-panel {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+}
+
+.kitchen-panel h3 {
+  margin: 0 0 15px 0;
+  color: #fff;
+  font-size: 1.2em;
+  border-bottom: 2px solid #444;
+  padding-bottom: 10px;
+}
+
+.ingredients-panel {
+  flex: 1;
+  min-width: 250px;
+}
+
+.preview-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  min-width: 300px;
+}
+
+.foods-panel {
+  flex: 1;
+  min-width: 300px;
+}
+
+.ingredients-list {
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ingredient-item {
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid transparent;
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ingredient-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateX(5px);
+}
+
+.ingredient-item.selected {
+  background: rgba(76, 175, 80, 0.3);
+  border-color: #4CAF50;
+}
+
+.ingredient-emoji {
+  font-size: 2em;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ingredient-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.ingredient-name {
+  color: #fff;
+  font-weight: 500;
+}
+
+.ingredient-quantity {
+  color: #888;
+  font-size: 0.9em;
+}
+
+.selected-ingredients {
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 8px;
+  padding: 20px;
+  min-height: 150px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cook-info {
+  color: #aaa;
+  font-size: 0.95em;
+  text-align: center;
+}
+
+.cook-btn {
+  background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+  color: white;
+  border: none;
+  padding: 15px 40px;
+  font-size: 1.2em;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.cook-btn:hover:not(:disabled) {
+  transform: scale(1.05);
+  box-shadow: 0 5px 20px rgba(76, 175, 80, 0.5);
+}
+
+.cook-btn:disabled {
+  background: #555;
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.clear-btn {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 10px 30px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.clear-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.foods-list {
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.food-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  gap: 12px;
+  transition: all 0.2s;
+}
+
+.food-card.discovered {
+  border-color: rgba(76, 175, 80, 0.5);
+  cursor: pointer;
+}
+
+.food-card.discovered:hover {
+  background: rgba(76, 175, 80, 0.2);
+  border-color: #4CAF50;
+  transform: translateX(5px);
+  box-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
+}
+
+.food-card.discovered:hover .food-name::after {
+  content: " 👆 Click to auto-fill!";
+  font-size: 0.7em;
+  color: #4CAF50;
+  font-style: italic;
+}
+
+.food-card.undiscovered {
+  opacity: 0.5;
+}
+
+.food-emoji {
+  font-size: 2.5em;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.food-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.food-name {
+  color: #fff;
+  font-weight: 600;
+  font-size: 1.1em;
+}
+
+.food-ingredients {
+  color: #888;
+  font-size: 0.85em;
+}
+
+.food-description {
+  color: #aaa;
+  font-size: 0.9em;
+  margin-top: 4px;
+}
+
+.buff-notification {
+  animation: slideInRight 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutRight {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+@keyframes failShake {
+  0%, 100% { transform: translate(-50%, -50%) rotate(0deg); }
+  25% { transform: translate(-50%, -50%) rotate(-5deg); }
+  75% { transform: translate(-50%, -50%) rotate(5deg); }
+}
+
+@keyframes discoveryPop {
+  0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+  50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+}
+
+/* 🔥 Kitchen Bench Cooking Animations */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes bobFlame {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+
+/* 🔢 Kitchen Bench Quantity Controls */
+.quantity-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  padding-left: 10px;
+}
+
+.qty-btn {
+  width: 24px;
+  height: 24px;
+  border: 2px solid #8B5A2B;
+  background: linear-gradient(135deg, #D4A574, #B8906A);
+  color: #3E2723;
+  border-radius: 50%;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.qty-btn:hover {
+  background: linear-gradient(135deg, #E4B584, #C8A07A);
+  transform: scale(1.1);
+}
+
+.qty-btn:active {
+  transform: scale(0.95);
+}
+
+.selected-qty {
+  min-width: 20px;
+  text-align: center;
+  font-weight: bold;
+  color: #654321;
+  font-size: 14px;
+}
+
