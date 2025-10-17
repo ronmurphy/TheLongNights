@@ -1,7 +1,7 @@
 // App.js - Entry point for unified The Long Nights + ShapeForge app (Vite version)
 import './style.css';
 import '@mdi/font/css/materialdesignicons.min.css'; // Material Design Icons (local)
-import { initThe Long Nights } from './The Long Nights.js';
+import { initVoxelWorld } from './VoxelWorld.js';
 import { SplashScreen } from './SplashScreen.js';
 import { GameIntroOverlay } from './ui/GameIntroOverlay.js';
 import { ChatOverlay } from './ui/Chat.js';
@@ -53,8 +53,8 @@ window.addEventListener('DOMContentLoaded', () => {
   console.log('Calling showGame() initially');
   showGame();
 
-  console.log('Calling initThe Long Nights...');
-  initThe Long Nights(gameContainer, splashScreen).then((app) => {
+  console.log('Calling initVoxelWorld...');
+  initVoxelWorld(gameContainer, splashScreen).then((app) => {
     console.log('✅ The Long Nights initialized successfully');
     // Expose app to window for debugging
     window['voxelApp'] = app;

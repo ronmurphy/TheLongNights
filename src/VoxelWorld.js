@@ -13893,8 +13893,8 @@ class NebulaVoxelApp {
     }
 }
 
-export async function initThe Long Nights(container, splashScreen = null) {
-    console.log('🔧 initThe Long Nights called with container:', container);
+export async function initVoxelWorld(container, splashScreen = null) {
+    console.log('🔧 initVoxelWorld called with container:', container);
 
     try {
         if (splashScreen) {
@@ -13990,7 +13990,7 @@ export async function initThe Long Nights(container, splashScreen = null) {
 
         return app;
     } catch (error) {
-        console.error('❌ Error in initThe Long Nights:', error);
+        console.error('❌ Error in initVoxelWorld:', error);
         throw error;
     }
 }
