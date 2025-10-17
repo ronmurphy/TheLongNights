@@ -290,6 +290,216 @@ export class ToolBenchSystem {
                 isTool: true
             },
 
+            // 💣 DEMOLITION TOOLS
+            demolition_charge: {
+                name: '💣 Demolition Charge',
+                items: { coal: 5, iron: 3, crystal: 1 },
+                description: 'Controlled explosion! 5 charges. Place and run!',
+                clues: {
+                    coal: 'Five dark chunks that burn with heat...',
+                    iron: 'Three metal bindings, strong and neat...',
+                    crystal: 'One spark of power, to make complete...'
+                },
+                category: 'demolition',
+                isConsumable: true,
+                charges: 5,
+                isDemolitionTool: true,
+                explosionRadius: 4,
+                fuseTime: 3
+            },
+
+            tree_feller: {
+                name: '🪓 Tree Feller',
+                items: { rustySword: 1, feather: 3, stick: 2 },
+                description: 'One swing harvests entire tree with physics!',
+                clues: {
+                    rustySword: 'A rusted blade, now put to chop...',
+                    feather: 'Three feathers light, to make it pop...',
+                    stick: 'Two handles firm, trees will drop...'
+                },
+                category: 'harvesting',
+                isTool: true,
+                isHarvestTool: true,
+                toolType: 'tree_feller',
+                canHarvest: ['oak_wood', 'pine_wood', 'palm_wood', 'birch_wood', 'dead_wood', 'douglas_fir'],
+                harvestEntireTree: true
+            },
+
+            // ⚔️ ADVANCED COMBAT WEAPONS - Blood Moon Survival
+            war_hammer: {
+                name: '🔨 War Hammer',
+                items: { stone: 10, bone: 5, iron: 3 },
+                description: 'Massive AoE damage, crushes multiple enemies',
+                clues: {
+                    stone: 'Ten chunks of earth, heavy and cruel...',
+                    bone: 'Five remnants of beasts, the warrior\'s tool...',
+                    iron: 'Three metal cores, to make it rule...'
+                },
+                category: 'combat',
+                isTool: true,
+                isWeapon: true,
+                damageType: 'AoE',
+                attackSpeed: 'slow',
+                attackPower: 'high'
+            },
+
+            battle_axe: {
+                name: '🪓 Battle Axe',
+                items: { rustySword: 1, iron: 5, bone: 3 },
+                description: 'High damage melee weapon, cleaves through enemies',
+                clues: {
+                    rustySword: 'A blade reborn, now sharp and wide...',
+                    iron: 'Five ingots forged, with strength and pride...',
+                    bone: 'Three shards of death, at your side...'
+                },
+                category: 'combat',
+                isTool: true,
+                isWeapon: true,
+                damageType: 'cleave',
+                attackSpeed: 'medium',
+                attackPower: 'very_high'
+            },
+
+            crossbow: {
+                name: '🏹 Crossbow',
+                items: { stick: 5, iron: 3, feather: 4 },
+                description: 'Powerful ranged weapon, piercing shots',
+                clues: {
+                    stick: 'Five pieces of wood, bent with care...',
+                    iron: 'Three metal parts, to make it rare...',
+                    feather: 'Four flights of speed, through the air...'
+                },
+                category: 'combat',
+                isTool: true,
+                isWeapon: true,
+                damageType: 'piercing',
+                attackSpeed: 'medium',
+                attackPower: 'high',
+                isRanged: true
+            },
+
+            fire_staff: {
+                name: '🔥 Fire Staff',
+                items: { stick: 3, crystal: 5, coal: 5 },
+                description: 'Launches fireballs, sets enemies ablaze',
+                clues: {
+                    stick: 'Three staffs of ancient wood, dark and long...',
+                    crystal: 'Five shards of magic, pure and strong...',
+                    coal: 'Five embers burning, to right the wrong...'
+                },
+                category: 'combat',
+                isTool: true,
+                isWeapon: true,
+                damageType: 'fire',
+                attackSpeed: 'medium',
+                attackPower: 'high',
+                isRanged: true,
+                hasMagic: true
+            },
+
+            ice_bow: {
+                name: '❄️ Ice Bow',
+                items: { stick: 4, iceShard: 6, crystal: 2 },
+                description: 'Freezes enemies, slows movement',
+                clues: {
+                    stick: 'Four branches bent, cold and true...',
+                    iceShard: 'Six frozen shards, winter\'s hue...',
+                    crystal: 'Two shards of frost, to pierce right through...'
+                },
+                category: 'combat',
+                isTool: true,
+                isWeapon: true,
+                damageType: 'ice',
+                attackSpeed: 'fast',
+                attackPower: 'medium',
+                isRanged: true,
+                hasMagic: true,
+                slowsEnemies: true
+            },
+
+            throwing_knives: {
+                name: '🗡️ Throwing Knives',
+                items: { iron: 5, feather: 3, bone: 2 },
+                description: 'Fast multi-shot ranged weapon, 15 charges',
+                clues: {
+                    iron: 'Five blades sharp, small and light...',
+                    feather: 'Three flights to guide, through the night...',
+                    bone: 'Two handles carved, to throw with might...'
+                },
+                category: 'combat',
+                isConsumable: true,
+                charges: 15,
+                isWeapon: true,
+                damageType: 'piercing',
+                attackSpeed: 'very_fast',
+                attackPower: 'low',
+                isRanged: true
+            },
+
+            // 🛡️ DEFENSIVE TOOLS
+            wooden_shield: {
+                name: '🛡️ Wooden Shield',
+                items: { wood: 5, iron: 2, fur: 2 },
+                description: 'Block incoming attacks, reduce damage',
+                clues: {
+                    wood: 'Five planks of oak, sturdy and wide...',
+                    iron: 'Two metal bands, to fortify the side...',
+                    fur: 'Two pelts for grip, where hand will ride...'
+                },
+                category: 'combat',
+                isTool: true,
+                isShield: true,
+                blockChance: 0.30,
+                damageReduction: 0.50
+            },
+
+            // 🔍 UTILITY TOOLS
+            treasure_detector: {
+                name: '🔍 Treasure Detector',
+                items: { compass: 1, crystal: 3, gold: 2 },
+                description: 'Reveals nearby treasures and collectibles',
+                clues: {
+                    compass: 'Your trusty guide, now seeking more...',
+                    crystal: 'Three shards of sight, to search the floor...',
+                    gold: 'Two pieces precious, to open the door...'
+                },
+                category: 'utility',
+                isTool: true,
+                isDetector: true,
+                detectionRadius: 30
+            },
+
+            recall_stone: {
+                name: '🏠 Recall Stone',
+                items: { crystal: 5, ancientAmulet: 1, iceShard: 3 },
+                description: 'Teleport to campfire. 3 charges.',
+                clues: {
+                    crystal: 'Five shards of home, to guide the way...',
+                    ancientAmulet: 'One ancient bond, where memories stay...',
+                    iceShard: 'Three frozen paths, no time to delay...'
+                },
+                category: 'utility',
+                isConsumable: true,
+                charges: 3,
+                teleportsToCampfire: true
+            },
+
+            climbing_claws: {
+                name: '🧗 Climbing Claws',
+                items: { bone: 6, iron: 4, fur: 2 },
+                description: 'Scale walls and cliffs, no fall damage',
+                clues: {
+                    bone: 'Six claws of beasts, sharp and curved...',
+                    iron: 'Four metal grips, strength preserved...',
+                    fur: 'Two padded palms, balance observed...'
+                },
+                category: 'utility',
+                isTool: true,
+                isMovementTool: true,
+                preventsallDamage: true,
+                allowsWallClimbing: true
+            },
+
             // 💡 LIGHTING TOOLS
             torch: {
                 name: '🔥 Torch',

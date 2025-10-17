@@ -360,8 +360,103 @@ export class AnimationSystem {
     // animateParticles(position, type, count) { }
 
     /**
-     * 🌲 TREE FALL: Tree falling animation with physics
-     * TODO: Extract from The Long Nights.js (search for "TIMBER")
+     * 🌲 TREE FALL: Tree falling animation with rotation and fade
+     * @param {Array} treeBlocks - Array of tree block objects {x, y, z, blockType}
+     * @param {Object} treeOrigin - Tree origin position {x, y, z}
+     * @param {number} duration - Animation duration in seconds (default: 2.0)
+     * @param {function} onComplete - Callback when animation completes
      */
-    // animateTreeFall(treeBlocks, direction) { }
+    animateTreeFall(treeBlocks, treeOrigin, duration = 2.0, onComplete = null) {
+        console.log(`🌲 TIMBER! Animating ${treeBlocks.length} tree blocks falling from (${treeOrigin.x}, ${treeOrigin.y}, ${treeOrigin.z})`);
+
+        // Create a group to hold all tree meshes
+        const treeGroup = new THREE.Group();
+        const meshes = [];
+
+        // Create temporary meshes for each tree block
+        treeBlocks.forEach(block => {
+            const geometry = new THREE.BoxGeometry(1, 1, 1);
+
+            // Determine block color based on type
+            let color = 0x8B4513; // Brown (wood)
+            if (!this.voxelWorld.isWoodBlock(block.blockType)) {
+                color = 0x228B22; // Green (leaves)
+            }
+
+            const material = new THREE.MeshBasicMaterial({
+                color: color,
+                transparent: true,
+                opacity: 0.9
+            });
+
+            const mesh = new THREE.Mesh(geometry, material);
+
+            // Position relative to tree origin
+            mesh.position.set(
+                block.x - treeOrigin.x,
+                block.y - treeOrigin.y,
+                block.z - treeOrigin.z
+            );
+
+            treeGroup.add(mesh);
+            meshes.push({ mesh, geometry, material });
+        });
+
+        // Position the group at tree origin
+        treeGroup.position.set(treeOrigin.x, treeOrigin.y, treeOrigin.z);
+        this.voxelWorld.scene.add(treeGroup);
+
+        // Determine fall direction (random left/right tilt)
+        const fallDirection = Math.random() > 0.5 ? 1 : -1;
+        const fallAngle = Math.PI / 2; // 90 degrees (horizontal)
+
+        console.log(`🌲 Tree will fall ${fallDirection > 0 ? 'right' : 'left'} (${(fallAngle * 180 / Math.PI).toFixed(0)}°)`);
+
+        // Animate tree falling
+        const animId = this.animationId++;
+        this.activeAnimations.set(animId, {
+            type: 'tree_fall',
+            progress: 0,
+            duration: duration,
+            treeGroup: treeGroup,
+            meshes: meshes,
+            onUpdate: (progress) => {
+                // Ease-out rotation (starts fast, slows down)
+                const easeProgress = 1 - Math.pow(1 - progress, 3);
+
+                // Rotate tree around its base (X-axis for side fall)
+                treeGroup.rotation.z = easeProgress * fallAngle * fallDirection;
+
+                // Slight downward movement as it falls
+                treeGroup.position.y = treeOrigin.y - (easeProgress * 2);
+
+                // Fade out in the last 30% of animation
+                if (progress > 0.7) {
+                    const fadeProgress = (progress - 0.7) / 0.3;
+                    meshes.forEach(({ mesh }) => {
+                        if (mesh.material) {
+                            mesh.material.opacity = 0.9 * (1 - fadeProgress);
+                        }
+                    });
+                }
+            },
+            onComplete: () => {
+                // Clean up all meshes
+                meshes.forEach(({ mesh, geometry, material }) => {
+                    treeGroup.remove(mesh);
+                    geometry.dispose();
+                    material.dispose();
+                });
+
+                this.voxelWorld.scene.remove(treeGroup);
+                console.log(`🌲 Tree fall animation complete - ${meshes.length} blocks disposed`);
+
+                if (onComplete) {
+                    onComplete();
+                }
+            }
+        });
+
+        return animId;
+    }
 }

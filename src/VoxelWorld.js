@@ -2895,6 +2895,38 @@ class NebulaVoxelApp {
                 tool_bench: '🔧',     // Tool bench for advanced crafting
                 kitchen_bench: '🍳',  // Kitchen bench for cooking
 
+                // 💣 DEMOLITION & HARVESTING
+                demolition_charge: '💣',  // Demolition charge
+                crafted_demolition_charge: '💣',
+                tree_feller: '🪓',        // Tree feller
+                crafted_tree_feller: '🪓',
+
+                // ⚔️ ADVANCED COMBAT WEAPONS
+                war_hammer: '🔨',         // War hammer
+                crafted_war_hammer: '🔨',
+                battle_axe: '🪓',         // Battle axe
+                crafted_battle_axe: '🪓',
+                crossbow: '🏹',           // Crossbow
+                crafted_crossbow: '🏹',
+                fire_staff: '🔥',         // Fire staff
+                crafted_fire_staff: '🔥',
+                ice_bow: '❄️',            // Ice bow
+                crafted_ice_bow: '❄️',
+                throwing_knives: '🗡️',    // Throwing knives
+                crafted_throwing_knives: '🗡️',
+
+                // 🛡️ DEFENSIVE
+                wooden_shield: '🛡️',      // Wooden shield
+                crafted_wooden_shield: '🛡️',
+
+                // 🔍 UTILITY TOOLS
+                treasure_detector: '🔍',   // Treasure detector
+                crafted_treasure_detector: '🔍',
+                recall_stone: '🏠',        // Recall stone
+                crafted_recall_stone: '🏠',
+                climbing_claws: '🧗',      // Climbing claws
+                crafted_climbing_claws: '🧗',
+
                 // Tree types for compass tracking
                 oak_tree: '🌳',
                 pine_tree: '🌲',
@@ -3000,10 +3032,17 @@ class NebulaVoxelApp {
                 'crafted_compass', 'crafted_compass_upgrade', 'crafted_machete',
                 'crafted_club', 'crafted_stone_spear', 'crafted_torch', 'crafted_wood_shield',
                 'crafted_hoe', 'crafted_watering_can', 'crafted_healing_potion', 'crafted_light_orb',
+                'crafted_demolition_charge', 'crafted_tree_feller',
+                'crafted_war_hammer', 'crafted_battle_axe', 'crafted_crossbow',
+                'crafted_fire_staff', 'crafted_ice_bow', 'crafted_throwing_knives',
+                'crafted_wooden_shield', 'crafted_treasure_detector', 'crafted_recall_stone', 'crafted_climbing_claws',
                 'grappling_hook', 'speed_boots', 'combat_sword', 'mining_pick',
                 'stone_hammer', 'magic_amulet', 'compass', 'compass_upgrade', 'machete',
                 'club', 'stone_spear', 'torch', 'wood_shield', 'hoe', 'watering_can',
-                'healing_potion', 'light_orb'
+                'healing_potion', 'light_orb',
+                'demolition_charge', 'tree_feller',
+                'war_hammer', 'battle_axe', 'crossbow', 'fire_staff', 'ice_bow', 'throwing_knives',
+                'wooden_shield', 'treasure_detector', 'recall_stone', 'climbing_claws'
             ];
             
             if (toolBenchTools.includes(itemType)) {
@@ -6618,6 +6657,9 @@ class NebulaVoxelApp {
             const selectedSlot = this.inventory?.hotbarSlots?.[this.selectedSlot];
             const currentTool = selectedSlot?.itemType || null;
 
+            // 🪓 TREE FELLER PENALTY: 3x harvest time for non-tree blocks
+            const isTreeFeller = currentTool === 'tree_feller' || currentTool === 'crafted_tree_feller';
+
             // Base harvest times (in milliseconds)
             const baseTimes = {
                 grass: 500,
@@ -6676,7 +6718,14 @@ class NebulaVoxelApp {
                 return -1; // Cannot harvest gold without stone hammer or iron tool
             }
 
-            return Math.floor(baseTime * efficiency);
+            let finalTime = Math.floor(baseTime * efficiency);
+
+            // 🪓 TREE FELLER PENALTY: 3x slower on non-wood blocks
+            if (isTreeFeller && !this.isWoodBlock(blockType)) {
+                finalTime = finalTime * 3;
+            }
+
+            return finalTime;
         };
 
         // Start harvesting a block
@@ -7142,7 +7191,10 @@ class NebulaVoxelApp {
                 'grappling_hook', 'speed_boots', 'combat_sword', 'mining_pick',
                 'stone_hammer', 'magic_amulet', 'compass', 'compass_upgrade',
                 'club', 'stone_spear', 'torch', 'wood_shield',
-                'hoe', 'watering_can', 'healing_potion', 'light_orb', 'simple_house'
+                'hoe', 'watering_can', 'healing_potion', 'light_orb', 'simple_house',
+                'demolition_charge', 'tree_feller', 'war_hammer', 'battle_axe',
+                'crossbow', 'fire_staff', 'ice_bow', 'throwing_knives', 'wooden_shield',
+                'treasure_detector', 'recall_stone', 'climbing_claws'
             ];
 
             // If user types a craftable tool name WITHOUT "crafted_" prefix, auto-add it
@@ -11806,6 +11858,13 @@ class NebulaVoxelApp {
                             'healing_potion', 'light_orb', 'magic_amulet',
                             'backpack_upgrade_1', 'backpack_upgrade_2', 'machete_upgrade',
                             'compass', 'compass_upgrade',
+                            // 💣 NEW TOOLS
+                            'demolition_charge', 'crafted_demolition_charge', 'tree_feller', 'crafted_tree_feller',
+                            'war_hammer', 'crafted_war_hammer', 'battle_axe', 'crafted_battle_axe',
+                            'crossbow', 'crafted_crossbow', 'fire_staff', 'crafted_fire_staff',
+                            'ice_bow', 'crafted_ice_bow', 'throwing_knives', 'crafted_throwing_knives',
+                            'wooden_shield', 'crafted_wooden_shield', 'treasure_detector', 'crafted_treasure_detector',
+                            'recall_stone', 'crafted_recall_stone', 'climbing_claws', 'crafted_climbing_claws',
                             // 🌾 FARMING: Seeds and crops are not placeable
                             'wheat_seeds', 'carrot_seeds', 'pumpkin_seeds', 'berry_seeds',
                             'wheat', 'carrot', 'potato', 'pumpkin', 'berry', 'mushroom', 'rice', 'corn_ear',
