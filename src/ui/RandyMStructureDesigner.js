@@ -49,6 +49,7 @@ export class RandyMStructureDesigner {
         this.isAdjustingVertical = false; // True when Shift is held after first click
         this.verticalAdjustmentStart = 0; // Mouse Y position when Shift was first pressed
         this.verticalOffset = 0; // Current Y offset from shapeStart
+        this.savedAxisLocks = null; // Backup of axis locks before Shift pressed
         
         // DOM elements
         this.modalOverlay = null;
@@ -70,9 +71,11 @@ export class RandyMStructureDesigner {
         // Camera rotation state
         this.isRotating = false;
         this.rotationStart = new THREE.Vector2();
-        this.cameraRotation = 0; // Current rotation angle in radians
+        this.cameraRotation = 0; // Current rotation angle in radians (horizontal)
+        this.cameraTilt = Math.PI / 6; // Vertical tilt angle (30 degrees default)
         this.cameraDistance = 20; // Distance from center
-        this.cameraHeight = 15;   // Height above ground
+        this.cameraHeight = 15;   // Height above ground (deprecated - using tilt now)
+        this.cameraPan = { x: 0, z: 0 }; // Camera pan offset
         
         // Axis lock toggles
         this.axisLocks = {
@@ -105,6 +108,9 @@ export class RandyMStructureDesigner {
         console.log('🎨 Opening RandyM Structure Designer...');
         this.isOpen = true;
         
+        // Disable game controls while designer is open
+        this.voxelWorld.controlsEnabled = false;
+        
         // Create modal UI
         this.createModal();
         
@@ -128,6 +134,9 @@ export class RandyMStructureDesigner {
         
         console.log('🎨 Closing RandyM Structure Designer...');
         this.isOpen = false;
+        
+        // Re-enable game controls when designer closes
+        this.voxelWorld.controlsEnabled = true;
         
         // Stop animation loop
         if (this.animationFrameId) {
@@ -1061,7 +1070,13 @@ export class RandyMStructureDesigner {
         this.shapeEnd = null;
         this.clearShapePreview();
         
-        // Reset vertical adjustment state
+        // Reset vertical adjustment state and restore axis locks
+        if (this.isAdjustingVertical && this.savedAxisLocks) {
+            this.setAxisLock('x', this.savedAxisLocks.x);
+            this.setAxisLock('z', this.savedAxisLocks.z);
+            this.savedAxisLocks = null;
+        }
+        
         this.isAdjustingVertical = false;
         this.verticalOffset = 0;
         this.hideVerticalIndicator();
@@ -1801,6 +1816,23 @@ export class RandyMStructureDesigner {
     }
     
     /**
+     * Set axis lock state programmatically (used by Shift+vertical adjustment)
+     */
+    setAxisLock(axis, locked) {
+        this.axisLocks[axis] = locked;
+        
+        // Update UI
+        const toggle = document.getElementById(`axis-lock-${axis}`);
+        if (toggle) {
+            if (locked) {
+                toggle.classList.add('active');
+            } else {
+                toggle.classList.remove('active');
+            }
+        }
+    }
+    
+    /**
      * Create undo/redo section in tool palette
      */
     createUndoRedoSection(container) {
@@ -1925,37 +1957,66 @@ export class RandyMStructureDesigner {
         const enhancedGraphics = this.voxelWorld?.enhancedGraphics;
         if (!enhancedGraphics) return;
         
-        // Try to load mini texture
-        const texture = await enhancedGraphics.loadMiniTexture(blockType);
+        // Show loading state
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#2c3e50';
+        ctx.fillRect(0, 0, 32, 32);
+        ctx.fillStyle = '#4a9eff';
+        ctx.font = '10px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('...', 16, 18);
         
-        if (texture && texture.image) {
-            // Draw texture to canvas
-            const ctx = canvas.getContext('2d');
-            ctx.imageSmoothingEnabled = false; // Pixel art style
+        try {
+            // Try to load mini texture
+            const texture = await enhancedGraphics.loadMiniTexture(blockType);
             
-            // Wait for image to load
-            if (texture.image.complete) {
-                ctx.drawImage(texture.image, 0, 0, 32, 32);
-            } else {
-                texture.image.onload = () => {
+            if (texture && texture.image) {
+                // Draw texture to canvas
+                ctx.imageSmoothingEnabled = false; // Pixel art style
+                
+                // Wait for image to load
+                if (texture.image.complete) {
+                    ctx.clearRect(0, 0, 32, 32);
                     ctx.drawImage(texture.image, 0, 0, 32, 32);
-                };
+                    console.log(`✅ Loaded texture for ${blockType}`);
+                } else {
+                    texture.image.onload = () => {
+                        ctx.clearRect(0, 0, 32, 32);
+                        ctx.drawImage(texture.image, 0, 0, 32, 32);
+                        console.log(`✅ Loaded texture for ${blockType}`);
+                    };
+                    texture.image.onerror = () => {
+                        console.warn(`⚠️ Failed to load texture image for ${blockType}`);
+                        this.drawFallbackThumbnail(blockType, canvas);
+                    };
+                }
+                
+                // Cleanup texture (we only needed it for the canvas)
+                texture.dispose();
+            } else {
+                // Fallback: draw colored square based on block type
+                console.warn(`⚠️ No texture available for ${blockType}, using fallback color`);
+                this.drawFallbackThumbnail(blockType, canvas);
             }
-            
-            // Cleanup texture (we only needed it for the canvas)
-            texture.dispose();
-        } else {
-            // Fallback: draw colored square based on block type
-            const ctx = canvas.getContext('2d');
-            const color = this.getBlockColor(blockType);
-            ctx.fillStyle = color;
-            ctx.fillRect(0, 0, 32, 32);
-            
-            // Add border
-            ctx.strokeStyle = '#4a9eff';
-            ctx.lineWidth = 1;
-            ctx.strokeRect(0, 0, 32, 32);
+        } catch (error) {
+            console.error(`❌ Error loading thumbnail for ${blockType}:`, error);
+            this.drawFallbackThumbnail(blockType, canvas);
         }
+    }
+    
+    /**
+     * Draw fallback colored thumbnail when texture fails
+     */
+    drawFallbackThumbnail(blockType, canvas) {
+        const ctx = canvas.getContext('2d');
+        const color = this.getBlockColor(blockType);
+        ctx.fillStyle = color;
+        ctx.fillRect(0, 0, 32, 32);
+        
+        // Add border
+        ctx.strokeStyle = '#4a9eff';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(0, 0, 32, 32);
     }
     
     /**
@@ -2792,6 +2853,10 @@ export class RandyMStructureDesigner {
         this.canvas.addEventListener('wheel', this.onWheel);
         window.addEventListener('resize', this.onResize);
         window.addEventListener('keydown', this.onKeyDown);
+        
+        // Add window mouseup to catch releases outside canvas
+        // (fixes Ctrl+drag rotation getting stuck)
+        window.addEventListener('mouseup', this.onMouseUp);
     }
     
     /**
@@ -2808,6 +2873,7 @@ export class RandyMStructureDesigner {
         }
         window.removeEventListener('resize', this.onResize);
         window.removeEventListener('keydown', this.onKeyDown);
+        window.removeEventListener('mouseup', this.onMouseUp);
     }
     
     /**
@@ -2821,11 +2887,21 @@ export class RandyMStructureDesigner {
         // Handle camera rotation if Ctrl is held and dragging
         if (this.isRotating && event.ctrlKey) {
             const deltaX = event.clientX - this.rotationStart.x;
+            const deltaY = event.clientY - this.rotationStart.y;
             
-            // Update rotation (1 pixel = 0.01 radians)
-            this.cameraRotation += deltaX * 0.01;
+            // Horizontal rotation (unless Y-axis is locked)
+            if (!this.axisLocks.y) {
+                this.cameraRotation += deltaX * 0.01;
+            }
             
-            // Update camera position based on rotation
+            // Vertical tilt (unless X-axis is locked)
+            if (!this.axisLocks.x) {
+                this.cameraTilt -= deltaY * 0.01;
+                // Clamp tilt to prevent camera flipping (10 degrees to 80 degrees)
+                this.cameraTilt = Math.max(Math.PI / 18, Math.min(Math.PI * 4 / 9, this.cameraTilt));
+            }
+            
+            // Update camera position based on rotation and tilt
             this.updateCameraPosition();
             
             // Update rotation start for next frame
@@ -2840,7 +2916,18 @@ export class RandyMStructureDesigner {
                 if (!this.isAdjustingVertical) {
                     this.isAdjustingVertical = true;
                     this.verticalAdjustmentStart = event.clientY;
-                    console.log('📏 Vertical adjustment mode activated (hold Shift + move mouse up/down)');
+                    
+                    // Save current axis lock state
+                    this.savedAxisLocks = {
+                        x: this.axisLocks.x,
+                        z: this.axisLocks.z
+                    };
+                    
+                    // Auto-lock X and Z axes (only allow Y movement)
+                    this.setAxisLock('x', true);
+                    this.setAxisLock('z', true);
+                    
+                    console.log('📏 Vertical adjustment mode: X and Z axes locked (Y-only movement)');
                 }
                 
                 // Calculate vertical offset based on mouse movement
@@ -2848,21 +2935,34 @@ export class RandyMStructureDesigner {
                 const deltaY = this.verticalAdjustmentStart - event.clientY;
                 this.verticalOffset = Math.round(deltaY / 20); // 20 pixels per block
                 
-                // Update preview with vertical offset
+                // Get current mouse position for the end point
                 const currentPos = this.getPlacementPosition();
                 if (currentPos) {
-                    // Create adjusted end position with vertical offset
-                    const adjustedPos = currentPos.clone();
-                    adjustedPos.y += this.verticalOffset;
-                    this.updateShapePreview(adjustedPos);
+                    // Lock X and Z to shapeStart, only use currentPos for visual reference
+                    // But keep Y offset for vertical adjustment
+                    const adjustedEnd = new THREE.Vector3(
+                        this.shapeStart.x,
+                        currentPos.y + this.verticalOffset,
+                        this.shapeStart.z
+                    );
                     
-                    // Update vertical indicator
-                    this.updateVerticalIndicator();
+                    this.updateShapePreview(adjustedEnd);
                 }
+                
+                // Update vertical indicator
+                this.updateVerticalIndicator();
             } else {
                 // Exit vertical adjustment mode when Shift is released
                 if (this.isAdjustingVertical) {
                     this.isAdjustingVertical = false;
+                    
+                    // Restore previous axis lock state
+                    if (this.savedAxisLocks) {
+                        this.setAxisLock('x', this.savedAxisLocks.x);
+                        this.setAxisLock('z', this.savedAxisLocks.z);
+                        this.savedAxisLocks = null;
+                    }
+                    
                     console.log(`📏 Vertical adjustment complete: ${this.verticalOffset > 0 ? '+' : ''}${this.verticalOffset} blocks`);
                 }
                 
@@ -2887,6 +2987,7 @@ export class RandyMStructureDesigner {
             this.isRotating = true;
             this.rotationStart.set(event.clientX, event.clientY);
             this.canvas.style.cursor = 'grabbing';
+            console.log('🎮 Started camera rotation/tilt mode');
             event.preventDefault();
         }
     }
@@ -2895,6 +2996,9 @@ export class RandyMStructureDesigner {
      * Handle mouse up
      */
     handleMouseUp(event) {
+        if (this.isRotating) {
+            console.log('🎮 Stopped camera rotation/tilt mode');
+        }
         this.isRotating = false;
         this.canvas.style.cursor = 'default';
     }
@@ -2903,12 +3007,19 @@ export class RandyMStructureDesigner {
      * Update camera position based on rotation angle
      */
     updateCameraPosition() {
-        // Calculate new camera position orbiting around center (0, 0, 0)
-        const x = Math.cos(this.cameraRotation) * this.cameraDistance;
-        const z = Math.sin(this.cameraRotation) * this.cameraDistance;
+        // Calculate new camera position using spherical coordinates
+        // Horizontal angle (rotation around Y-axis)
+        const horizontalDistance = Math.cos(this.cameraTilt) * this.cameraDistance;
+        const x = Math.cos(this.cameraRotation) * horizontalDistance;
+        const z = Math.sin(this.cameraRotation) * horizontalDistance;
+        const y = Math.sin(this.cameraTilt) * this.cameraDistance;
         
-        this.camera.position.set(x, this.cameraHeight, z);
-        this.camera.lookAt(0, 0, 0);
+        // Apply pan offset
+        const panX = this.cameraPan.x;
+        const panZ = this.cameraPan.z;
+        
+        this.camera.position.set(x + panX, y, z + panZ);
+        this.camera.lookAt(panX, 0, panZ);
     }
     
     /**
@@ -3127,6 +3238,51 @@ export class RandyMStructureDesigner {
                 this.cancelShape();
                 event.preventDefault();
             }
+        }
+        
+        // Camera Pan: WASD or Arrow Keys (unless Z-axis is locked)
+        const panSpeed = 1; // Units per keypress
+        let panned = false;
+        
+        if (!this.axisLocks.z) {
+            if (event.key === 'w' || event.key === 'W' || event.key === 'ArrowUp') {
+                this.cameraPan.z -= panSpeed;
+                panned = true;
+            }
+            if (event.key === 's' || event.key === 'S' || event.key === 'ArrowDown') {
+                this.cameraPan.z += panSpeed;
+                panned = true;
+            }
+        }
+        
+        if (!this.axisLocks.x) {
+            if (event.key === 'a' || event.key === 'A' || event.key === 'ArrowLeft') {
+                this.cameraPan.x -= panSpeed;
+                panned = true;
+            }
+            if (event.key === 'd' || event.key === 'D' || event.key === 'ArrowRight') {
+                this.cameraPan.x += panSpeed;
+                panned = true;
+            }
+        }
+        
+        if (panned) {
+            this.updateCameraPosition();
+            console.log(`📷 Camera panned to (${this.cameraPan.x.toFixed(1)}, ${this.cameraPan.z.toFixed(1)})`);
+            event.preventDefault();
+            return;
+        }
+        
+        // Reset Camera: R key
+        if (event.key === 'r' || event.key === 'R') {
+            this.cameraRotation = Math.PI / 4;
+            this.cameraTilt = Math.PI / 6;
+            this.cameraPan = { x: 0, z: 0 };
+            this.cameraDistance = 20;
+            this.updateCameraPosition();
+            console.log('📷 Camera reset to default position');
+            event.preventDefault();
+            return;
         }
         
         // Undo: Ctrl+Z

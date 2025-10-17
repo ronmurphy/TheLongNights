@@ -1,8 +1,8 @@
-# RandyM Structure Designer - Phase 6 In Progress! 🎨
+# RandyM Structure Designer - Phase 7 Complete! 🎨
 
 **Named after:** Randy (with M initial)  
 **Created:** October 17, 2025  
-**Status:** Phase 6 🔄 Save/Load System - **IN PROGRESS** 🔄  
+**Status:** Phase 7 ✅ Camera Controls - **COMPLETE** ✅  
 **Current Mode:** 🎨 Creative/Debug (Unlimited Blocks)  
 **Future Mode:** 🎮 NPC Service (Player Inventory Integration)
 
@@ -17,7 +17,7 @@ In the browser console:
 openStructureDesigner()
 ```
 
-### Controls (Phase 6)
+### Controls (Phase 7)
 
 | Action | Control |
 |--------|---------|
@@ -33,8 +33,14 @@ openStructureDesigner()
 | **Delete Block** | Right Click (hover shows red glow) |
 | **Undo** | Ctrl+Z or click Undo button |
 | **Redo** | Ctrl+Y / Ctrl+Shift+Z or click Redo button |
-| **Rotate Camera** | Ctrl + Left Click Drag |
+| **Rotate Camera** | Ctrl + Left Click Drag (horizontal) |
+| **Tilt Camera** | Ctrl + Left Click Drag (vertical) |
+| **Pan Camera** | WASD or Arrow Keys |
+| **Reset Camera** | R key |
 | **Zoom** | Mouse Wheel |
+| **Lock X-Axis** | Click X-Axis toggle (prevents horizontal pan) |
+| **Lock Y-Axis** | Click Y-Axis toggle (prevents rotation) |
+| **Lock Z-Axis** | Click Z-Axis toggle (prevents vertical pan) |
 | **Save Structure** | Click "💾 Save" button |
 | **Load Structure** | Click "📂 Load" button |
 | **Close** | Click "✕ Close" button |
@@ -385,6 +391,25 @@ class MasterBuilderNPC extends NPC {
 - ✅ **Fast Loading** - Instant load of large structures
 - ✅ **Memory Efficient** - Dramatic memory reduction
 - ✅ **Batch Rendering** - Three.js can batch identical geometries
+
+### ~~Phase 7: Camera Controls~~ 📷 ✅ COMPLETE
+- ✅ **Vertical Tilt** - Ctrl+Drag up/down to tilt camera (10-80 degrees)
+- ✅ **Horizontal Rotation** - Ctrl+Drag left/right (existing feature)
+- ✅ **Camera Pan** - WASD or Arrow Keys to slide view
+- ✅ **Reset Camera** - R key resets to default position
+- ✅ **Working Axis Locks** - X/Y/Z toggles now actually prevent camera movement
+  - X-Lock: Prevents horizontal panning (A/D keys)
+  - Y-Lock: Prevents rotation (Ctrl+Drag horizontal)
+  - Z-Lock: Prevents vertical panning (W/S keys)
+- ✅ **Spherical Camera Math** - Proper 3D orbit with tilt
+- ✅ **Clamped Tilt** - Prevents camera from flipping upside-down
+
+### Phase 7.5: Smart Vertical Adjustment 🎯 ✅ COMPLETE
+- ✅ **Auto-Lock X/Z When Shift Pressed** - Holding Shift automatically locks X and Z axes
+- ✅ **Visual Toggle Feedback** - X and Z axis toggles visually activate when Shift is held
+- ✅ **Pure Y-Axis Movement** - Mouse movement only affects height (no horizontal drift!)
+- ✅ **Auto-Restore Locks** - Releasing Shift restores previous axis lock states
+- ✅ **Precise Height Control** - Much easier to adjust vertical dimensions accurately
 
 ### Phase 7: Polish ✨
 - [ ] Camera pan controls
