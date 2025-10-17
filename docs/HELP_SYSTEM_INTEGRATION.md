@@ -53,7 +53,7 @@ import { marked } from 'marked';
 
 Uses **marked** library (v12.0.2) for fast markdown parsing.
 
-#### 2. Dynamic File Loading (VoxelWorld.js ~line 12687)
+#### 2. Dynamic File Loading (The Long Nights.js ~line 12687)
 ```javascript
 const loadHelpTopic = async (topic) => {
     // Try Electron API first (for packaged app)
@@ -135,7 +135,7 @@ Adding new help topics:
    touch assets/help/new-topic.md
    ```
 
-2. **Add button** in Help tab (VoxelWorld.js ~line 12140):
+2. **Add button** in Help tab (The Long Nights.js ~line 12140):
    ```html
    <button class="help-topic-btn" data-topic="new-topic" style="...">
        📖 New Topic
@@ -198,7 +198,7 @@ Potential additions:
 
 ## Files Modified
 
-1. **src/VoxelWorld.js**:
+1. **src/The Long Nights.js**:
    - Line ~33: Added `import { marked } from 'marked';`
    - Line ~11858: Added Help tab button
    - Line ~12140: Added Help tab content with buttons

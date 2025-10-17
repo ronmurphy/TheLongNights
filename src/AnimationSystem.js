@@ -1,7 +1,7 @@
 /**
  * AnimationSystem.js
  * 
- * Centralized animation management system for VoxelWorld
+ * Centralized animation management system for The Long Nights
  * Handles trajectory animations, particle effects, and other visual effects
  * 
  * Phase 1: Grappling Hook Trajectory (Bezier curve with apex calculation)
@@ -20,7 +20,7 @@ export class AnimationSystem {
     }
 
     /**
-     * Main update loop - called every frame from VoxelWorld
+     * Main update loop - called every frame from The Long Nights
      * @param {number} deltaTime - Time since last frame in seconds
      */
     update(deltaTime) {
@@ -343,25 +343,25 @@ export class AnimationSystem {
 
     /**
      * 💥 EXPLOSION: Particle explosion effect
-     * TODO: Extract from VoxelWorld.js createExplosionEffect()
+     * TODO: Extract from The Long Nights.js createExplosionEffect()
      */
     // animateExplosion(position, radius, particleCount) { }
 
     /**
      * 🎈 BILLBOARD: Floating damage numbers / item pickups
-     * TODO: Extract from VoxelWorld.js animateBillboards()
+     * TODO: Extract from The Long Nights.js animateBillboards()
      */
     // animateBillboard(position, text, color, duration) { }
 
     /**
      * ✨ PARTICLES: Particle effects (mining, crafting, etc.)
-     * TODO: Extract from VoxelWorld.js animateParticleEffects()
+     * TODO: Extract from The Long Nights.js animateParticleEffects()
      */
     // animateParticles(position, type, count) { }
 
     /**
      * 🌲 TREE FALL: Tree falling animation with physics
-     * TODO: Extract from VoxelWorld.js (search for "TIMBER")
+     * TODO: Extract from The Long Nights.js (search for "TIMBER")
      */
     // animateTreeFall(treeBlocks, direction) { }
 }

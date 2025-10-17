@@ -49,14 +49,14 @@ Emoji images styled to look like native emoji
 
 ### Rebuild the app:
 ```bash
-cd /home/brad/Documents/VoxelWorld-1/VoxelWorld-1-vite
+cd /home/brad/Documents/The Long Nights-1/The Long Nights-1-vite
 bash desktopBuild.sh
 ```
 
 ### Test in Wine:
 ```bash
 cd dist-electron
-wine VoxelWorld-0.2.10-portable.exe
+wine The Long Nights-0.2.10-portable.exe
 ```
 
 **The 📍 Log and ALL emoji will now display as images!**

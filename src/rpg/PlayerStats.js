@@ -1,7 +1,7 @@
 /**
  * PlayerStats.js
  *
- * DCC TTRPG character stats system for VoxelWorld
+ * DCC TTRPG character stats system for The Long Nights
  * Small numbers (2-15), fast math, luck-based scaling
  */
 

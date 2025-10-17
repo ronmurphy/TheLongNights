@@ -1,7 +1,7 @@
 /**
  * ChunkSerializer.js
  *
- * Binary chunk serialization for VoxelWorld chunk persistence system.
+ * Binary chunk serialization for The Long Nights chunk persistence system.
  *
  * File Format:
  * - Header (32 bytes)

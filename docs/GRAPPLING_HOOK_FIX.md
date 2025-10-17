@@ -21,7 +21,7 @@ Added special handling for grappling hooks **before** the placement logic checks
 6. **Early return** prevents trying to place it as a block
 
 ### Code Location
-**VoxelWorld.js** - Right-click handler (around line 9640):
+**The Long Nights.js** - Right-click handler (around line 9640):
 ```javascript
 // 🕸️ GRAPPLING HOOK: Check if item is a grappling hook (ender pearl style teleport)
 const metadata = this.inventoryMetadata?.[selectedBlock];
@@ -91,6 +91,6 @@ To test the fix:
 5. Should teleport instantly without errors!
 
 ## Related Files
-- `VoxelWorld.js` - Main game logic with teleport handler
+- `The Long Nights.js` - Main game logic with teleport handler
 - `ToolBenchSystem.js` - Grappling hook blueprint and metadata
 - `CompanionCodex.js` - Grappling hook UI icons

@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# VoxelWorld Desktop Build Script
+# The Long Nights Desktop Build Script
 # This script builds desktop executables for Windows, Linux, and macOS using Electron
 
-echo "🏗️  Building VoxelWorld for Desktop..."
+echo "🏗️  Building The Long Nights for Desktop..."
 
 # Step 1: Build the web assets
 echo "📦 Building web assets..."

@@ -3,7 +3,7 @@
 ## Current Status ✅
 - **ttf-ms-fonts**: Installed (Core Microsoft fonts: Arial, Times New Roman, etc.)
 - **ttf-dejavu**: Installed (Open source alternatives)
-- **Material Design Icons**: Added to VoxelWorld (bundled, no external CDN)
+- **Material Design Icons**: Added to The Long Nights (bundled, no external CDN)
 
 ## Why Windows 11 Fonts are Tricky on Arch
 
@@ -19,7 +19,7 @@ The `ttf-ms-fonts` you installed includes:
 - Comic Sans MS, Georgia, Verdana, Trebuchet MS
 - Impact, Webdings
 
-**This is enough for most applications!** VoxelWorld is already configured to use these as fallbacks.
+**This is enough for most applications!** The Long Nights is already configured to use these as fallbacks.
 
 ```bash
 # Verify installed:
@@ -104,9 +104,9 @@ Microsoft fonts → Open Source equivalents:
 sudo pacman -S ttf-liberation ttf-carlito ttf-caladea noto-fonts noto-fonts-emoji
 ```
 
-## VoxelWorld Font Configuration
+## The Long Nights Font Configuration
 
-VoxelWorld is already configured with extensive fallbacks:
+The Long Nights is already configured with extensive fallbacks:
 
 1. **Inter** (custom bundled font)
 2. **Segoe UI** (Windows 10/11)
@@ -128,9 +128,9 @@ yay -S ttf-vista-fonts
 # 3. Update font cache
 fc-cache -fv
 
-# 4. Test VoxelWorld
-cd /home/brad/Documents/VoxelWorld-1/VoxelWorld-1-vite/dist-electron
-wine VoxelWorld-0.2.7-portable.exe
+# 4. Test The Long Nights
+cd /home/brad/Documents/The Long Nights-1/The Long Nights-1-vite/dist-electron
+wine The Long Nights-0.2.7-portable.exe
 ```
 
 ## Verify Fonts Are Working
@@ -145,10 +145,10 @@ fc-list | grep -i dejavu
 fc-list | grep -i noto
 
 # Check what Wine sees
-WINEDEBUG=+font wine VoxelWorld-0.2.7-portable.exe 2>&1 | grep -i "font"
+WINEDEBUG=+font wine The Long Nights-0.2.7-portable.exe 2>&1 | grep -i "font"
 ```
 
-## Current VoxelWorld Status
+## Current The Long Nights Status
 
 ✅ **Fonts working with ttf-ms-fonts**
 ✅ **Material Design Icons bundled (no external CDN)**  
@@ -159,4 +159,4 @@ You don't actually need Windows 11 fonts - the current setup works great!
 
 ---
 **Last Updated**: October 12, 2025  
-**VoxelWorld Version**: 0.2.7
+**The Long Nights Version**: 0.2.7

@@ -157,4 +157,4 @@ Future enhancements could include:
 
 ---
 
-Made with ❤️ for VoxelWorld modders!
+Made with ❤️ for The Long Nights modders!

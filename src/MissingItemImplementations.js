@@ -38,7 +38,7 @@ export class MissingItemImplementations {
      * Machete - Better than stone axe for chopping
      */
     implementMachete() {
-        // In VoxelWorld harvesting logic, check for machete
+        // In The Long Nights harvesting logic, check for machete
         const hasMachete = this.voxelWorld.hasEquippedTool('machete') || 
                           this.voxelWorld.hasEquippedTool('crafted_machete');
 
@@ -228,7 +228,7 @@ export class MissingItemImplementations {
 
     /**
      * Install all implementations
-     * Call this in VoxelWorld initialization
+     * Call this in The Long Nights initialization
      */
     static installAll(voxelWorld) {
         const impl = new MissingItemImplementations(voxelWorld);

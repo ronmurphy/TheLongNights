@@ -1,4 +1,4 @@
-# 🎉 VoxelWorld v0.2.9 - Complete Emoji & Font Solution
+# 🎉 The Long Nights v0.2.9 - Complete Emoji & Font Solution
 
 ## ✅ SOLVED: Emoji Support for Windows Builds on Arch Linux
 
@@ -10,7 +10,7 @@ You needed **emoji to display in the Windows portable build when testing through
 #### 1. 🎨 **Emoji Font Configuration** ✅
 - **Noto Color Emoji** linked to Wine (`~/.wine/drive_c/windows/Fonts/NotoColorEmoji.ttf`)
 - **Font substitutions** registered in Wine registry
-- **CSS emoji fallbacks** added to VoxelWorld
+- **CSS emoji fallbacks** added to The Long Nights
 
 #### 2. 🔤 **Font Stack** ✅
 ```css
@@ -31,12 +31,12 @@ font-family:
 
 ## 📦 Build v0.2.9 Status
 
-**Location**: `/home/brad/Documents/VoxelWorld-1/VoxelWorld-1-vite/dist-electron/`
+**Location**: `/home/brad/Documents/The Long Nights-1/The Long Nights-1-vite/dist-electron/`
 
 **Files**:
-- ✅ `VoxelWorld-0.2.9-portable.exe` (Windows - 222MB)
-- ✅ `VoxelWorld-0.2.9.AppImage` (Linux - native emoji support)
-- ✅ `VoxelWorld-0.2.9-install.exe` (Windows installer)
+- ✅ `The Long Nights-0.2.9-portable.exe` (Windows - 222MB)
+- ✅ `The Long Nights-0.2.9.AppImage` (Linux - native emoji support)
+- ✅ `The Long Nights-0.2.9-install.exe` (Windows installer)
 
 **What's Included**:
 - ✅ Emoji font fallbacks in CSS
@@ -48,14 +48,14 @@ font-family:
 
 ### Quick Test Script
 ```bash
-cd /home/brad/Documents/VoxelWorld-1/VoxelWorld-1-vite
+cd /home/brad/Documents/The Long Nights-1/The Long Nights-1-vite
 ./test-emoji.sh
 ```
 
 ### Manual Test - Wine (Windows portable)
 ```bash
 cd dist-electron
-wine VoxelWorld-0.2.9-portable.exe
+wine The Long Nights-0.2.9-portable.exe
 ```
 
 **What to check**:
@@ -67,8 +67,8 @@ wine VoxelWorld-0.2.9-portable.exe
 ### Manual Test - Linux Native (Guaranteed Emoji)
 ```bash
 cd dist-electron
-chmod +x VoxelWorld-0.2.9.AppImage
-./VoxelWorld-0.2.9.AppImage
+chmod +x The Long Nights-0.2.9.AppImage
+./The Long Nights-0.2.9.AppImage
 ```
 
 The Linux build **will definitely show emoji** using your system's Noto Color Emoji font!
@@ -93,7 +93,7 @@ fc-list | grep -i emoji
 ### Debug Emoji Font Loading
 ```bash
 cd dist-electron
-WINEDEBUG=+font wine VoxelWorld-0.2.9-portable.exe 2>&1 | grep -i emoji
+WINEDEBUG=+font wine The Long Nights-0.2.9-portable.exe 2>&1 | grep -i emoji
 ```
 
 ## 💡 How Emoji Work
@@ -115,7 +115,7 @@ WINEDEBUG=+font wine VoxelWorld-0.2.9-portable.exe 2>&1 | grep -i emoji
 - No Wine layer needed
 - Perfect emoji support
 
-## 🎨 Using Emoji in VoxelWorld
+## 🎨 Using Emoji in The Long Nights
 
 ### Unicode Emoji
 ```html
@@ -162,7 +162,7 @@ bash configure-wine-emoji.sh
 
 **Solution 3**: Use Linux build instead
 ```bash
-./VoxelWorld-0.2.9.AppImage
+./The Long Nights-0.2.9.AppImage
 ```
 
 ### ❌ Some Emoji Work, Others Don't
@@ -178,7 +178,7 @@ This is expected! Wine's font handling is complex. Solutions:
 
 **Best**: Use the Linux AppImage for testing emoji
 ```bash
-./VoxelWorld-0.2.9.AppImage
+./The Long Nights-0.2.9.AppImage
 ```
 
 **Alternative**: On actual Windows 10/11, emoji will work perfectly
@@ -196,15 +196,15 @@ This is expected! Wine's font handling is complex. Solutions:
 ## 🎯 Summary
 
 ### What You Have Now:
-✅ **VoxelWorld v0.2.9** with emoji support  
+✅ **The Long Nights v0.2.9** with emoji support  
 ✅ **Wine configured** with Noto Color Emoji  
 ✅ **CSS fallbacks** for emoji fonts  
 ✅ **Material Design Icons** bundled  
 ✅ **System emoji fonts** installed  
 
 ### How to Test:
-1. **Wine**: `wine VoxelWorld-0.2.9-portable.exe`
-2. **Linux**: `./VoxelWorld-0.2.9.AppImage` (guaranteed emoji)
+1. **Wine**: `wine The Long Nights-0.2.9-portable.exe`
+2. **Linux**: `./The Long Nights-0.2.9.AppImage` (guaranteed emoji)
 3. **Real Windows**: Transfer .exe and run (perfect emoji)
 
 ### Expected Results:

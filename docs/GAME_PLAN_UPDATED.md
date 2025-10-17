@@ -1,4 +1,4 @@
-# 🎮 VoxelWorld - Updated Game Direction & Roadmap
+# 🎮 The Long Nights - Updated Game Direction & Roadmap
 
 **Date:** October 15, 2025  
 **Status:** Phase 1 - Core Survival Systems

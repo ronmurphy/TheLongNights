@@ -1,4 +1,4 @@
-Great question! Here are some npm modules that could potentially help VoxelWorld run faster or smoother:
+Great question! Here are some npm modules that could potentially help The Long Nights run faster or smoother:
 
 ## Performance & Optimization
 

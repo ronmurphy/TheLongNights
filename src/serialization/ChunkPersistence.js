@@ -5,8 +5,8 @@
  * Handles both Electron (Node.js fs) and browser (IndexedDB) environments.
  *
  * Directory Structure:
- * - Electron: {userData}/VoxelWorld/saves/{worldSeed}/chunks/
- * - Browser: IndexedDB database "VoxelWorld" with stores "chunks" and "modifications"
+ * - Electron: {userData}/The Long Nights/saves/{worldSeed}/chunks/
+ * - Browser: IndexedDB database "The Long Nights" with stores "chunks" and "modifications"
  *
  * File Types:
  * - chunk_X_Z.dat - Generated terrain data (binary)
@@ -53,7 +53,7 @@ export class ChunkPersistence {
 
             // Get user data directory
             const userDataPath = app.getPath('userData');
-            this.chunksDir = this.path.join(userDataPath, 'VoxelWorld', 'saves', this.worldSeed.toString(), 'chunks');
+            this.chunksDir = this.path.join(userDataPath, 'The Long Nights', 'saves', this.worldSeed.toString(), 'chunks');
 
             // Create directory structure
             await this.fs.mkdir(this.chunksDir, { recursive: true });
@@ -70,7 +70,7 @@ export class ChunkPersistence {
      */
     async initIndexedDB() {
         return new Promise((resolve, reject) => {
-            const request = indexedDB.open('VoxelWorld', 2); // Increment version for new store
+            const request = indexedDB.open('The Long Nights', 2); // Increment version for new store
 
             request.onerror = () => {
                 console.error('❌ Failed to open IndexedDB:', request.error);

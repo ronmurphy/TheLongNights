@@ -27,7 +27,7 @@ The `CompanionTutorialSystem` makes your companion feel alive by:
 import { CompanionTutorialSystem } from './ui/CompanionTutorialSystem.js';
 
 // In your App.js initialization (where you create voxelApp)
-// AFTER VoxelWorld is created:
+// AFTER The Long Nights is created:
 window.voxelApp = app;
 
 // NEW: Initialize companion tutorial system
@@ -39,7 +39,7 @@ console.log('🎓 CompanionTutorialSystem initialized');
 
 ### Step 2: Hook Machete Selection
 
-**File: `src/VoxelWorld.js`**
+**File: `src/The Long Nights.js`**
 
 Find where machete is selected (search for `showMacheteTutorial`):
 
@@ -190,7 +190,7 @@ craftItem(recipeId) {
 
 ### Step 7: Hook Campfire Placement
 
-**File: `src/VoxelWorld.js`**
+**File: `src/The Long Nights.js`**
 
 Find where campfire sets respawn point (search for `respawnCampfire =`):
 

@@ -23,11 +23,11 @@ Block textures now load correctly in packaged Electron builds:
 ### Core Integration
 1. **src/App.js**
    - Added `CompanionTutorialSystem` import
-   - Initialize tutorial system after VoxelWorld creation
+   - Initialize tutorial system after The Long Nights creation
    - Set `app.tutorialSystem` for global access
 
 ### Tutorial Hooks (8 locations)
-2. **src/VoxelWorld.js** - 3 hooks added:
+2. **src/The Long Nights.js** - 3 hooks added:
    - ✅ Machete selection tutorial (line ~2673)
    - ✅ Campfire placement tutorial (line ~690)
    - ✅ Nightfall tutorial (line ~9692)
@@ -168,7 +168,7 @@ async showFishingTutorial() {
     ], () => this.markSeen(key));
 }
 
-// 2. Add hook in game code (e.g., VoxelWorld.js)
+// 2. Add hook in game code (e.g., The Long Nights.js)
 if (itemCaught === 'fish' && this.tutorialSystem) {
     this.tutorialSystem.showFishingTutorial();
 }

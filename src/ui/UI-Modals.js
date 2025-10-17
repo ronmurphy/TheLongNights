@@ -1,7 +1,7 @@
 /**
  * UI-Modals.js
  *
- * Centralized modal system for VoxelWorld
+ * Centralized modal system for The Long Nights
  * Character creation, settings, help, etc.
  * Styled to match Explorer's Journal aesthetic
  */
@@ -19,10 +19,10 @@ export class UIModals {
         // Remove existing modal if any
         this.closeActiveModal();
 
-        // 🔒 Disable VoxelWorld input controls while modal is open
+        // 🔒 Disable The Long Nights input controls while modal is open
         if (this.voxelWorld) {
             this.voxelWorld.controlsEnabled = false;
-            console.log('🔒 Disabled VoxelWorld input controls for character creation');
+            console.log('🔒 Disabled The Long Nights input controls for character creation');
         }
 
         const modal = document.createElement('div');
@@ -188,10 +188,10 @@ export class UIModals {
         btnFinish.addEventListener('click', () => {
             this.closeActiveModal();
 
-            // ✅ Re-enable VoxelWorld input controls when modal closes
+            // ✅ Re-enable The Long Nights input controls when modal closes
             if (this.voxelWorld) {
                 this.voxelWorld.controlsEnabled = true;
-                console.log('✅ Re-enabled VoxelWorld input controls');
+                console.log('✅ Re-enabled The Long Nights input controls');
             }
 
             if (onComplete) {
@@ -285,7 +285,7 @@ export class UIModals {
 
     // 📊 FUTURE: Settings Modal
     showSettings() {
-        // TODO: Migrate settings from VoxelWorld.js
+        // TODO: Migrate settings from The Long Nights.js
         console.log('⚙️ Settings modal - coming soon!');
     }
 
@@ -295,9 +295,9 @@ export class UIModals {
         console.log('❓ Help modal - coming soon!');
     }
 
-    // 🗺️ FUTURE: World Map Modal (migrate from VoxelWorld)
+    // 🗺️ FUTURE: World Map Modal (migrate from The Long Nights)
     showWorldMap() {
-        // TODO: Migrate world map from VoxelWorld.js
+        // TODO: Migrate world map from The Long Nights.js
         console.log('🗺️ World map modal - coming soon!');
     }
 }

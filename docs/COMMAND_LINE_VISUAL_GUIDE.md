@@ -7,7 +7,7 @@
 
 Method 1: Shortcut Target Field
 ┌─────────────────────────────────────────────────────────────────────┐
-│  "C:\Path\To\VoxelWorld.exe" --force_high_performance_gpu          │
+│  "C:\Path\To\The Long Nights.exe" --force_high_performance_gpu          │
 │   └──────┬──────────────────┘  └────────────┬─────────────────┘    │
 │          │                                   │                       │
 │       Path to EXE                       Command Switch              │
@@ -16,7 +16,7 @@ Method 1: Shortcut Target Field
 
 Multiple Switches:
 ┌─────────────────────────────────────────────────────────────────────┐
-│  "C:\Path\To\VoxelWorld.exe" --switch1 --switch2 --switch3          │
+│  "C:\Path\To\The Long Nights.exe" --switch1 --switch2 --switch3          │
 │   └──────┬──────────────────┘  └───┬────┘ └───┬────┘ └───┬────┘    │
 │          │                         │          │          │           │
 │       Path to EXE               Switch1    Switch2    Switch3       │
@@ -25,8 +25,8 @@ Multiple Switches:
 
 Method 2: Command Prompt
 ┌─────────────────────────────────────────────────────────────────────┐
-│  cd C:\Path\To\VoxelWorld                                           │
-│  VoxelWorld.exe --force_high_performance_gpu                        │
+│  cd C:\Path\To\The Long Nights                                           │
+│  The Long Nights.exe --force_high_performance_gpu                        │
 └─────────────────────────────────────────────────────────────────────┘
 
 
@@ -36,8 +36,8 @@ Method 2: Command Prompt
 
 Method 1: Terminal
 ┌─────────────────────────────────────────────────────────────────────┐
-│  cd /path/to/VoxelWorld                                             │
-│  ./VoxelWorld --force_high_performance_gpu                          │
+│  cd /path/to/The Long Nights                                             │
+│  ./The Long Nights --force_high_performance_gpu                          │
 │  └─┬─────────┘ └────────────┬─────────────────┘                    │
 │    │                         │                                       │
 │  Execute            Command Switch                                  │
@@ -46,7 +46,7 @@ Method 1: Terminal
 
 Multiple Switches:
 ┌─────────────────────────────────────────────────────────────────────┐
-│  ./VoxelWorld --switch1 --switch2 --switch3                         │
+│  ./The Long Nights --switch1 --switch2 --switch3                         │
 │  └─┬─────────┘ └───┬────┘ └───┬────┘ └───┬────┘                    │
 │    │               │          │          │                           │
 │  Execute        Switch1    Switch2    Switch3                       │
@@ -56,8 +56,8 @@ Multiple Switches:
 Method 2: Shell Script
 ┌─────────────────────────────────────────────────────────────────────┐
 │  #!/bin/bash                                                        │
-│  cd /path/to/VoxelWorld                                             │
-│  ./VoxelWorld --force_high_performance_gpu                          │
+│  cd /path/to/The Long Nights                                             │
+│  ./The Long Nights --force_high_performance_gpu                          │
 └─────────────────────────────────────────────────────────────────────┘
 
 
@@ -97,24 +97,24 @@ Troubleshooting GPU Issues:
 
 WINDOWS Shortcut Target:
 ✅ CORRECT:
-  "C:\Games\VoxelWorld\VoxelWorld.exe" --force_high_performance_gpu
+  "C:\Games\The Long Nights\The Long Nights.exe" --force_high_performance_gpu
 
 ❌ WRONG (switches inside quotes):
-  "C:\Games\VoxelWorld\VoxelWorld.exe --force_high_performance_gpu"
+  "C:\Games\The Long Nights\The Long Nights.exe --force_high_performance_gpu"
 
 ❌ WRONG (single dash):
-  "C:\Games\VoxelWorld\VoxelWorld.exe" -force_high_performance_gpu
+  "C:\Games\The Long Nights\The Long Nights.exe" -force_high_performance_gpu
 
 
 LINUX Terminal:
 ✅ CORRECT:
-  ./VoxelWorld --force_high_performance_gpu
+  ./The Long Nights --force_high_performance_gpu
 
 ❌ WRONG (no dot-slash):
-  VoxelWorld --force_high_performance_gpu
+  The Long Nights --force_high_performance_gpu
 
 ❌ WRONG (single dash):
-  ./VoxelWorld -force_high_performance_gpu
+  ./The Long Nights -force_high_performance_gpu
 
 
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -144,8 +144,8 @@ LINUX Terminal:
 └─────────────────────────────────────────────────────────────────────┘
 
 "Command not found" (Linux):
-  → Use full path: /full/path/to/VoxelWorld --switches
-  → Or navigate first: cd /path/to/VoxelWorld
+  → Use full path: /full/path/to/The Long Nights --switches
+  → Or navigate first: cd /path/to/The Long Nights
 
 "Access denied" (Windows):
   → Right-click exe > Properties > Unblock > Apply
@@ -158,7 +158,7 @@ Switches don't work:
 Wrong GPU still used:
   → Windows Graphics Settings takes priority
   → Settings > System > Display > Graphics Settings
-  → Add VoxelWorld.exe, set to "High Performance"
+  → Add The Long Nights.exe, set to "High Performance"
 
 
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -166,21 +166,21 @@ Wrong GPU still used:
 └─────────────────────────────────────────────────────────────────────┘
 
 Windows Shortcut Target (adjust path):
-"C:\Users\YourName\Downloads\VoxelWorld\VoxelWorld.exe" --force_high_performance_gpu --disable-gpu-vsync
+"C:\Users\YourName\Downloads\The Long Nights\The Long Nights.exe" --force_high_performance_gpu --disable-gpu-vsync
 
 Linux Terminal (adjust path):
-cd ~/Downloads/VoxelWorld && ./VoxelWorld --force_high_performance_gpu --disable-gpu-vsync
+cd ~/Downloads/The Long Nights && ./The Long Nights --force_high_performance_gpu --disable-gpu-vsync
 
 Linux Shell Script:
 #!/bin/bash
-cd ~/Downloads/VoxelWorld
-./VoxelWorld --force_high_performance_gpu --disable-gpu-vsync
+cd ~/Downloads/The Long Nights
+./The Long Nights --force_high_performance_gpu --disable-gpu-vsync
 ```
 
 ---
 
 **Remember**: 
 - Windows: Use **double quotes** around path, switches **outside** quotes
-- Linux: Use **./VoxelWorld** (dot-slash), not just **VoxelWorld**
+- Linux: Use **./The Long Nights** (dot-slash), not just **The Long Nights**
 - Both: Use **double dash** (--) not single dash (-)
 - Both: Switches are **space-separated**

@@ -27,7 +27,7 @@ isToolItem(itemType) {
 }
 ```
 
-### 2. Updated VoxelWorld.js (Line ~2290)
+### 2. Updated The Long Nights.js (Line ~2290)
 Added `'hoe'` to the enhanced graphics tool list for icon loading:
 
 ```javascript
@@ -61,9 +61,9 @@ giveItem('hoe')
 
 ## Files Modified
 - ✅ `/src/HotbarSystem.js` - Added 'hoe' to tool identifiers
-- ✅ `/src/VoxelWorld.js` - Added 'hoe' to enhanced graphics tool list
-- ✅ `/src/VoxelWorld.js` - Left-click tilling logic (already done)
-- ✅ `/src/VoxelWorld.js` - Removed right-click hoe handler (already done)
+- ✅ `/src/The Long Nights.js` - Added 'hoe' to enhanced graphics tool list
+- ✅ `/src/The Long Nights.js` - Left-click tilling logic (already done)
+- ✅ `/src/The Long Nights.js` - Removed right-click hoe handler (already done)
 
 ## Asset Needed
 📝 **TODO:** Create `/assets/art/tools/hoe.png` icon for enhanced graphics support

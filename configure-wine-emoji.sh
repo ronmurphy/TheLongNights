@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "🎨 Wine Emoji Configuration for VoxelWorld"
+echo "🎨 Wine Emoji Configuration for The Long Nights"
 echo "=========================================="
 echo ""
 
@@ -111,9 +111,9 @@ echo ""
 echo "🧪 Testing:"
 echo "----------"
 echo ""
-echo "Test VoxelWorld with emoji support:"
+echo "Test The Long Nights with emoji support:"
 echo "  cd dist-electron"
-echo "  wine VoxelWorld-0.2.8-portable.exe"
+echo "  wine The Long Nights-0.2.8-portable.exe"
 echo ""
 
 echo "Check if Wine sees emoji fonts:"
@@ -121,7 +121,7 @@ echo "  wine cmd /c 'fc-list' 2>/dev/null | grep -i emoji"
 echo ""
 
 echo "Debug font loading:"
-echo "  WINEDEBUG=+font wine VoxelWorld-0.2.8-portable.exe 2>&1 | grep -i emoji"
+echo "  WINEDEBUG=+font wine The Long Nights-0.2.8-portable.exe 2>&1 | grep -i emoji"
 echo ""
 
 echo "=========================================="
@@ -130,7 +130,7 @@ echo "=========================================="
 echo ""
 echo "The Linux AppImage will use your system emoji directly:"
 echo "  cd dist-electron"
-echo "  ./VoxelWorld-0.2.8.AppImage"
+echo "  ./The Long Nights-0.2.8.AppImage"
 echo ""
 echo "This will definitely show emojis! 🎮✨🚀"
 echo ""

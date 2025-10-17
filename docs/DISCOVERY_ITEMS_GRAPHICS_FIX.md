@@ -28,7 +28,7 @@ tools: [
 ```
 
 ### 2. Added Discovery Items to Icon Check
-**File: `src/VoxelWorld.js` (Line ~2363-2381)**
+**File: `src/The Long Nights.js` (Line ~2363-2381)**
 
 ```javascript
 const toolsAndDiscoveryItems = [
@@ -92,7 +92,7 @@ if (toolsAndDiscoveryItems.includes(itemType)) {
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│ createBillboard() in VoxelWorld.js                  │
+│ createBillboard() in The Long Nights.js                  │
 │                                                     │
 │ 1. Check toolImages.has(type)?                     │
 │    → YES: Load PNG as THREE.js texture             │

@@ -1,4 +1,4 @@
-# 🎨 Emoji Support in VoxelWorld - Complete Guide
+# 🎨 Emoji Support in The Long Nights - Complete Guide
 
 ## ✅ What's Configured
 
@@ -8,14 +8,14 @@
 - ✅ **Font substitutions** registered in Wine registry
 - ✅ **Noto Color Emoji linked** to Wine fonts directory
 
-### Application Level (VoxelWorld)
+### Application Level (The Long Nights)
 - ✅ **CSS updated** with emoji font fallbacks
 - ✅ **Material Design Icons** bundled (7000+ icons)
 - ✅ **Emoji fonts** in font-family stack
 
 ## 🎯 Emoji Font Stack
 
-VoxelWorld now uses this emoji font cascade:
+The Long Nights now uses this emoji font cascade:
 
 ```css
 font-family: 
@@ -45,23 +45,23 @@ wine cmd /c 'fc-list' 2>/dev/null | grep -i emoji
 # NotoColorEmoji (or similar)
 ```
 
-### Test 2: Run VoxelWorld with Font Debugging
+### Test 2: Run The Long Nights with Font Debugging
 ```bash
-cd /home/brad/Documents/VoxelWorld-1/VoxelWorld-1-vite/dist-electron
-WINEDEBUG=+font wine VoxelWorld-0.2.8-portable.exe 2>&1 | grep -i emoji
+cd /home/brad/Documents/The Long Nights-1/The Long Nights-1-vite/dist-electron
+WINEDEBUG=+font wine The Long Nights-0.2.8-portable.exe 2>&1 | grep -i emoji
 ```
 
-### Test 3: Run VoxelWorld Normally
+### Test 3: Run The Long Nights Normally
 ```bash
-cd /home/brad/Documents/VoxelWorld-1/VoxelWorld-1-vite/dist-electron
-wine VoxelWorld-0.2.8-portable.exe
+cd /home/brad/Documents/The Long Nights-1/The Long Nights-1-vite/dist-electron
+wine The Long Nights-0.2.8-portable.exe
 ```
 
 ### Test 4: Use Native Linux Build (Guaranteed Emoji Support)
 ```bash
-cd /home/brad/Documents/VoxelWorld-1/VoxelWorld-1-vite/dist-electron
-chmod +x VoxelWorld-0.2.8.AppImage
-./VoxelWorld-0.2.8.AppImage
+cd /home/brad/Documents/The Long Nights-1/The Long Nights-1-vite/dist-electron
+chmod +x The Long Nights-0.2.8.AppImage
+./The Long Nights-0.2.8.AppImage
 ```
 
 ## 📝 How Emoji Work in Each Platform
@@ -86,11 +86,11 @@ chmod +x VoxelWorld-0.2.8.AppImage
 - **After**: Uses Noto Color Emoji via symlink ✅
 - Font substitution redirects Windows emoji requests to Noto
 
-## 🎨 Using Emoji in VoxelWorld
+## 🎨 Using Emoji in The Long Nights
 
 ### Method 1: Direct Unicode Emoji
 ```html
-<p>Welcome to VoxelWorld! 🎮</p>
+<p>Welcome to The Long Nights! 🎮</p>
 <button>Build 🏗️</button>
 <span>Health: ❤️❤️❤️</span>
 ```
@@ -131,7 +131,7 @@ wine regedit
 
 **Solution 3: Re-run emoji configuration**
 ```bash
-bash /home/brad/Documents/VoxelWorld-1/VoxelWorld-1-vite/configure-wine-emoji.sh
+bash /home/brad/Documents/The Long Nights-1/The Long Nights-1-vite/configure-wine-emoji.sh
 ```
 
 ### Emoji Work on Linux but Not in Wine
@@ -176,16 +176,16 @@ sudo pacman -S noto-fonts noto-fonts-emoji ttf-symbola
 
 ## 🚀 Next Steps
 
-### 1. Rebuild VoxelWorld with emoji support
+### 1. Rebuild The Long Nights with emoji support
 ```bash
-cd /home/brad/Documents/VoxelWorld-1/VoxelWorld-1-vite
+cd /home/brad/Documents/The Long Nights-1/The Long Nights-1-vite
 bash desktopBuild.sh
 ```
 
 ### 2. Test in Wine
 ```bash
 cd dist-electron
-wine VoxelWorld-0.2.9-portable.exe  # (or whatever version builds)
+wine The Long Nights-0.2.9-portable.exe  # (or whatever version builds)
 ```
 
 ### 3. Verify emoji rendering
@@ -199,7 +199,7 @@ Look for emoji in:
 ### 4. If emoji don't show in Wine
 Use the native Linux build:
 ```bash
-./VoxelWorld-0.2.9.AppImage
+./The Long Nights-0.2.9.AppImage
 ```
 
 Linux AppImage will **definitely** show emoji correctly!
@@ -233,18 +233,18 @@ player.status = health > 50 ? '💚' : health > 20 ? '💛' : '❤️';
 **What's Working:**
 - ✅ System emoji (Noto Color Emoji) installed
 - ✅ Wine configured with emoji support
-- ✅ VoxelWorld CSS includes emoji fallbacks
+- ✅ The Long Nights CSS includes emoji fallbacks
 - ✅ Material Design Icons bundled
 
 **How to Test:**
-1. Run Wine build: `wine VoxelWorld-0.2.8-portable.exe`
+1. Run Wine build: `wine The Long Nights-0.2.8-portable.exe`
 2. Check for emoji rendering
-3. If issues, use Linux build: `./VoxelWorld-0.2.8.AppImage`
+3. If issues, use Linux build: `./The Long Nights-0.2.8.AppImage`
 
 **Result:**
-🎉 **Emoji will work in VoxelWorld on Wine + Arch Linux!**
+🎉 **Emoji will work in The Long Nights on Wine + Arch Linux!**
 
 ---
 **Last Updated**: October 12, 2025  
-**VoxelWorld Version**: 0.2.8  
+**The Long Nights Version**: 0.2.8  
 **Emoji Support**: ✅ Configured

@@ -86,12 +86,12 @@ function createWindow() {
 }
 ```
 
-## Phase 3: Integrate SaveSystem into VoxelWorld.js
+## Phase 3: Integrate SaveSystem into The Long Nights.js
 
 ### Import SaveSystem
 
 ```javascript
-// Add to top of VoxelWorld.js
+// Add to top of The Long Nights.js
 import { SaveSystem } from './SaveSystem.js';
 ```
 
@@ -124,7 +124,7 @@ if (campfireClicked) {
 ### Add Save/Load Menu Functions
 
 ```javascript
-// Add these methods to VoxelWorld.js:
+// Add these methods to The Long Nights.js:
 
 this.showSaveMenu = async () => {
   // Get all save slots
@@ -284,7 +284,7 @@ this.showLoadMenu = async () => {
 Replace the current World tab content with save/load buttons:
 
 ```javascript
-// In the World tab section of VoxelWorld.js:
+// In the World tab section of The Long Nights.js:
 const worldContent = modal.querySelector('#world-content');
 worldContent.innerHTML = `
   <div style="padding: 20px;">
@@ -351,7 +351,7 @@ modal.querySelector('#load-game-btn').addEventListener('click', () => {
 - [ ] Install dependencies: `npm install msgpack-lite pako @electron/remote`
 - [ ] Update electron-preload.cjs with file operations
 - [ ] Update electron.cjs with @electron/remote
-- [ ] Import SaveSystem into VoxelWorld.js
+- [ ] Import SaveSystem into The Long Nights.js
 - [ ] Initialize SaveSystem in constructor
 - [ ] Add save/load menu functions
 - [ ] Update World tab UI

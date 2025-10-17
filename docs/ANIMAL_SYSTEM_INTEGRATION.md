@@ -28,7 +28,7 @@ assets/art/animals/   (CREATE THIS FOLDER)
 
 ## 🔌 Integration Steps
 
-### Step 1: Import AnimalSystem in VoxelWorld.js
+### Step 1: Import AnimalSystem in The Long Nights.js
 
 Add to imports (around line 34):
 ```javascript
@@ -245,7 +245,7 @@ console.log('Loot:', loot);
 ### Phase 1 (NOW):
 1. Create 4 rabbit PNG files with your AI
 2. Put them in `assets/art/animals/`
-3. Integrate into VoxelWorld.js (Steps 1-7 above)
+3. Integrate into The Long Nights.js (Steps 1-7 above)
 4. Test spawning at dawn
 5. Test hunting & harvesting
 
@@ -265,7 +265,7 @@ console.log('Loot:', loot);
 
 - [ ] Created `assets/art/animals/` folder
 - [ ] Created 4 rabbit PNG files
-- [ ] Added AnimalSystem import to VoxelWorld.js
+- [ ] Added AnimalSystem import to The Long Nights.js
 - [ ] Initialized in constructor
 - [ ] Added update() to animate loop
 - [ ] Added spear hit detection

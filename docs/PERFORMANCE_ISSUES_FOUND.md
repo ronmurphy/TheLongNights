@@ -8,7 +8,7 @@ Performance scan revealed multiple accumulation issues that worsen with distance
 ## 🔴 CRITICAL ISSUES
 
 ### 1. **Unbounded Position Arrays**
-**Location:** VoxelWorld.js lines 85-87, 401, 406, 1869
+**Location:** The Long Nights.js lines 85-87, 401, 406, 1869
 **Issue:** Arrays grow infinitely as player explores
 ```javascript
 this.waterPositions = [];      // Grows with every water block placed
@@ -44,7 +44,7 @@ cleanupDistantPositions(playerPos, maxDistance = 200) {
 ---
 
 ### 2. **Per-Frame Billboard Animation Iteration**
-**Location:** VoxelWorld.js lines 968-1007
+**Location:** The Long Nights.js lines 968-1007
 **Issue:** Loops through entire `this.world` object every frame
 ```javascript
 this.animateBillboards = (currentTime) => {
@@ -82,7 +82,7 @@ this.animateBillboards = (currentTime) => {
 ---
 
 ### 3. **Explosion Effects Array Leak**
-**Location:** VoxelWorld.js lines 1418-1445, 9585-9620
+**Location:** The Long Nights.js lines 1418-1445, 9585-9620
 **Issue:** Explosions added but cleanup only happens if lifetime expires
 ```javascript
 this.explosionEffects.push(explosionData);  // Added
@@ -110,7 +110,7 @@ if (this.explosionEffects.length > 50) {
 ---
 
 ### 4. **Ghost Billboard Array Accumulation**
-**Location:** VoxelWorld.js line 996
+**Location:** The Long Nights.js line 996
 **Issue:** `ghostBillboards` array iterated every frame
 ```javascript
 this.ghostBillboards.forEach((ghostData) => {
@@ -142,7 +142,7 @@ this.animateGhostBillboards = (playerPos) => {
 ## 🟡 MEDIUM ISSUES
 
 ### 5. **Chunk Tracking Cleanup**
-**Location:** VoxelWorld.js lines 1653-1677
+**Location:** The Long Nights.js lines 1653-1677
 **Good:** Has cleanup system
 **Issue:** Only cleans `visitedChunks` Set and `chunkSpawnTimes`
 ```javascript
@@ -216,7 +216,7 @@ getMaterial(color) {
 ## 🟢 MINOR ISSUES
 
 ### 7. **Explorer Pins UI Iteration**
-**Location:** VoxelWorld.js line 3005
+**Location:** The Long Nights.js line 3005
 **Issue:** Loops through all pins every render
 ```javascript
 this.explorerPins.forEach((pin, index) => {

@@ -6,7 +6,7 @@
 - ❌ REMOVED: Electron path detection (`dist/art` vs `art`)
 - ✅ RESTORED: Original paths (`art/blocks`, `art/tools`, etc.)
 
-### VoxelWorld.js  
+### The Long Nights.js  
 - ❌ REMOVED: Electron music path detection
 - ✅ RESTORED: Original path (`/music/forestDay.ogg`)
 

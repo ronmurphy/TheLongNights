@@ -116,7 +116,7 @@ The **Kitchen Bench System** is a mix-and-match cooking interface that allows pl
    - Matching Toolbench aesthetic
 
 ### **Files Modified**
-1. **`VoxelWorld.js`**
+1. **`The Long Nights.js`**
    - Imported KitchenBenchSystem
    - Added kitchen_bench detection (proximity)
    - F key handler to open UI

@@ -5,7 +5,7 @@
 ### 1. 🗡️ Spear System Fixed
 **Problem:** Crashed when throwing spear at animals  
 **Cause:** `hit.face.normal` is null for sprites/billboards  
-**Fix:** Added null check in `src/VoxelWorld.js` (line 11324-11355)  
+**Fix:** Added null check in `src/The Long Nights.js` (line 11324-11355)  
 **Result:** Spear throws work on both blocks AND animals now!
 
 ---
@@ -45,7 +45,7 @@
    - Shows sequential messages with delays
    - Simple event hooks (`onMacheteSelected()`, etc.)
 
-3. **Integration:** Initialized in `VoxelWorld.js` line 306
+3. **Integration:** Initialized in `The Long Nights.js` line 306
 
 #### What's Left:
 - Add 10 event hooks in various files (all documented in `TUTORIAL_SCRIPT_SYSTEM.md`)
@@ -90,7 +90,7 @@
 - `TUTORIAL_SCRIPT_SYSTEM.md` - This summary
 
 ### Modified Files:
-- `src/VoxelWorld.js` - Spear fix + tutorial system init
+- `src/The Long Nights.js` - Spear fix + tutorial system init
 - `src/BattleArena.js` - Arena transparency feature
 
 ---
@@ -183,7 +183,7 @@ this.tutorialSystem.showTutorial('new_feature');
 
 ### 🎯 Hook Locations:
 1. App.js - Game start
-2. VoxelWorld.js - Hotbar selection, block placement
+2. The Long Nights.js - Hotbar selection, block placement
 3. BackpackSystem.js - Backpack open
 4. WorkbenchSystem.js - Open + craft events
 5. ToolBenchSystem.js - Open + craft events

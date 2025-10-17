@@ -31,7 +31,7 @@ A visual debugging tool for the LOD (Level of Detail) system based on your frien
 - `LOD_DEBUG_IMPLEMENTATION.md` - This file
 
 ### Modified Files
-- `src/VoxelWorld.js`:
+- `src/The Long Nights.js`:
   - Line 23: Import LODDebugOverlay
   - Line 7048: Initialize overlay after LOD manager
   - Line 9397-9403: 'L' key toggle handler
@@ -72,7 +72,7 @@ This implementation satisfies the first two requirements:
 
 ### Initialization
 ```javascript
-// In VoxelWorld.js after LOD manager creation:
+// In The Long Nights.js after LOD manager creation:
 this.lodDebugOverlay = new LODDebugOverlay(this);
 ```
 
@@ -160,10 +160,10 @@ Based on your friend's suggestions and common debugging needs:
 
 ## Integration with ChunkRenderManager
 
-When you integrate the ChunkRenderManager.js scaffold, this overlay will automatically pull stats from the unified manager instead of separate VoxelWorld/ChunkLODManager sources.
+When you integrate the ChunkRenderManager.js scaffold, this overlay will automatically pull stats from the unified manager instead of separate The Long Nights/ChunkLODManager sources.
 
 ### Current Stats Sources
-- Tier 0: `app.visibleChunks.size` (VoxelWorld)
+- Tier 0: `app.visibleChunks.size` (The Long Nights)
 - Tier 1: `app.lodManager.getStats()` (ChunkLODManager)
 - Tier 2: Not implemented
 

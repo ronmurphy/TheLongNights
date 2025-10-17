@@ -335,10 +335,10 @@ export class ToolBenchSystem {
             document.exitPointerLock();
         }
 
-        // Disable VoxelWorld controls
+        // Disable The Long Nights controls
         if (this.voxelWorld) {
             this.voxelWorld.controlsEnabled = false;
-            console.log('🔒 Disabled VoxelWorld controls for tool bench');
+            console.log('🔒 Disabled The Long Nights controls for tool bench');
         }
 
         console.log('🔧 Tool Bench opened');
@@ -362,10 +362,10 @@ export class ToolBenchSystem {
             this.toolBenchModal = null;
         }
 
-        // Re-enable VoxelWorld controls
+        // Re-enable The Long Nights controls
         if (this.voxelWorld) {
             this.voxelWorld.controlsEnabled = true;
-            console.log('🔓 Re-enabled VoxelWorld controls');
+            console.log('🔓 Re-enabled The Long Nights controls');
         }
 
         // Re-acquire pointer lock for game

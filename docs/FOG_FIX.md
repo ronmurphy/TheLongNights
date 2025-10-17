@@ -9,7 +9,7 @@ Fog and LOD visual chunks were not appearing in the game because:
 ## Fixes Applied
 
 ### 1. Updated `updateFog()` to use LOD visual distance
-**File**: `src/VoxelWorld.js:6882-6902`
+**File**: `src/The Long Nights.js:6882-6902`
 
 ```javascript
 this.updateFog = (fogColor = null) => {
@@ -33,7 +33,7 @@ this.updateFog = (fogColor = null) => {
 ```
 
 ### 2. Update fog after LOD manager initializes
-**File**: `src/VoxelWorld.js:7045-7047`
+**File**: `src/The Long Nights.js:7045-7047`
 
 ```javascript
 this.lodManager = new ChunkLODManager(this);
@@ -44,7 +44,7 @@ this.updateFog();  // ← ADDED!
 ```
 
 ### 3. Simplified `setVisualDistance()` to use `updateFog()`
-**File**: `src/VoxelWorld.js:10801-10802`
+**File**: `src/The Long Nights.js:10801-10802`
 
 ```javascript
 this.lodManager.setVisualDistance(distance);

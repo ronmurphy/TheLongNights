@@ -1,7 +1,7 @@
 # 🎨 Local Emoji System Guide
 
 ## Overview
-VoxelWorld now uses **local emoji assets** instead of CDN-based rendering. This provides:
+The Long Nights now uses **local emoji assets** instead of CDN-based rendering. This provides:
 - ⚡ **Faster performance** - No network requests, all assets are bundled
 - 🌐 **Works offline** - No internet required
 - 🎨 **Multiple styles** - Google (Noto), Apple, Twitter, and Microsoft emoji
@@ -159,7 +159,7 @@ bash desktopBuild.sh
 ### Test in Wine
 ```bash
 cd dist-electron
-wine VoxelWorld-0.3.1-portable.exe
+wine The Long Nights-0.3.1-portable.exe
 # All emoji should display perfectly!
 ```
 

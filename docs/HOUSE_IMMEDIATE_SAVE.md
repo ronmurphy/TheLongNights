@@ -106,7 +106,7 @@ Watch console for:
 
 ## 📁 Files Modified
 
-**`src/VoxelWorld.js`** (lines 650-657):
+**`src/The Long Nights.js`** (lines 650-657):
 ```javascript
 // After house placement:
 if (this.modificationTracker) {

@@ -14,10 +14,10 @@
 
 ## 🔌 Integration Steps
 
-### Step 1: Import new modules in VoxelWorld.js
+### Step 1: Import new modules in The Long Nights.js
 
 ```javascript
-// Add to top of src/VoxelWorld.js
+// Add to top of src/The Long Nights.js
 import { itemRegistry } from './ItemRegistry.js';
 import { craftingUIEnhancer } from './CraftingUIEnhancer.js';
 ```
@@ -25,7 +25,7 @@ import { craftingUIEnhancer } from './CraftingUIEnhancer.js';
 ### Step 2: Initialize registry during game startup
 
 ```javascript
-// In VoxelWorld constructor, after other initializations
+// In The Long Nights constructor, after other initializations
 async initialize() {
     // ... existing initialization code ...
     
@@ -97,7 +97,7 @@ createPlanElement(plan) {
 
 ### Step 6: Use smart emoji/PNG strategy in item icons
 
-In `src/VoxelWorld.js`, enhance the `getItemIcon` method:
+In `src/The Long Nights.js`, enhance the `getItemIcon` method:
 
 ```javascript
 import { craftingUIEnhancer } from './CraftingUIEnhancer.js';

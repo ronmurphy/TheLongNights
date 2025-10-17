@@ -1,5 +1,5 @@
 #!/bin/bash
-cd /home/brad/Documents/VoxelWorld-1/VoxelWorld-1-vite
+cd /home/brad/Documents/The Long Nights-1/The Long Nights-1-vite
 
 # Create branch to save current work
 git branch wip-greedy-mesh-session5-inverted-uvs

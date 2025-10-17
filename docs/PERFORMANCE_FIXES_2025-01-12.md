@@ -23,7 +23,7 @@
 ### 1. TextureLoader Memory Leak (CRITICAL)
 **Problem:** Every billboard was creating a new `THREE.TextureLoader()` instance, loading textures into GPU memory without ever releasing them. This accumulated as you explored (more chunks = more billboards = more textures).
 
-**Location:** `VoxelWorld.js` line 888
+**Location:** `The Long Nights.js` line 888
 
 **Solution:** Created shared texture cache system:
 ```javascript
@@ -91,11 +91,11 @@ requestAnimationFrame(processBatch);
 
 ### Performance Stats Spam  
 - **Fix**: Initialize `lastPerfLog = performance.now()` instead of `0`
-- **Location**: VoxelWorld.js line 10124
+- **Location**: The Long Nights.js line 10124
 
 ### Billboard Debug Spam
 - **Fix**: Commented out debug log
-- **Location**: VoxelWorld.js line 883
+- **Location**: The Long Nights.js line 883
 
 ---
 
@@ -109,7 +109,7 @@ requestAnimationFrame(processBatch);
 
 ### Multiple Backpack Spawn
 - **Fix**: Removed duplicate spawn at line 9412
-- **Location**: VoxelWorld.js
+- **Location**: The Long Nights.js
 
 ### StaminaSystem Undefined Variables
 - **Fix**: Fixed typos in variable names

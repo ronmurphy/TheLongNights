@@ -8,7 +8,7 @@
 
 ## Changes Made
 
-### File: `src/VoxelWorld.js` (around line 5157)
+### File: `src/The Long Nights.js` (around line 5157)
 
 Added persistent seed system with debug mode:
 
@@ -137,7 +137,7 @@ await this.modificationTracker.clearAllModifications();
 **CRITICAL:** Set `USE_DEBUG_SEED = false` before production build!
 
 Add to build checklist:
-- [ ] Verify `USE_DEBUG_SEED = false` in VoxelWorld.js
+- [ ] Verify `USE_DEBUG_SEED = false` in The Long Nights.js
 - [ ] Test new game generation
 - [ ] Test world persistence
 - [ ] Test save/load system
@@ -146,4 +146,4 @@ Add to build checklist:
 ---
 
 **Last Updated:** 2025-10-03
-**Related Files:** src/VoxelWorld.js, src/serialization/ChunkPersistence.js, src/serialization/ModificationTracker.js
+**Related Files:** src/The Long Nights.js, src/serialization/ChunkPersistence.js, src/serialization/ModificationTracker.js

@@ -1,7 +1,7 @@
 # 🏛️ Structure Generator System
 
 ## Overview
-The StructureGenerator creates procedurally generated ruins and structures in the VoxelWorld. It generates four sizes of hollow structures with treasure inside.
+The StructureGenerator creates procedurally generated ruins and structures in the The Long Nights. It generates four sizes of hollow structures with treasure inside.
 
 ## Structure Sizes
 

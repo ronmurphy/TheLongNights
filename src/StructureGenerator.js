@@ -6,7 +6,7 @@
 export class StructureGenerator {
     constructor(seed = 12345, billboardItems = {}, voxelWorld = null) {
         this.seed = seed;
-        this.voxelWorld = voxelWorld; // Reference to VoxelWorld for minimap tracking
+        this.voxelWorld = voxelWorld; // Reference to The Long Nights for minimap tracking
         this.STRUCTURE_FREQUENCY = 0.05; // 5% of chunks - rare but findable (~1 per 20 chunks)
         this.MIN_STRUCTURE_DISTANCE = 80; // Minimum blocks between structures
 
@@ -41,7 +41,7 @@ export class StructureGenerator {
             treasure: 'skull' // Billboard treasure item
         };
 
-        // Use centralized billboard items from VoxelWorld
+        // Use centralized billboard items from The Long Nights
         // If not provided (fallback), use minimal set
         this.TREASURE_ITEMS = Object.keys(billboardItems).length > 0
             ? Object.keys(billboardItems)

@@ -106,12 +106,12 @@ onItemCrafted('stone_hammer')
 ## 📋 Integration Checklist
 
 - [ ] **Step 1:** Initialize in `App.js` (3 lines)
-- [ ] **Step 2:** Hook machete selection in `VoxelWorld.js` (1 line)
+- [ ] **Step 2:** Hook machete selection in `The Long Nights.js` (1 line)
 - [ ] **Step 3:** Hook workbench in `WorkbenchSystem.js` open() (3 lines)
 - [ ] **Step 4:** Hook tool bench in `ToolBenchSystem.js` open() (3 lines)
 - [ ] **Step 5:** Hook kitchen bench in `KitchenBenchSystem.js` open() (3 lines)
 - [ ] **Step 6:** Hook crafting in `ToolBenchSystem.js` craftItem() (3 lines)
-- [ ] **Step 7:** Hook campfire in `VoxelWorld.js` campfire placement (3 lines)
+- [ ] **Step 7:** Hook campfire in `The Long Nights.js` campfire placement (3 lines)
 - [ ] **Step 8:** Hook nightfall in day/night cycle (3 lines)
 
 **Total integration time: ~15-20 minutes** (just adding hooks)

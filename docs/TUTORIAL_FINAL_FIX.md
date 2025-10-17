@@ -8,7 +8,7 @@
 🎓 TutorialScriptSystem initialized
 🎓 CompanionTutorialSystem initialized  ← Wrong message!
 ```
-- VoxelWorld.js had the wrong console.log message even though it was using TutorialScriptSystem
+- The Long Nights.js had the wrong console.log message even though it was using TutorialScriptSystem
 
 ### 2. Data Loading Path Issues
 ```
@@ -53,7 +53,7 @@ fetch('/data/tutorialScripts.json')  // Works in both dev and production!
 ## Changes Made
 
 ### 1. Fixed Console Message
-**File:** `/src/VoxelWorld.js` line 307
+**File:** `/src/The Long Nights.js` line 307
 ```javascript
 // OLD:
 console.log('🎓 CompanionTutorialSystem initialized');

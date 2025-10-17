@@ -57,7 +57,7 @@ src/
 │   └── MountainWorker.js     (NEW - generates mountain shells)
 ├── MountainSystem.js         (NEW - main thread mountain manager)
 ├── DungeonGenerator.js       (NEW - interior room generation)
-└── VoxelWorld.js             (integrate mountain + dungeon systems)
+└── The Long Nights.js             (integrate mountain + dungeon systems)
 ```
 
 ---
@@ -258,10 +258,10 @@ localStorage.setItem(`mountain_${centerX}_${centerZ}`, JSON.stringify(mountainDa
 4. Generate procedural rooms + main path
 5. Set `dungeonGenerated = true` flag
 
-**Code hook location:** VoxelWorld.js `update()` loop
+**Code hook location:** The Long Nights.js `update()` loop
 
 ```javascript
-// VoxelWorld.js - Player position check
+// The Long Nights.js - Player position check
 update(deltaTime) {
     // ... existing code ...
 
@@ -692,7 +692,7 @@ if (terrainData.hasMountain) {
 }
 ```
 
-### VoxelWorld.js Changes:
+### The Long Nights.js Changes:
 
 ```javascript
 // Add mountain system

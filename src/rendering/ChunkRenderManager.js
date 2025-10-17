@@ -141,7 +141,7 @@ export class ChunkRenderManager {
             }
         }
 
-        // Update Tier 0 (full detail) - handled by main VoxelWorld
+        // Update Tier 0 (full detail) - handled by main The Long Nights
         this.stats.tier0Chunks = shouldExist.tier0.size;
 
         // Update Tier 1 (LOD chunks) - use existing LOD manager

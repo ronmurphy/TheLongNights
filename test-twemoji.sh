@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "🎨 VoxelWorld v0.3.0 - Twemoji Emoji Solution"
+echo "🎨 The Long Nights v0.3.0 - Twemoji Emoji Solution"
 echo "============================================"
 echo ""
 echo "✅ EMOJI NOW WORK IN WINE!"
@@ -18,10 +18,10 @@ echo "Test Options:"
 echo "================================================"
 echo ""
 echo "1. Test Windows Portable with Wine"
-echo "   wine /home/brad/Documents/VoxelWorld-1/VoxelWorld-1-vite/dist-electron/VoxelWorld-0.3.0-portable.exe"
+echo "   wine /home/brad/Documents/The Long Nights-1/The Long Nights-1-vite/dist-electron/The Long Nights-0.3.0-portable.exe"
 echo ""
 echo "2. Test Linux Native"
-echo "   /home/brad/Documents/VoxelWorld-1/VoxelWorld-1-vite/dist-electron/VoxelWorld-0.3.0.AppImage"
+echo "   /home/brad/Documents/The Long Nights-1/The Long Nights-1-vite/dist-electron/The Long Nights-0.3.0.AppImage"
 echo ""
 
 read -p "Select test (1-2) or press Enter to exit: " choice
@@ -32,21 +32,21 @@ case $choice in
         echo "🍷 Testing Windows portable with Wine..."
         echo "👀 Look for emoji (they should be images, not rectangles!)"
         echo ""
-        cd /home/brad/Documents/VoxelWorld-1/VoxelWorld-1-vite/dist-electron
-        wine VoxelWorld-0.3.0-portable.exe
+        cd /home/brad/Documents/The Long Nights-1/The Long Nights-1-vite/dist-electron
+        wine The Long Nights-0.3.0-portable.exe
         ;;
     2)
         echo ""
         echo "🐧 Testing Linux native..."
-        cd /home/brad/Documents/VoxelWorld-1/VoxelWorld-1-vite/dist-electron
-        chmod +x VoxelWorld-0.3.0.AppImage
-        ./VoxelWorld-0.3.0.AppImage
+        cd /home/brad/Documents/The Long Nights-1/The Long Nights-1-vite/dist-electron
+        chmod +x The Long Nights-0.3.0.AppImage
+        ./The Long Nights-0.3.0.AppImage
         ;;
     *)
         echo ""
         echo "To test manually:"
-        echo "  cd /home/brad/Documents/VoxelWorld-1/VoxelWorld-1-vite/dist-electron"
-        echo "  wine VoxelWorld-0.3.0-portable.exe"
+        echo "  cd /home/brad/Documents/The Long Nights-1/The Long Nights-1-vite/dist-electron"
+        echo "  wine The Long Nights-0.3.0-portable.exe"
         ;;
 esac
 

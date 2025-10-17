@@ -2,7 +2,7 @@
 
 ## 📋 Summary
 
-Successfully integrated **Drawflow** visual node editor into VoxelWorld with full bidirectional conversion between editor format and game tutorial format.
+Successfully integrated **Drawflow** visual node editor into The Long Nights with full bidirectional conversion between editor format and game tutorial format.
 
 ## ✅ What Was Built
 
@@ -26,7 +26,7 @@ Successfully integrated **Drawflow** visual node editor into VoxelWorld with ful
 - ESC key to close
 - Dev console integration
 
-### 4. **Game Integration** (`src/VoxelWorld.js`)
+### 4. **Game Integration** (`src/The Long Nights.js`)
 - Imported TutorialEditorModal
 - Added `openTutorialEditor()` dev command
 - Exposed via `voxelWorld.openTutorialEditor()`
@@ -48,7 +48,7 @@ voxelWorld.openTutorialEditor()
 
 ### Method 3: Keyboard Shortcut (Future)
 ```javascript
-// Could add keyboard listener in VoxelWorld.js
+// Could add keyboard listener in The Long Nights.js
 // Example: Ctrl+Shift+T to open editor
 ```
 
@@ -91,7 +91,7 @@ voxelWorld.openTutorialEditor()
 - ✅ `TUTORIAL_EDITOR_README.md` - User documentation
 
 ### Modified Files
-- ✅ `src/VoxelWorld.js` - Added modal init & dev command
+- ✅ `src/The Long Nights.js` - Added modal init & dev command
 - ✅ `package.json` - Added drawflow dependency
 
 ## 🎯 Example Workflow

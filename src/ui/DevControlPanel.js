@@ -322,7 +322,7 @@ export class DevControlPanel {
                 if (typeof this.voxelWorld[command] === 'function') {
                     result = arg !== undefined ? this.voxelWorld[command](arg) : this.voxelWorld[command]();
                 } else {
-                    throw new Error(`VoxelWorld method ${command} not found`);
+                    throw new Error(`The Long Nights method ${command} not found`);
                 }
             }
 

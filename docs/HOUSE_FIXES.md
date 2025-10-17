@@ -103,7 +103,7 @@ addBlockFn(worldPosX, worldPosY, worldPosZ, floorMaterial, true);  // ✅ player
    - Fixed half-dimension calculation
    - Added debug logging for dimensions
 
-2. **`src/VoxelWorld.js`** (line 7382-7395)
+2. **`src/The Long Nights.js`** (line 7382-7395)
    - Calculate exterior dimensions (interior + 2 walls)
    - Show full footprint in reticle
    - Added debug logging

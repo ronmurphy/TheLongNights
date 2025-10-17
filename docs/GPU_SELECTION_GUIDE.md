@@ -2,7 +2,7 @@
 
 ## What's New?
 
-VoxelWorld now has **in-game GPU selection**! You can switch between your dedicated GPU (for maximum performance) and integrated GPU (for battery saving) directly from the menu.
+The Long Nights now has **in-game GPU selection**! You can switch between your dedicated GPU (for maximum performance) and integrated GPU (for battery saving) directly from the menu.
 
 ## Default Behavior
 

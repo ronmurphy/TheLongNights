@@ -27,10 +27,10 @@ The stamina system forces players to:
 - `/src/StaminaSystem.js` - Standalone stamina management system
 
 ### Integration Points:
-- `VoxelWorld.js` line ~12: Import StaminaSystem
-- `VoxelWorld.js` line ~245: Initialize stamina system
-- `VoxelWorld.js` line ~9870: Stamina update in animate loop
-- `VoxelWorld.js` line ~10293: Shift key tracking for sprint
+- `The Long Nights.js` line ~12: Import StaminaSystem
+- `The Long Nights.js` line ~245: Initialize stamina system
+- `The Long Nights.js` line ~9870: Stamina update in animate loop
+- `The Long Nights.js` line ~10293: Shift key tracking for sprint
 
 ---
 

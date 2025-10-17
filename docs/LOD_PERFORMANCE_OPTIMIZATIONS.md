@@ -192,7 +192,7 @@ animateFadeIn(lodMeshGroup) {
 
 ### High Priority
 1. **Move Trees to Worker** (3-4 hours)
-   - Trees currently generate on main thread (line 7311 in VoxelWorld.js)
+   - Trees currently generate on main thread (line 7311 in The Long Nights.js)
    - Each tree = 20-100 block placements
    - Migrate tree generation logic to ChunkWorker
    - Return tree data with chunk data

@@ -20,7 +20,7 @@ Uncaught TypeError: Cannot read properties of null (reading 'normal')
 - Blocks have `hit.face.normal`, sprites do not
 
 ### Solution:
-**File: `src/VoxelWorld.js` (lines 11324-11355)**
+**File: `src/The Long Nights.js` (lines 11324-11355)**
 
 Added null check for `hit.face.normal`:
 ```javascript
@@ -94,7 +94,7 @@ tree.material.opacity = 1.0    (restored)
 ### Status: **Initialized (Ready for Hooks)**
 
 ### What's Done:
-**File: `src/VoxelWorld.js`**
+**File: `src/The Long Nights.js`**
 - ✅ Import added (line 28)
 - ✅ System initialized (line 305)
 - ✅ Console log confirms: `🎓 CompanionTutorialSystem initialized`
@@ -119,7 +119,7 @@ The `CompanionTutorialSystem` provides **dynamic, personality-driven tutorials**
 ### Still Needs:
 Hook calls in these files (per `COMPANION_TUTORIAL_INTEGRATION.md`):
 
-#### VoxelWorld.js:
+#### The Long Nights.js:
 ```javascript
 // When machete selected (hotbar slot change)
 if (slot.itemType === 'machete' && this.tutorialSystem) {

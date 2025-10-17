@@ -13,7 +13,7 @@ export class CombatantSprite {
         this.entityData = entityData;
         this.entityId = entityId;
         this.isPlayer = isPlayer;
-        this.voxelWorld = voxelWorld; // Reference to VoxelWorld for companion portrait updates
+        this.voxelWorld = voxelWorld; // Reference to The Long Nights for companion portrait updates
 
         // Sprite objects
         this.sprite = null;

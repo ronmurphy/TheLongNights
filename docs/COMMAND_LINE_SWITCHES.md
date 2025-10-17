@@ -1,4 +1,4 @@
-# 🎮 VoxelWorld Command-Line Switches Guide
+# 🎮 The Long Nights Command-Line Switches Guide
 
 ## For Testers: How to Force GPU Selection
 
@@ -10,11 +10,11 @@ If the in-game GPU selection isn't working, you can force GPU usage with command
 
 ### Method 1: Create Desktop Shortcut (Easiest for Testers)
 
-1. **Locate VoxelWorld.exe**:
-   - Usually in: `C:\Users\YourName\Downloads\VoxelWorld\` (or wherever you extracted it)
+1. **Locate The Long Nights.exe**:
+   - Usually in: `C:\Users\YourName\Downloads\The Long Nights\` (or wherever you extracted it)
    - Or in: `dist-electron\` folder after building
 
-2. **Right-click on VoxelWorld.exe**
+2. **Right-click on The Long Nights.exe**
    - Select "**Create shortcut**"
 
 3. **Right-click the new shortcut**
@@ -22,13 +22,13 @@ If the in-game GPU selection isn't working, you can force GPU usage with command
 
 4. **In the "Target" field**, add switches at the END:
    ```
-   "C:\Path\To\VoxelWorld.exe" --force_high_performance_gpu --disable-gpu-vsync
+   "C:\Path\To\The Long Nights.exe" --force_high_performance_gpu --disable-gpu-vsync
    ```
 
 5. **Click "Apply"** and **"OK"**
 
 6. **Rename the shortcut** (optional):
-   - "VoxelWorld (High Performance)"
+   - "The Long Nights (High Performance)"
 
 7. **Use this shortcut** to launch the game
 
@@ -40,12 +40,12 @@ If the in-game GPU selection isn't working, you can force GPU usage with command
 
 2. **Navigate to game folder**:
    ```cmd
-   cd C:\Path\To\VoxelWorld
+   cd C:\Path\To\The Long Nights
    ```
 
 3. **Launch with switches**:
    ```cmd
-   VoxelWorld.exe --force_high_performance_gpu --disable-gpu-vsync
+   The Long Nights.exe --force_high_performance_gpu --disable-gpu-vsync
    ```
 
 ### Method 3: PowerShell (Alternative)
@@ -56,12 +56,12 @@ If the in-game GPU selection isn't working, you can force GPU usage with command
 
 2. **Navigate to game folder**:
    ```powershell
-   cd "C:\Path\To\VoxelWorld"
+   cd "C:\Path\To\The Long Nights"
    ```
 
 3. **Launch with switches**:
    ```powershell
-   .\VoxelWorld.exe --force_high_performance_gpu --disable-gpu-vsync
+   .\The Long Nights.exe --force_high_performance_gpu --disable-gpu-vsync
    ```
 
 ---
@@ -79,9 +79,9 @@ If the in-game GPU selection isn't working, you can force GPU usage with command
    ```ini
    [Desktop Entry]
    Type=Application
-   Name=VoxelWorld (High Performance)
-   Comment=VoxelWorld with GPU flags
-   Exec=/path/to/VoxelWorld --force_high_performance_gpu --disable-gpu-vsync
+   Name=The Long Nights (High Performance)
+   Comment=The Long Nights with GPU flags
+   Exec=/path/to/The Long Nights --force_high_performance_gpu --disable-gpu-vsync
    Icon=/path/to/voxelworld.png
    Terminal=false
    Categories=Game;
@@ -101,17 +101,17 @@ If the in-game GPU selection isn't working, you can force GPU usage with command
 
 2. **Navigate to game folder**:
    ```bash
-   cd /path/to/VoxelWorld
+   cd /path/to/The Long Nights
    ```
 
 3. **Make executable** (first time only):
    ```bash
-   chmod +x VoxelWorld
+   chmod +x The Long Nights
    ```
 
 4. **Launch with switches**:
    ```bash
-   ./VoxelWorld --force_high_performance_gpu --disable-gpu-vsync
+   ./The Long Nights --force_high_performance_gpu --disable-gpu-vsync
    ```
 
 ### Method 3: Shell Script (For Repeated Use)
@@ -124,8 +124,8 @@ If the in-game GPU selection isn't working, you can force GPU usage with command
 2. **Add this content**:
    ```bash
    #!/bin/bash
-   cd /path/to/VoxelWorld
-   ./VoxelWorld --force_high_performance_gpu --disable-gpu-vsync
+   cd /path/to/The Long Nights
+   ./The Long Nights --force_high_performance_gpu --disable-gpu-vsync
    ```
 
 3. **Make executable**:
@@ -175,37 +175,37 @@ If the in-game GPU selection isn't working, you can force GPU usage with command
 ### For Gaming Laptops (NVIDIA/AMD dGPU):
 ```bash
 # Windows
-VoxelWorld.exe --force_high_performance_gpu --disable-gpu-vsync
+The Long Nights.exe --force_high_performance_gpu --disable-gpu-vsync
 
 # Linux
-./VoxelWorld --force_high_performance_gpu --disable-gpu-vsync
+./The Long Nights --force_high_performance_gpu --disable-gpu-vsync
 ```
 
 ### For Integrated Graphics (Intel/AMD iGPU):
 ```bash
 # Windows
-VoxelWorld.exe --disable-gpu-vsync
+The Long Nights.exe --disable-gpu-vsync
 
 # Linux
-./VoxelWorld --disable-gpu-vsync
+./The Long Nights --disable-gpu-vsync
 ```
 
 ### For Troubleshooting GPU Issues:
 ```bash
 # Windows
-VoxelWorld.exe --force_high_performance_gpu --ignore-gpu-blacklist --enable-logging
+The Long Nights.exe --force_high_performance_gpu --ignore-gpu-blacklist --enable-logging
 
 # Linux
-./VoxelWorld --force_high_performance_gpu --ignore-gpu-blacklist --enable-logging
+./The Long Nights --force_high_performance_gpu --ignore-gpu-blacklist --enable-logging
 ```
 
 ### For Maximum Performance Testing:
 ```bash
 # Windows
-VoxelWorld.exe --force_high_performance_gpu --disable-gpu-vsync --enable-gpu-rasterization --ignore-gpu-blacklist
+The Long Nights.exe --force_high_performance_gpu --disable-gpu-vsync --enable-gpu-rasterization --ignore-gpu-blacklist
 
 # Linux
-./VoxelWorld --force_high_performance_gpu --disable-gpu-vsync --enable-gpu-rasterization --ignore-gpu-blacklist
+./The Long Nights --force_high_performance_gpu --disable-gpu-vsync --enable-gpu-rasterization --ignore-gpu-blacklist
 ```
 
 ---
@@ -243,7 +243,7 @@ Please report back:
 **Problem**: Terminal says `command not found`  
 **Solution**: You're not in the right folder. Use full path:
 ```bash
-/full/path/to/VoxelWorld --force_high_performance_gpu
+/full/path/to/The Long Nights --force_high_performance_gpu
 ```
 
 ### "Access denied" (Windows)
@@ -261,14 +261,14 @@ Please report back:
 **Problem**: Even with `--force_high_performance_gpu`, iGPU is used  
 **Solution**: Windows Graphics Settings takes priority:
 1. Windows Settings > System > Display > Graphics Settings
-2. Add VoxelWorld.exe
+2. Add The Long Nights.exe
 3. Set to "High Performance"
 4. Restart computer
 
-### Can't Find VoxelWorld.exe
+### Can't Find The Long Nights.exe
 **Problem**: Don't know where game is installed  
 **Windows**: Right-click shortcut > "Open file location"  
-**Linux**: Usually in `/opt/VoxelWorld` or `~/Games/VoxelWorld`
+**Linux**: Usually in `/opt/The Long Nights` or `~/Games/The Long Nights`
 
 ---
 
@@ -276,16 +276,16 @@ Please report back:
 
 ### Windows - Copy & Paste This:
 ```batch
-REM Navigate to your VoxelWorld folder first!
-cd C:\Path\To\VoxelWorld
-VoxelWorld.exe --force_high_performance_gpu --disable-gpu-vsync
+REM Navigate to your The Long Nights folder first!
+cd C:\Path\To\The Long Nights
+The Long Nights.exe --force_high_performance_gpu --disable-gpu-vsync
 ```
 
 ### Linux - Copy & Paste This:
 ```bash
-# Navigate to your VoxelWorld folder first!
-cd /path/to/VoxelWorld
-./VoxelWorld --force_high_performance_gpu --disable-gpu-vsync
+# Navigate to your The Long Nights folder first!
+cd /path/to/The Long Nights
+./The Long Nights --force_high_performance_gpu --disable-gpu-vsync
 ```
 
 ---

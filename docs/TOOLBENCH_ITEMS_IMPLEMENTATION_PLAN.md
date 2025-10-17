@@ -11,7 +11,7 @@ This document tracks all ToolBench craftable items, their implementation status,
 - **Status**: ✅ Complete
 - **Functionality**: Collects leaves from trees automatically
 - **Graphics**: `/art/tools/machete.png`
-- **System**: Integrated into VoxelWorld.js tree harvesting
+- **System**: Integrated into The Long Nights.js tree harvesting
 
 ### 🌾 Hoe (`hoe`, `crafted_hoe`)
 - **Status**: ✅ Complete
@@ -195,7 +195,7 @@ This document tracks all ToolBench craftable items, their implementation status,
 
 ### Phase 2: Healing Potion Smart Targeting (Medium Priority)
 1. Add healing_potion to ToolBenchSystem blueprint (already exists)
-2. Modify VoxelWorld.js harvest click handler:
+2. Modify The Long Nights.js harvest click handler:
    - Check if healing_potion is selected
    - Raycast for companion sprite
    - If companion targeted + in battle → heal companion

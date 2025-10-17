@@ -253,9 +253,9 @@ addInstance(x, y, z, blockType, color) {
 }
 ```
 
-### Step 3: Add Feature Flag to VoxelWorld
+### Step 3: Add Feature Flag to The Long Nights
 ```javascript
-// src/VoxelWorld.js
+// src/The Long Nights.js
 
 constructor(container) {
     // ... initialization
@@ -344,7 +344,7 @@ addBlock(x, y, z, type, playerPlaced, customColor) {
 
 If Phase 2 has issues:
 
-1. Set `this.PHASE_2_ENABLED = false` in VoxelWorld constructor
+1. Set `this.PHASE_2_ENABLED = false` in The Long Nights constructor
 2. Restart game - instant rollback to Phase 1 performance
 3. Debug issues without affecting player experience
 4. Re-enable when fixed

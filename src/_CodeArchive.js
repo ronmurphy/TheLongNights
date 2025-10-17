@@ -27,7 +27,7 @@
  * Instant teleport player to target position (like Minecraft ender pearl)
  * Alternative to the smooth grappling hook animation
  * 
- * @param {VoxelWorld} voxelWorld - Reference to main game instance
+ * @param {The Long Nights} voxelWorld - Reference to main game instance
  * @param {number} targetX - Target X coordinate
  * @param {number} targetY - Target Y coordinate  
  * @param {number} targetZ - Target Z coordinate

@@ -7,7 +7,7 @@
 
 **Problem:** The player position is a plain JavaScript object `{x, y, z}`, not a THREE.Vector3, so it doesn't have a `.set()` method.
 
-**Fix Applied (VoxelWorld.js ~line 9651):**
+**Fix Applied (The Long Nights.js ~line 9651):**
 ```javascript
 // BEFORE (broken):
 this.player.position.set(targetX, targetY, targetZ);
@@ -34,7 +34,7 @@ const iconContent = this.voxelWorld.getItemIcon(slotData.itemType) : '❓';
 const iconContent = this.voxelWorld.getItemIcon(slotData.itemType, 'hotbar') : '❓';
 ```
 
-**2. VoxelWorld.js (line ~5774)** - Backpack display:
+**2. The Long Nights.js (line ~5774)** - Backpack display:
 ```javascript
 // BEFORE:
 const iconContent = this.getItemIcon(slotData.itemType);
@@ -48,7 +48,7 @@ const iconContent = this.getItemIcon(slotData.itemType, 'inventory');
 ### Icon Display Flow:
 1. Item is `crafted_grappling_hook`
 2. Hotbar calls `getItemIcon('crafted_grappling_hook', 'hotbar')`
-3. VoxelWorld checks enhanced graphics tool list → **Found!** ✅
+3. The Long Nights checks enhanced graphics tool list → **Found!** ✅
 4. Calls `enhancedGraphics.getHotbarToolIcon('crafted_grappling_hook', '🕸️')`
 5. EnhancedGraphics checks aliases → maps to `'grapple'`
 6. Loads `art/tools/grapple.png`
@@ -99,7 +99,7 @@ giveItem('leaf', 10)
 ```
 
 ## Files Modified:
-- ✅ VoxelWorld.js (2 fixes: teleport logic, backpack icon context)
+- ✅ The Long Nights.js (2 fixes: teleport logic, backpack icon context)
 - ✅ InventorySystem.js (1 fix: hotbar icon context)
 
 ## Next Steps (Optional Enhancements):

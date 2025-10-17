@@ -14,7 +14,7 @@ Updated all modal and overlay z-index values to ensure proper layering:
 - **Why**: Companion messages and tutorials need to appear OVER all modals so players can continue clicking through them
 
 ### ✅ Explorer's Menu Modal (z-index: 50000)
-**File**: `/src/VoxelWorld.js` line ~11713
+**File**: `/src/The Long Nights.js` line ~11713
 - **Old**: `z-index: 3000`
 - **New**: `z-index: 50000`
 - **Why**: Main game menu needs consistent high z-index
@@ -26,13 +26,13 @@ Updated all modal and overlay z-index values to ensure proper layering:
 - **Why**: Companion selection screen is a modal
 
 ### ✅ Old Workbench Modal (z-index: 50000)
-**File**: `/src/VoxelWorld.js` line ~2810
+**File**: `/src/The Long Nights.js` line ~2810
 - **Old**: `z-index: 4000`
 - **New**: `z-index: 50000`
 - **Why**: Consistency with other modals
 
 ### ✅ Compass Configuration Modal (z-index: 50000)
-**File**: `/src/VoxelWorld.js` line ~3694
+**File**: `/src/The Long Nights.js` line ~3694
 - **Old**: `z-index: 10000`
 - **New**: `z-index: 50000`
 - **Why**: Compass targeting UI is a modal
@@ -56,7 +56,7 @@ Updated all modal and overlay z-index values to ensure proper layering:
 - Already had correct value
 
 ### ✅ World Map Modal (z-index: 50000)
-**File**: `/src/VoxelWorld.js` line ~2921
+**File**: `/src/The Long Nights.js` line ~2921
 - Already had correct value
 
 ## Z-Index Layer Structure

@@ -1,7 +1,7 @@
 # 🎮 GPU Optimization Guide
 
 ## Problem Solved
-Your VoxelWorld app was not utilizing the dedicated NVIDIA RTX 4060 GPU, instead defaulting to the integrated Radeon 780M graphics. This resulted in the same render distance (3) as your lower-spec laptop.
+Your The Long Nights app was not utilizing the dedicated NVIDIA RTX 4060 GPU, instead defaulting to the integrated Radeon 780M graphics. This resulted in the same render distance (3) as your lower-spec laptop.
 
 ## NEW: In-Game GPU Selection! 🎮
 
@@ -77,7 +77,7 @@ Updated benchmark thresholds to support render distance level 4:
 ## How to Test
 
 ### Step 1: Select Your GPU (NEW - Easiest Method!)
-1. Launch VoxelWorld
+1. Launch The Long Nights
 2. Press **ESC** or click the **time indicator**
 3. Look at the **GPU section** at top of menu
 4. Click the **GPU button** to cycle through:

@@ -91,7 +91,7 @@ bash desktopBuild.sh
 ### Wine Test
 ```bash
 cd dist-electron
-wine VoxelWorld-0.3.1-portable.exe
+wine The Long Nights-0.3.1-portable.exe
 ```
 
 ## Next Steps

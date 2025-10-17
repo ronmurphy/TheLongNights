@@ -4,7 +4,7 @@
 
 ### 1. "Start New Game" Button Update
 - **Button text changed**: `🎮 Start New Game` (was "🎲 Start New World")
-- **Location**: VoxelWorld.js line 10191
+- **Location**: The Long Nights.js line 10191
 - **Added warning dialog**: Confirms save deletion before proceeding
 - **Simplified logic**: Removed old ttrpg code, now just clears localStorage and reloads
 
@@ -26,7 +26,7 @@ const newGame = async () => {
 ## 🔍 Code Located - Ready for Migration
 
 ### Machete - Leaf Harvesting
-**Location**: VoxelWorld.js lines **4690-4708**
+**Location**: The Long Nights.js lines **4690-4708**
 **Functionality**: Collects all leaves when tree is cut down
 
 ```javascript
@@ -53,13 +53,13 @@ if (hasMachete && treeMetadata.leafBlocks.length > 0) {
 
 **Migration Plan**:
 - Add `onTreeHarvested(treeMetadata)` method to PlayerItemsSystem
-- Call from VoxelWorld during tree removal
+- Call from The Long Nights during tree removal
 - Moves 19 lines of code
 
 ---
 
 ### Stone Hammer - Mining Bonuses
-**Location**: VoxelWorld.js lines **1089-1158**  
+**Location**: The Long Nights.js lines **1089-1158**  
 **Functionality**: Enhanced mining for stone/iron/gold blocks
 
 ```javascript
@@ -83,14 +83,14 @@ if (hasStoneHammer && blockData.type === 'stone') {
 
 **Migration Plan**:
 - Add `onBlockHarvested(blockType, x, y, z)` method to PlayerItemsSystem
-- Call from removeBlock() in VoxelWorld
+- Call from removeBlock() in The Long Nights
 - Returns `{ bonusItems: [{type, count}], createExplosion: boolean }`
 - Moves ~70 lines of code
 
 ---
 
 ### Compass - Biome Detection  
-**Location**: VoxelWorld.js lines **5399-5443**
+**Location**: The Long Nights.js lines **5399-5443**
 **Functionality**: Updates biome display when player moves
 
 ```javascript
@@ -141,7 +141,7 @@ this.updateBiomeIndicator = () => {
 1. Add `onTreeHarvested(treeMetadata)` method
 2. Add `onBlockHarvested(blockType, x, y, z)` method
 3. Add `updateCompassEffect()` method (called from update loop)
-4. Wire up calls from VoxelWorld
+4. Wire up calls from The Long Nights
 
 ### Phase 3: Test All Effects
 - ✅ Torch lighting (already working)
@@ -151,7 +151,7 @@ this.updateBiomeIndicator = () => {
 - ⏳ Speed boots (if implemented)
 
 ### Phase 4: Clean Up
-- Remove commented code from VoxelWorld.js
+- Remove commented code from The Long Nights.js
 - Verify file size reduction (11,065 → closer to <2,000 line goal)
 - Update CLAUDE.md progress
 
@@ -160,7 +160,7 @@ this.updateBiomeIndicator = () => {
 ## 🎯 Expected Benefits
 
 - **Code Organization**: Item effects centralized in PlayerItemsSystem
-- **File Size**: Remove ~135 lines from VoxelWorld.js  
+- **File Size**: Remove ~135 lines from The Long Nights.js  
 - **Maintainability**: Easier to add new items (grappling hook, magic amulet, etc.)
 - **Performance**: Already optimized with flag-based checks (torch example)
 - **Testing**: Isolated system easier to debug

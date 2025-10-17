@@ -68,7 +68,7 @@ export class PlayerItemsSystem {
 
     /**
      * 🔦 TORCH: Dynamic lighting effect (3x3 chunk area)
-     * Only active during dusk/night (controlled by VoxelWorld.isTorchAllowed flag)
+     * Only active during dusk/night (controlled by The Long Nights.isTorchAllowed flag)
      */
     updateTorchEffect(deltaTime) {
         // Check if torches are allowed (flag set by day/night cycle)

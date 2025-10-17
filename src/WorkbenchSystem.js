@@ -206,10 +206,10 @@ export class WorkbenchSystem {
             document.exitPointerLock();
         }
 
-        // Disable VoxelWorld input controls while workbench is open
+        // Disable The Long Nights input controls while workbench is open
         if (this.voxelWorld) {
             this.voxelWorld.controlsEnabled = false;
-            console.log('🔒 Disabled VoxelWorld input controls for workbench');
+            console.log('🔒 Disabled The Long Nights input controls for workbench');
         }
 
         // Always recreate UI to get fresh inventory data
@@ -245,10 +245,10 @@ export class WorkbenchSystem {
         }
         this.isOpen = false;
 
-        // Re-enable VoxelWorld input controls when workbench closes
+        // Re-enable The Long Nights input controls when workbench closes
         if (this.voxelWorld) {
             this.voxelWorld.controlsEnabled = true;
-            console.log('✅ Re-enabled VoxelWorld input controls');
+            console.log('✅ Re-enabled The Long Nights input controls');
         }
 
         // Re-acquire pointer lock for game
@@ -1608,7 +1608,7 @@ export class WorkbenchSystem {
         console.log('🎨 Selected material:', this.selectedMaterial);
         console.log('🎨 Selected shape:', this.selectedShape);
         console.log('🎨 Selected materials Set:', Array.from(this.selectedMaterials));
-        console.log('🎨 VoxelWorld slot materials:', this.voxelWorld ? this.voxelWorld.getAllMaterialsFromSlots() : 'NO VOXELWORLD');
+        console.log('🎨 The Long Nights slot materials:', this.voxelWorld ? this.voxelWorld.getAllMaterialsFromSlots() : 'NO VOXELWORLD');
 
         // Check each requirement individually
         if (!this.scene) {
@@ -1629,7 +1629,7 @@ export class WorkbenchSystem {
         }
 
         if (!this.voxelWorld || !this.voxelWorld.getAllMaterialsFromSlots) {
-            console.log('❌ Missing: VoxelWorld or slot system not available');
+            console.log('❌ Missing: The Long Nights or slot system not available');
             return;
         }
 
@@ -1868,10 +1868,10 @@ export class WorkbenchSystem {
         // Event handlers
         const closeModal = () => {
             document.body.removeChild(namingModal);
-            // Re-enable VoxelWorld input controls when modal closes
+            // Re-enable The Long Nights input controls when modal closes
             if (this.voxelWorld) {
                 this.voxelWorld.controlsEnabled = true;
-                console.log('✅ Re-enabled VoxelWorld input controls');
+                console.log('✅ Re-enabled The Long Nights input controls');
             }
         };
 
@@ -1929,10 +1929,10 @@ export class WorkbenchSystem {
         namingModal.appendChild(container);
         document.body.appendChild(namingModal);
 
-        // Disable VoxelWorld input controls while modal is open
+        // Disable The Long Nights input controls while modal is open
         if (this.voxelWorld) {
             this.voxelWorld.controlsEnabled = false;
-            console.log('🔒 Disabled VoxelWorld input controls for naming modal');
+            console.log('🔒 Disabled The Long Nights input controls for naming modal');
         }
     }
 

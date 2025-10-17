@@ -1,19 +1,19 @@
 #!/bin/bash
 
-# Font Debug Script for VoxelWorld Windows Build
+# Font Debug Script for The Long Nights Windows Build
 
 echo "======================================"
-echo "VoxelWorld Font Diagnostic Tool"
+echo "The Long Nights Font Diagnostic Tool"
 echo "======================================"
 echo ""
 
-APP_PATH="/home/brad/Documents/VoxelWorld-1/VoxelWorld-1-vite/dist-electron"
-TEMP_DIR="/tmp/voxelworld-font-debug"
+APP_PATH="/home/brad/Documents/The Long Nights-1/The Long Nights-1-vite/dist-electron"
+TEMP_DIR="/tmp/thelongnights-font-debug"
 
 echo "1. Checking if portable executable exists..."
-if [ -f "$APP_PATH/VoxelWorld-0.2.6-portable.exe" ]; then
-    echo "   ✅ Found: VoxelWorld-0.2.6-portable.exe"
-    ls -lh "$APP_PATH/VoxelWorld-0.2.6-portable.exe"
+if [ -f "$APP_PATH/The Long Nights-0.2.6-portable.exe" ]; then
+    echo "   ✅ Found: The Long Nights-0.2.6-portable.exe"
+    ls -lh "$APP_PATH/The Long Nights-0.2.6-portable.exe"
 else
     echo "   ❌ Portable executable not found!"
     exit 1
@@ -80,7 +80,7 @@ echo "======================================"
 echo ""
 echo "To test with Wine:"
 echo "  cd $APP_PATH"
-echo "  wine VoxelWorld-0.2.6-portable.exe"
+echo "  wine The Long Nights-0.2.6-portable.exe"
 echo ""
 echo "To check console errors:"
-echo "  WINEDEBUG=+all wine VoxelWorld-0.2.6-portable.exe 2>&1 | grep -i font"
+echo "  WINEDEBUG=+all wine The Long Nights-0.2.6-portable.exe 2>&1 | grep -i font"

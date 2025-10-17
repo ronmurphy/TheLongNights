@@ -20,7 +20,7 @@ The GPU selection button in the Adventurer's Menu was **not actually switching G
 
 ## ✅ **Solution Implemented**
 
-### 1. **Automatic Page Reload** (VoxelWorld.js ~line 12407)
+### 1. **Automatic Page Reload** (The Long Nights.js ~line 12407)
 ```javascript
 const cycleGPUPreference = () => {
     const preferences = ['high-performance', 'low-power', 'default'];
@@ -44,7 +44,7 @@ const cycleGPUPreference = () => {
 - ✅ **Game automatically reloads after 1 second**
 - ✅ New GPU setting applied on reload
 
-### 2. **Enhanced GPU Detection & Verification** (VoxelWorld.js ~line 8085)
+### 2. **Enhanced GPU Detection & Verification** (The Long Nights.js ~line 8085)
 
 Added comprehensive GPU detection logging to **verify** which GPU is actually being used:
 
@@ -152,7 +152,7 @@ If you see "⚠️ WARNING: Requested dGPU but iGPU detected!", the browser/OS i
 3. Click "**Browse**"
 4. Navigate to your Electron app:
    - Dev: `node_modules/electron/dist/electron.exe`
-   - Production: `dist-electron/VoxelWorld.exe` (or similar)
+   - Production: `dist-electron/The Long Nights.exe` (or similar)
 5. Select the app and click "**Options**"
 6. Choose "**High Performance**"
 7. Click "**Save**"
@@ -165,7 +165,7 @@ The Electron GPU flags we added should help, but Windows may still override. If 
 1. Create a shortcut to the game
 2. Right-click > Properties
 3. In "Target", add: `--force_high_performance_gpu`
-4. Example: `"C:\...\VoxelWorld.exe" --force_high_performance_gpu`
+4. Example: `"C:\...\The Long Nights.exe" --force_high_performance_gpu`
 
 ## 📊 **Expected Performance Differences**
 
@@ -200,7 +200,7 @@ The Electron GPU flags we added should help, but Windows may still override. If 
 
 ## 📝 **Files Modified**
 
-1. **src/VoxelWorld.js**:
+1. **src/The Long Nights.js**:
    - Line ~12407: Automatic reload on GPU change
    - Line ~8085: Enhanced GPU detection and verification logging
 

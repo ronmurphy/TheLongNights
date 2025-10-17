@@ -1,6 +1,6 @@
 # 🎓 Tutorial/Quest Editor
 
-A visual node-based editor for creating tutorial sequences and quest flows in VoxelWorld.
+A visual node-based editor for creating tutorial sequences and quest flows in The Long Nights.
 
 ## 🚀 Quick Start
 

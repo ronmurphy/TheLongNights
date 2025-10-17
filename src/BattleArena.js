@@ -348,7 +348,7 @@ export class BattleArena {
     }
 
     /**
-     * Update battle (called every frame from VoxelWorld)
+     * Update battle (called every frame from The Long Nights)
      */
     update(deltaTime) {
         if (!this.isActive) return;
@@ -855,7 +855,7 @@ export class BattleArena {
     }
 
     /**
-     * Use an item on the companion (called from VoxelWorld inventory system)
+     * Use an item on the companion (called from The Long Nights inventory system)
      * @param {string} itemType - Type of item being used (e.g., 'potion', 'buff')
      * @param {number} amount - Effect amount (HP restore, stat boost, etc.)
      */

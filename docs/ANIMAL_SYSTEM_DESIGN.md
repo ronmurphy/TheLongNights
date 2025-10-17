@@ -223,7 +223,7 @@ src/
   animals/               # (NEW FOLDER)
     Animal.js            # Base animal class
     configs.js           # All animal configurations
-  VoxelWorld.js          # Integration point
+  The Long Nights.js          # Integration point
 
 assets/art/animals/      # (NEW FOLDER)
   rabbit_rest.png
@@ -243,7 +243,7 @@ assets/art/animals/      # (NEW FOLDER)
 
 ### 1. Spawning (like trees/pumpkins)
 ```javascript
-// In VoxelWorld.js
+// In The Long Nights.js
 if (currentTimeOfDay === 'dawn' && biome === 'grassland') {
   animalSystem.trySpawnAnimal('rabbit', chunkX, chunkZ);
 }

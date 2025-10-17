@@ -197,7 +197,7 @@ getItemIcon(itemId) {
 ```javascript
 // Create emoji mapping in CraftingUIEnhancer.js
 this.emojiMap = {
-    // Copy from BILLBOARD_ITEMS in VoxelWorld.js
+    // Copy from BILLBOARD_ITEMS in The Long Nights.js
     'skull': '💀',
     'mushroom': '🍄',
     // ... add ~30 common items

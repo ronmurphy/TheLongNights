@@ -320,7 +320,7 @@ function getBiomeAt(worldX, worldZ) {
 }
 
 function shouldGenerateTree(worldX, worldZ, biome) {
-    // 🌲 USE OLD WORKING FORMULA from VoxelWorld-X BiomeWorldGen.js!
+    // 🌲 USE OLD WORKING FORMULA from The Long Nights-X BiomeWorldGen.js!
     const baseTreeChance = biome.treeChance || 0.08;
 
     // Biome-specific density multipliers (from old working code)

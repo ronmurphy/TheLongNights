@@ -7,7 +7,7 @@ A clean, extensible system that unifies chunk rendering across all LOD tiers. Ba
 ## Architecture
 
 ### **Current System (Messy)**
-- VoxelWorld.js handles Tier 0 chunks
+- The Long Nights.js handles Tier 0 chunks
 - ChunkLODManager.js handles Tier 1 chunks
 - No Tier 2 (billboards)
 - Systems don't communicate well
@@ -16,7 +16,7 @@ A clean, extensible system that unifies chunk rendering across all LOD tiers. Ba
 ### **New System (Clean)**
 ```
 ChunkRenderManager (Orchestrator)
-├── Tier 0: Full Detail (VoxelWorld manages)
+├── Tier 0: Full Detail (The Long Nights manages)
 ├── Tier 1: LOD Chunks (ChunkLODManager)
 └── Tier 2: Billboards (Future)
 ```
@@ -56,7 +56,7 @@ voxelWorld.renderManager.getStats()
 ## Integration Steps
 
 ### Phase 1: Wire Up (No Breaking Changes)
-1. Import ChunkRenderManager in VoxelWorld.js
+1. Import ChunkRenderManager in The Long Nights.js
 2. Initialize after camera setup
 3. Call `renderManager.update()` in game loop
 4. Keep existing systems running in parallel
@@ -74,7 +74,7 @@ voxelWorld.renderManager.getStats()
 ## Quick Test
 
 ```javascript
-// In VoxelWorld.js constructor (after camera setup):
+// In The Long Nights.js constructor (after camera setup):
 import { ChunkRenderManager } from './rendering/ChunkRenderManager.js';
 
 this.renderManager = new ChunkRenderManager(this);
@@ -92,7 +92,7 @@ console.log(this.renderManager.getStats());
 ## Current Status
 
 ✅ **ChunkRenderManager.js created** - Clean scaffold ready
-⏸️ **Not integrated yet** - Needs wiring in VoxelWorld.js
+⏸️ **Not integrated yet** - Needs wiring in The Long Nights.js
 ⏸️ **Tier 2 not implemented** - Billboards are future work
 
 ## Next Steps

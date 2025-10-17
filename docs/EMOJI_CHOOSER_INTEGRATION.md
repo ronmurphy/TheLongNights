@@ -4,7 +4,7 @@
 
 ### ✅ 1. Emoji Chooser Added to Explorer's Menu
 
-**File: `src/VoxelWorld.js`**
+**File: `src/The Long Nights.js`**
 
 - **Import Added** (Line ~29): 
   ```javascript
@@ -90,7 +90,7 @@
 
 ## Files Modified
 
-1. **`src/VoxelWorld.js`**
+1. **`src/The Long Nights.js`**
    - Added emoji chooser import
    - Enhanced Graphics tab with emoji chooser container
    - Injected styled emoji chooser UI
@@ -141,7 +141,7 @@
 
 1. **Add emoji-mart integration** for full emoji picker (future feature)
 2. **Optimize bundle size** - Consider reducing from 4 emoji sets to 2 (save ~150MB)
-3. **Custom game emoji** - Add VoxelWorld-specific emoji in `/assets/custom-emoji/`
+3. **Custom game emoji** - Add The Long Nights-specific emoji in `/assets/custom-emoji/`
 4. **Preview updates** - Make emoji preview in chooser update in real-time
 
 ---

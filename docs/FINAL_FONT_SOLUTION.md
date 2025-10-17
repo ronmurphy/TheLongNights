@@ -1,4 +1,4 @@
-# VoxelWorld v0.2.8 - Complete Font & Icon Solution
+# The Long Nights v0.2.8 - Complete Font & Icon Solution
 
 ## ✅ What's Fixed
 
@@ -27,11 +27,11 @@ app.asar.unpacked/
 
 ## 📦 Build v0.2.8 Details
 
-**Location**: `/home/brad/Documents/VoxelWorld-1/VoxelWorld-1-vite/dist-electron/`
+**Location**: `/home/brad/Documents/The Long Nights-1/The Long Nights-1-vite/dist-electron/`
 
 **Files**:
-- `VoxelWorld-0.2.8-portable.exe` (Windows portable)
-- `VoxelWorld-0.2.8.AppImage` (Linux native)
+- `The Long Nights-0.2.8-portable.exe` (Windows portable)
+- `The Long Nights-0.2.8.AppImage` (Linux native)
 
 **What's Included**:
 - ✅ Custom Inter font (unpacked from ASAR)
@@ -121,8 +121,8 @@ sudo pacman -S ttf-carlito ttf-caladea
 
 ### Test the New Build:
 ```bash
-cd /home/brad/Documents/VoxelWorld-1/VoxelWorld-1-vite/dist-electron
-wine VoxelWorld-0.2.8-portable.exe
+cd /home/brad/Documents/The Long Nights-1/The Long Nights-1-vite/dist-electron
+wine The Long Nights-0.2.8-portable.exe
 ```
 
 ### What to Look For:
@@ -139,7 +139,7 @@ fc-list | grep -i liberation
 fc-list | grep -i dejavu
 
 # Check what Wine sees
-WINEDEBUG=+font wine VoxelWorld-0.2.8-portable.exe 2>&1 | grep -i font
+WINEDEBUG=+font wine The Long Nights-0.2.8-portable.exe 2>&1 | grep -i font
 ```
 
 ## 📝 Summary
@@ -156,7 +156,7 @@ WINEDEBUG=+font wine VoxelWorld-0.2.8-portable.exe 2>&1 | grep -i font
 4. ✅ Bundle Material Design Icons locally (already done)
 
 ### Result:
-🎉 **VoxelWorld fonts working perfectly on Arch Linux + Wine!**
+🎉 **The Long Nights fonts working perfectly on Arch Linux + Wine!**
 
 ---
 

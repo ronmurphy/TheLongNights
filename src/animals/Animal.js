@@ -337,7 +337,7 @@ export class Animal {
      * Update attack state
      */
     updateAttack(delta) {
-        // Deal damage to player (handled by VoxelWorld)
+        // Deal damage to player (handled by The Long Nights)
         if (this.stateTimer < 0.5) {
             // Attack animation playing
             return;

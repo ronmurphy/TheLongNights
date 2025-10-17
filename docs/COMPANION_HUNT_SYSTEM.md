@@ -143,7 +143,7 @@ The **CompanionHunt System** is a groundbreaking feature that transforms compani
 - **CompanionHuntSystem.js** - Main expedition logic
 - **Movement**: 2 chunks/minute calculation
 - **Discovery checks**: Every in-game minute
-- **Biome detection**: VoxelWorld.getBiomeAt()
+- **Biome detection**: The Long Nights.getBiomeAt()
 - **Billboard spawning**: addBillboardItem()
 - **Map markers**: Minimap + Journal integration
 
@@ -246,7 +246,7 @@ companionHuntSystem.update(gameTime);
 
 ### **Key Files**
 - `/src/CompanionHuntSystem.js` - Main system (550+ lines)
-- `/src/VoxelWorld.js` - Integration + update loop
+- `/src/The Long Nights.js` - Integration + update loop
 - `/docs/COMPANION_HUNT_SYSTEM.md` - This file
 
 ### **Constants**

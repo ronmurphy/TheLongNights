@@ -400,9 +400,9 @@ export class InventorySystem {
         });
     }
 
-    // 🔄 DELEGATED: Backpack UI updates now handled by VoxelWorld's beautiful restored UI
+    // 🔄 DELEGATED: Backpack UI updates now handled by The Long Nights's beautiful restored UI
     updateBackpackInventoryDisplay() {
-        // Delegate to VoxelWorld's polished UI system
+        // Delegate to The Long Nights's polished UI system
         if (this.voxelWorld && this.voxelWorld.updateBackpackInventoryDisplay) {
             this.voxelWorld.updateBackpackInventoryDisplay();
             return;

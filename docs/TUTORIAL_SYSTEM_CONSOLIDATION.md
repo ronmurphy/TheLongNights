@@ -12,7 +12,7 @@ The game had **THREE overlapping tutorial systems** running simultaneously, caus
 ### 1. TutorialScriptSystem.js ✅ (KEPT)
 - **Location**: `/src/ui/TutorialScriptSystem.js`
 - **Data Source**: `/data/tutorialScripts.json`
-- **Initialized in**: `VoxelWorld.js` line 306
+- **Initialized in**: `The Long Nights.js` line 306
 - **Type**: JSON-based, event-driven
 - **Features**: 
   - Loads companion info dynamically
@@ -39,7 +39,7 @@ The game had **THREE overlapping tutorial systems** running simultaneously, caus
 - ✅ Removed old standalone tutorial methods
 - ✅ Kept the first-time player intro sequence (handles companion selection)
 
-### 2. VoxelWorld.js
+### 2. The Long Nights.js
 - ✅ Kept `TutorialScriptSystem` initialization (line 306)
 - ✅ Removed old `showWorkbenchTutorial()` function (lines 5945-6036)
 - ✅ Updated backpack pickup to call `tutorialSystem.onBackpackOpened()`
@@ -72,15 +72,15 @@ All these are properly connected to `TutorialScriptSystem`:
 
 | Event | Hook Location | Tutorial ID |
 |-------|--------------|-------------|
-| Game Start | VoxelWorld.js (removed - App.js handles) | `game_start` |
-| Machete Selected | VoxelWorld.js:2746 | `machete_selected` |
-| Backpack Opened | VoxelWorld.js:1334, 2784, 6710 | `backpack_opened` |
+| Game Start | The Long Nights.js (removed - App.js handles) | `game_start` |
+| Machete Selected | The Long Nights.js:2746 | `machete_selected` |
+| Backpack Opened | The Long Nights.js:1334, 2784, 6710 | `backpack_opened` |
 | Item Crafted | WorkbenchSystem.js:2058, ToolBenchSystem.js | Various |
 | Workbench Opened | WorkbenchSystem.js:233 | `workbench_opened` |
 | Tool Bench Opened | ToolBenchSystem.js:320 | `tool_bench_opened` |
 | Kitchen Bench Opened | KitchenBenchSystem.js:440 | `kitchen_bench_opened` |
-| Campfire Placed | VoxelWorld.js:739 | `campfire_placed` |
-| Nightfall | VoxelWorld.js:9756 | `nightfall` |
+| Campfire Placed | The Long Nights.js:739 | `campfire_placed` |
+| Nightfall | The Long Nights.js:9756 | `nightfall` |
 | Ghost Spawn | GhostSystem.js:167 | `first_ghost` |
 | Animal Spawn | AnimalSystem.js:209 | `first_rabbit` |
 
@@ -98,7 +98,7 @@ All these are properly connected to `TutorialScriptSystem`:
 ## Files Modified
 
 1. `/src/App.js` - Removed CompanionTutorialSystem, removed old methods
-2. `/src/VoxelWorld.js` - Removed old workbench tutorial, fixed event hooks
+2. `/src/The Long Nights.js` - Removed old workbench tutorial, fixed event hooks
 3. `/data/tutorialScripts.json` - Enhanced backpack tutorial
 
 ## Files to Keep (Don't Delete)

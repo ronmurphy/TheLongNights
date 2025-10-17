@@ -269,9 +269,9 @@ npm run electron
 ```
 
 **Output:**
-- `dist-electron/VoxelWorld-0.4.6.AppImage` (Linux)
-- `dist-electron/VoxelWorld-0.4.6-install.exe` (Windows installer)
-- `dist-electron/VoxelWorld-0.4.6-portable.exe` (Windows portable)
+- `dist-electron/The Long Nights-0.4.6.AppImage` (Linux)
+- `dist-electron/The Long Nights-0.4.6-install.exe` (Windows installer)
+- `dist-electron/The Long Nights-0.4.6-portable.exe` (Windows portable)
 
 ---
 
@@ -354,7 +354,7 @@ This is a Node.js/Electron deprecation warning, not a game issue. It doesn't aff
 
 ## Conclusion
 
-The VoxelWorld Electron build is now **production ready**! 
+The The Long Nights Electron build is now **production ready**! 
 
 All assets load correctly, music plays, combat works, crafting works, and the game runs smoothly. The expected 404 errors during block texture fallback are normal and don't indicate problems.
 
@@ -376,7 +376,7 @@ npm run electron
 
 ### Test Latest Build
 ```bash
-./dist-electron/VoxelWorld-0.4.6.AppImage
+./dist-electron/The Long Nights-0.4.6.AppImage
 ```
 
 ### Check Console for Issues

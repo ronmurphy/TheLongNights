@@ -1,7 +1,7 @@
 /**
  * CompanionCodex.js
  *
- * Companion Registry / Pokedex system for VoxelWorld
+ * Companion Registry / Pokedex system for The Long Nights
  * Shows discovered companions, stats, and allows setting active companion
  * Styled to match Explorer's Journal aesthetic (open book layout)
  */
@@ -171,7 +171,7 @@ export class CompanionCodex {
             document.exitPointerLock();
         }
 
-        // Disable VoxelWorld input controls while codex is open
+        // Disable The Long Nights input controls while codex is open
         if (this.voxelWorld) {
             this.voxelWorld.controlsEnabled = false;
             console.log('🔒 Disabled input controls for Companion Codex');
@@ -420,7 +420,7 @@ export class CompanionCodex {
             this.codexElement.style.opacity = '1';
         }, 10);
 
-        // Disable VoxelWorld controls
+        // Disable The Long Nights controls
         if (this.voxelWorld) {
             this.voxelWorld.controlsEnabled = false;
         }
@@ -1015,7 +1015,7 @@ export class CompanionCodex {
                 this.codexElement = null;
             }
 
-            // Re-enable VoxelWorld controls
+            // Re-enable The Long Nights controls
             if (this.voxelWorld) {
                 this.voxelWorld.controlsEnabled = true;
                 console.log('✅ Re-enabled input controls after closing Companion Codex');

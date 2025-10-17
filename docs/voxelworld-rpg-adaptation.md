@@ -1,6 +1,6 @@
-# 🎮 VoxelWorld RPG System Adaptation
+# 🎮 The Long Nights RPG System Adaptation
 
-*Adapting DCC TTRPG mechanics to VoxelWorld-1-vite*
+*Adapting DCC TTRPG mechanics to The Long Nights-1-vite*
 
 **Status**: Planning Phase
 **Priority**: Foundation for enemy mobs, progression, combat
@@ -10,7 +10,7 @@
 
 ## 📋 **System Overview**
 
-VoxelWorld will use the **DCC TTRPG system** as its foundation, adapting the small-number, fast-math approach for real-time voxel gameplay.
+The Long Nights will use the **DCC TTRPG system** as its foundation, adapting the small-number, fast-math approach for real-time voxel gameplay.
 
 ### **Core Principles to Preserve**
 - ✅ **Attributes start at 2** (not 10) - easier math
@@ -252,7 +252,7 @@ export const GHOST_VARIANTS = {
 
 ### **Step 1: Player Stats Foundation** ⏳
 - [ ] Create `PlayerStats.js`
-- [ ] Integrate stats into existing VoxelWorld player object
+- [ ] Integrate stats into existing The Long Nights player object
 - [ ] Create basic character sheet UI (pause menu)
 - [ ] Display HP/MP in HUD
 - [ ] Save/load stats with existing save system
@@ -312,7 +312,7 @@ These are part of the TTRPG but can wait:
 
 ---
 
-## 🔧 **VoxelWorld-Specific Adaptations**
+## 🔧 **The Long Nights-Specific Adaptations**
 
 ### **Real-Time Combat**
 - **Turn-based → Cooldown-based**: Attacks happen every X seconds
@@ -378,7 +378,7 @@ Once those are working, angry ghosts become a simple variant with:
 
 ---
 
-## 💡 **Why This System is Perfect for VoxelWorld**
+## 💡 **Why This System is Perfect for The Long Nights**
 
 1. **Small numbers** = Easy to display in minimal HUD space
 2. **Opposed rolls** = Dynamic combat, not "you hit, they hit, repeat"
@@ -405,7 +405,7 @@ Once those are working, angry ghosts become a simple variant with:
 
 ### **Integration Done:**
 - ✅ Wired character creation to "Start New World" button
-- ✅ RPG system initializes with VoxelWorld
+- ✅ RPG system initializes with The Long Nights
 - ✅ Stats load/save ready (not connected to save system yet)
 
 ### **Test It:**
@@ -445,7 +445,7 @@ Once those are working, angry ghosts become a simple variant with:
 1. **Create HUD Elements**
    - [ ] Add HP bar (red) to existing HUD
    - [ ] Add MP bar (blue) to existing HUD
-   - [ ] Style to match VoxelWorld aesthetic
+   - [ ] Style to match The Long Nights aesthetic
    - [ ] Position: Top-left below minimap?
 
 2. **Update Loop Integration**
@@ -511,7 +511,7 @@ Once those are working, angry ghosts become a simple variant with:
 
 1. **CSS Not Loaded in Main Game**
    - [ ] Add `<link>` to modals.css in index.html
-   - [ ] OR import CSS in VoxelWorld.js
+   - [ ] OR import CSS in The Long Nights.js
 
 2. **Character Name Not Used**
    - [ ] Store character name somewhere (playerStats? save file?)
@@ -543,20 +543,20 @@ Once those are working, angry ghosts become a simple variant with:
 
 ```javascript
 // Save/Load System
-VoxelWorld.js:~5800 - saveWorld()
-VoxelWorld.js:~5900 - loadWorld()
+The Long Nights.js:~5800 - saveWorld()
+The Long Nights.js:~5900 - loadWorld()
 
 // Block Harvesting (for XP)
-VoxelWorld.js:~search for "removeBlock" or "harvest"
+The Long Nights.js:~search for "removeBlock" or "harvest"
 
 // Animation Loop (for HUD update)
-VoxelWorld.js:~8878 - animate() function
+The Long Nights.js:~8878 - animate() function
 
 // Character Creation Button
-VoxelWorld.js:10331 - newGame() function (DONE!)
+The Long Nights.js:10331 - newGame() function (DONE!)
 
 // Minimap/HUD Area
-VoxelWorld.js:~search for "minimap" or "coordDisplay"
+The Long Nights.js:~search for "minimap" or "coordDisplay"
 ```
 
 ---

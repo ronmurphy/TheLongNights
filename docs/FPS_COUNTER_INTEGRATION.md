@@ -27,7 +27,7 @@ Integrated **stats.js** (by mrdoob, creator of Three.js) to provide a profession
 
 ### Key Files Modified
 
-#### 1. **src/VoxelWorld.js**
+#### 1. **src/The Long Nights.js**
 - **Import**: Added `import Stats from 'stats.js';`
 - **Constructor** (lines ~47-60):
   ```javascript
@@ -73,7 +73,7 @@ Integrated **stats.js** (by mrdoob, creator of Three.js) to provide a profession
   ```
 
 #### 2. **src/App.js**
-- Exposed VoxelWorld instance as `window.voxelWorld` for electron menu access:
+- Exposed The Long Nights instance as `window.voxelWorld` for electron menu access:
   ```javascript
   window['voxelWorld'] = app; // Also expose as voxelWorld for electron menu
   ```
@@ -160,7 +160,7 @@ Possible improvements if needed:
 - **Memory impact**: Negligible (~50KB)
 
 ## Related Files
-- `src/VoxelWorld.js` - Main integration
+- `src/The Long Nights.js` - Main integration
 - `src/App.js` - Window exposure
 - `electron.cjs` - Menu integration
 - `package.json` - Dependencies

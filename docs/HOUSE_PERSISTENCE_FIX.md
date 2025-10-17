@@ -136,7 +136,7 @@ app.modificationTracker.flushDirtyChunks();
    - Simplified interior detection
    - Added debug logging for bounds
 
-2. **`src/VoxelWorld.js`** (line 7382-7395) 
+2. **`src/The Long Nights.js`** (line 7382-7395) 
    - Reticle shows full exterior footprint (interior + 2 walls)
 
 3. **Existing Systems** (confirmed working):

@@ -2,7 +2,7 @@
 
 ## Current Situation (2025-10-09)
 
-GNOME keeps crashing when testing VoxelWorld-1. Suspected causes:
+GNOME keeps crashing when testing The Long Nights-1. Suspected causes:
 - Memory leaks in the application
 - Vite dev server issues
 - Electron (VSCode) compatibility issues with GNOME
@@ -10,15 +10,15 @@ GNOME keeps crashing when testing VoxelWorld-1. Suspected causes:
 
 ## Project Structure
 
-Two project versions exist in `/home/brad/Documents/VoxelWorld-1/`:
+Two project versions exist in `/home/brad/Documents/The Long Nights-1/`:
 
-1. **VoxelWorld-1-vite/** - Main development (has memory leaks, crashes GNOME)
+1. **The Long Nights-1-vite/** - Main development (has memory leaks, crashes GNOME)
    - Commit: `02e06f5` (main branch)
    - Features: Silent Hill fog, miniChunks texture system, advanced LOD
    - Problem: Memory leaks, causes GNOME crashes
    - Visual: Smooth fog, seamless chunk loading
 
-2. **VoxelWorld-X/** - Older stable build
+2. **The Long Nights-X/** - Older stable build
    - Commit: `d78e191`
    - Features: Basic LOD with visible chunk boundaries (desirable!)
    - Status: More stable, nice visual chunk loading feedback
@@ -29,12 +29,12 @@ Two project versions exist in `/home/brad/Documents/VoxelWorld-1/`:
 Created a new stable branch to test without the problematic features:
 
 ```bash
-cd /home/brad/Documents/VoxelWorld-1/VoxelWorld-1-vite
-git checkout voxelworld-stable  # Branch based on d78e191 (VoxelWorld-X)
+cd /home/brad/Documents/The Long Nights-1/The Long Nights-1-vite
+git checkout voxelworld-stable  # Branch based on d78e191 (The Long Nights-X)
 ```
 
 ### Branch: `voxelworld-stable`
-- **Based on**: commit `d78e191` (VoxelWorld-X)
+- **Based on**: commit `d78e191` (The Long Nights-X)
 - **Goal**: Test if this version is stable without memory leaks
 - **Has**: Visual LOD chunk loading, proper geometry disposal
 - **Does NOT have**: Fog system, miniChunks, Vite texture plugin, extra rendering managers
@@ -45,7 +45,7 @@ Should be running at http://localhost:5173/ (started with `npm run dev`)
 
 If not running:
 ```bash
-cd /home/brad/Documents/VoxelWorld-1/VoxelWorld-1-vite
+cd /home/brad/Documents/The Long Nights-1/The Long Nights-1-vite
 git checkout voxelworld-stable
 npm run dev
 ```
@@ -59,7 +59,7 @@ npm run dev
 
 ## Key Commits to Know
 
-- `d78e191` - VoxelWorld-X base (stable, visible chunk loading)
+- `d78e191` - The Long Nights-X base (stable, visible chunk loading)
 - `2607976` - "sort of working lod system part 2"
 - `ee6c7c6` - miniChunks added
 - `091cf51` - "lot of fog"
@@ -126,7 +126,7 @@ git diff d78e191..HEAD --stat
 
 ## File Locations
 
-- Main code: `/home/brad/Documents/VoxelWorld-1/VoxelWorld-1-vite/src/VoxelWorld.js`
+- Main code: `/home/brad/Documents/The Long Nights-1/The Long Nights-1-vite/src/The Long Nights.js`
 - LOD Manager: `src/rendering/ChunkLODManager.js`
 - Worker: `src/workers/ChunkWorker.js`
 
@@ -142,7 +142,7 @@ git diff d78e191..HEAD --stat
 
 ## Notes
 
-- User prefers visible chunk LOD loading (VoxelWorld-X style) over seamless fog
+- User prefers visible chunk LOD loading (The Long Nights-X style) over seamless fog
 - Memory leaks likely introduced between d78e191 and main
 - Vite might be contributing to instability
 - VSCode (Electron) + GNOME has known compatibility issues

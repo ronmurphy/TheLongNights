@@ -2,7 +2,7 @@
  * CraftedTools.js
  *
  * Handles special behaviors for crafted tools and equipment
- * Extracted from VoxelWorld.js to improve code organization
+ * Extracted from The Long Nights.js to improve code organization
  */
 
 export class CraftedTools {

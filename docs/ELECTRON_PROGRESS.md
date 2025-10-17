@@ -42,7 +42,7 @@ const artBasePath = isElectron ? 'dist/art' : 'art';
 
 **Cause**: Hardcoded path `/assets/music/` doesn't exist in electron (should be `/dist/music/`)
 
-**Fix Applied**: Updated VoxelWorld.js to detect electron:
+**Fix Applied**: Updated The Long Nights.js to detect electron:
 ```javascript
 const isElectron = typeof window !== 'undefined' && window.electronAPI;
 const musicPath = isElectron ? '/dist/music/forestDay.ogg' : '/music/forestDay.ogg';
@@ -119,7 +119,7 @@ After rebuild, check:
 1. **electron.cjs** - Use `app.getAppPath()` for preload
 2. **package.json** - Added `electron-preload.cjs` to `files` array
 3. **EnhancedGraphics.js** - Detect electron, use `dist/art` paths
-4. **VoxelWorld.js** - Detect electron, use `/dist/music/` path
+4. **The Long Nights.js** - Detect electron, use `/dist/music/` path
 5. **EmojiRenderer.js** - (Reverted - needs different solution)
 
 ---

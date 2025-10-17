@@ -1,8 +1,8 @@
 /**
  * RPGIntegration.js
  *
- * Integration point for VoxelWorld RPG systems
- * Connects PlayerStats, CombatSystem, and UI to VoxelWorld
+ * Integration point for The Long Nights RPG systems
+ * Connects PlayerStats, CombatSystem, and UI to The Long Nights
  */
 
 import { PlayerStats } from './PlayerStats.js';
@@ -46,7 +46,7 @@ export class RPGIntegration {
      */
     needsCharacterCreation() {
         // Check if stats exist in save data
-        const savedStats = localStorage.getItem('voxelWorld_playerStats');
+        const savedStats = localStorage.getItem('longNights_playerStats');
         return !savedStats;
     }
 
@@ -55,7 +55,7 @@ export class RPGIntegration {
      */
     saveStats() {
         const data = this.playerStats.serialize();
-        localStorage.setItem('voxelWorld_playerStats', JSON.stringify(data));
+        localStorage.setItem('longNights_playerStats', JSON.stringify(data));
         console.log('💾 Player stats saved');
     }
 
@@ -64,7 +64,7 @@ export class RPGIntegration {
      */
     loadStats() {
         try {
-            const saved = localStorage.getItem('voxelWorld_playerStats');
+            const saved = localStorage.getItem('longNights_playerStats');
             if (saved) {
                 const data = JSON.parse(saved);
                 this.playerStats.deserialize(data);

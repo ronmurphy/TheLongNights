@@ -8,12 +8,12 @@ When running the Windows portable build through Wine, fonts were not displaying 
 ### 1. **External Google Fonts Loading** ❌
 - **Issue**: `index.html` was loading Google Material Icons from `https://fonts.googleapis.com/`
 - **Impact**: External fonts don't load in packaged Electron apps, especially offline
-- **Location**: `/VoxelWorld-1-vite/index.html` line 7
+- **Location**: `/The Long Nights-1-vite/index.html` line 7
 
 ### 2. **CSS Color Bug** ❌  
 - **Issue**: CSS contained `* { color: #000 !important; }` making ALL text black
 - **Impact**: Text invisible on dark backgrounds (game UI has dark theme)
-- **Location**: `/VoxelWorld-1-vite/src/style.css` line 37
+- **Location**: `/The Long Nights-1-vite/src/style.css` line 37
 
 ### 3. **Font Path Configuration** ⚠️
 - **Issue**: Font paths were correct but needed better fallbacks
@@ -60,20 +60,20 @@ The new build **v0.2.6** has been created with all fixes:
 
 ## New Build Location
 ```
-/home/brad/Documents/VoxelWorld-1/VoxelWorld-1-vite/dist-electron/VoxelWorld-0.2.6-portable.exe
+/home/brad/Documents/The Long Nights-1/The Long Nights-1-vite/dist-electron/The Long Nights-0.2.6-portable.exe
 ```
 
 ## Testing Instructions
 
 ### Test with Wine
 ```bash
-cd /home/brad/Documents/VoxelWorld-1/VoxelWorld-1-vite/dist-electron
-wine VoxelWorld-0.2.6-portable.exe
+cd /home/brad/Documents/The Long Nights-1/The Long Nights-1-vite/dist-electron
+wine The Long Nights-0.2.6-portable.exe
 ```
 
 ### What to Check
 1. ✅ Loading screen text should be visible (logo + "Initializing..." text)
-2. ✅ Main menu text should be visible (header "VoxelWorld + ShapeForge")
+2. ✅ Main menu text should be visible (header "The Long Nights + ShapeForge")
 3. ✅ UI buttons should have visible text ("Play Mode", "Workbench")
 4. ✅ In-game UI text should be readable on dark backgrounds
 5. ✅ Modal dialogs should have proper font rendering
@@ -88,7 +88,7 @@ wine VoxelWorld-0.2.6-portable.exe
 ## Rollback (if needed)
 If you need to revert, the previous build is:
 ```
-VoxelWorld-0.2.5-portable.exe
+The Long Nights-0.2.5-portable.exe
 ```
 
 ---

@@ -44,7 +44,7 @@ const wallHeight = interiorHeight;   // ✅ From workbench slider
 
 ### Reticle System
 ```javascript
-// In VoxelWorld.js - updateTargetHighlight()
+// In The Long Nights.js - updateTargetHighlight()
 const selectedSlot = this.hotbarSystem?.getSelectedSlot();
 
 if (selectedSlot && selectedSlot.itemType.includes('simple_house')) {
@@ -132,7 +132,7 @@ totalHeight = interiorHeight + 3   // +1 floor, +2 roof slope
    - Uses passed parameters instead of hardcoded values
    - Handles wood block materials properly
 
-2. **`src/VoxelWorld.js`** (lines 7369-7410)
+2. **`src/The Long Nights.js`** (lines 7369-7410)
    - Added dynamic reticle resizing
    - Checks hotbar for simple_house selection
    - Pulls dimensions from workbenchSystem
@@ -141,7 +141,7 @@ totalHeight = interiorHeight + 3   // +1 floor, +2 roof slope
 3. **`src/WorkbenchSystem.js`** (existing)
    - Already had slider support
    - Enforces minimum 4×4×4 for simple_house
-   - Passes dimensions to VoxelWorld
+   - Passes dimensions to The Long Nights
 
 ### Key Features
 - ✅ Memory management: Disposes old geometry before creating new

@@ -1,10 +1,10 @@
 #!/bin/bash
 
-# Quick test script for VoxelWorld v0.2.7
+# Quick test script for The Long Nights v0.2.7
 
-cd /home/brad/Documents/VoxelWorld-1/VoxelWorld-1-vite/dist-electron
+cd /home/brad/Documents/The Long Nights-1/The Long Nights-1-vite/dist-electron
 
-echo "🎮 VoxelWorld v0.2.7 - Font Fix Edition"
+echo "🎮 The Long Nights v0.2.7 - Font Fix Edition"
 echo "========================================"
 echo ""
 echo "Available builds:"
@@ -23,13 +23,13 @@ case $choice in
         echo "   ✅ Game menu text"
         echo "   ✅ UI buttons text"
         echo ""
-        wine VoxelWorld-0.2.7-portable.exe
+        wine The Long Nights-0.2.7-portable.exe
         ;;
     2)
         echo ""
         echo "🐧 Launching Linux AppImage..."
-        chmod +x VoxelWorld-0.2.7.AppImage
-        ./VoxelWorld-0.2.7.AppImage
+        chmod +x The Long Nights-0.2.7.AppImage
+        ./The Long Nights-0.2.7.AppImage
         ;;
     3)
         echo "Goodbye!"

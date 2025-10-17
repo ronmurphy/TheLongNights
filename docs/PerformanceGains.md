@@ -1,6 +1,6 @@
 │ Here is Claude's plan:                                                                                                              │
 │ ╭─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮ │
-│ │ VoxelWorld Performance Optimization Implementation Guide                                                                        │ │
+│ │ The Long Nights Performance Optimization Implementation Guide                                                                        │ │
 │ │                                                                                                                                 │ │
 │ │ THREE.js InstancedMesh & Object Pooling Migration                                                                               │ │
 │ │                                                                                                                                 │ │
@@ -39,21 +39,21 @@
 │ │     // ... all other shapes                                                                                                     │ │
 │ │                                                                                                                                 │ │
 │ │     // Materials (one per block type)                                                                                           │ │
-│ │     // Will be populated with actual textures from VoxelWorld                                                                   │ │
+│ │     // Will be populated with actual textures from The Long Nights                                                                   │ │
 │ │   }                                                                                                                             │ │
 │ │                                                                                                                                 │ │
 │ │   getGeometry(type) { return this.geometries.get(type); }                                                                       │ │
 │ │   getMaterial(type) { return this.materials.get(type); }                                                                        │ │
 │ │                                                                                                                                 │ │
-│ │   // Called by VoxelWorld to register materials with textures                                                                   │ │
+│ │   // Called by The Long Nights to register materials with textures                                                                   │ │
 │ │   registerMaterial(blockType, material) {                                                                                       │ │
 │ │     this.materials.set(blockType, material);                                                                                    │ │
 │ │   }                                                                                                                             │ │
 │ │ }                                                                                                                               │ │
 │ │                                                                                                                                 │ │
-│ │ Step 1.2: Initialize Pool in VoxelWorld                                                                                         │ │
+│ │ Step 1.2: Initialize Pool in The Long Nights                                                                                         │ │
 │ │                                                                                                                                 │ │
-│ │ File: src/VoxelWorld.js (MODIFY)                                                                                                │ │
+│ │ File: src/The Long Nights.js (MODIFY)                                                                                                │ │
 │ │ Line: ~10 (in constructor, before anything else)                                                                                │ │
 │ │                                                                                                                                 │ │
 │ │ Changes:                                                                                                                        │ │
@@ -67,7 +67,7 @@
 │ │                                                                                                                                 │ │
 │ │ Step 1.3: Update addBlock() to Use Pool                                                                                         │ │
 │ │                                                                                                                                 │ │
-│ │ File: src/VoxelWorld.js                                                                                                         │ │
+│ │ File: src/The Long Nights.js                                                                                                         │ │
 │ │ Function: addBlock() (around line 130-180)                                                                                      │ │
 │ │                                                                                                                                 │ │
 │ │ Change from:                                                                                                                    │ │
@@ -80,7 +80,7 @@
 │ │                                                                                                                                 │ │
 │ │ Step 1.4: Update Crafted Objects (ShapeForge)                                                                                   │ │
 │ │                                                                                                                                 │ │
-│ │ File: src/VoxelWorld.js                                                                                                         │ │
+│ │ File: src/The Long Nights.js                                                                                                         │ │
 │ │ Function: placeCraftedObject() (around line 200-260)                                                                            │ │
 │ │                                                                                                                                 │ │
 │ │ Update all geometry creations:                                                                                                  │ │
@@ -113,7 +113,7 @@
 │ │ Architecture Overview                                                                                                           │ │
 │ │                                                                                                                                 │ │
 │ │ ┌─────────────────────────────────────┐                                                                                         │ │
-│ │ │       VoxelWorld Rendering          │                                                                                         │ │
+│ │ │       The Long Nights Rendering          │                                                                                         │ │
 │ │ ├─────────────────────────────────────┤                                                                                         │ │
 │ │ │                                     │                                                                                         │ │
 │ │ │  Natural Terrain (99% of blocks)   │                                                                                          │ │
@@ -124,7 +124,7 @@
 │ │ │     └─ ... (5 draw calls total)    │                                                                                          │ │
 │ │ │                                     │                                                                                         │ │
 │ │ │  Player-Placed (1% of blocks)      │                                                                                          │ │
-│ │ │  └→ Existing VoxelWorld.addBlock() │                                                                                          │ │
+│ │ │  └→ Existing The Long Nights.addBlock() │                                                                                          │ │
 │ │ │     └─ Individual THREE.Mesh       │                                                                                          │ │
 │ │ │        (Easy to add/remove)         │                                                                                         │ │
 │ │ │                                     │                                                                                         │ │
@@ -167,9 +167,9 @@
 │ │   updateInstanceColor(x, y, z, color)                                                                                           │ │
 │ │ }                                                                                                                               │ │
 │ │                                                                                                                                 │ │
-│ │ Step 2.2: Integrate with VoxelWorld Constructor                                                                                 │ │
+│ │ Step 2.2: Integrate with The Long Nights Constructor                                                                                 │ │
 │ │                                                                                                                                 │ │
-│ │ File: src/VoxelWorld.js                                                                                                         │ │
+│ │ File: src/The Long Nights.js                                                                                                         │ │
 │ │ Location: Constructor (~line 20)                                                                                                │ │
 │ │                                                                                                                                 │ │
 │ │ Add:                                                                                                                            │ │
@@ -208,7 +208,7 @@
 │ │                                                                                                                                 │ │
 │ │ Step 2.4: Update removeBlock() for Hybrid System                                                                                │ │
 │ │                                                                                                                                 │ │
-│ │ File: src/VoxelWorld.js                                                                                                         │ │
+│ │ File: src/The Long Nights.js                                                                                                         │ │
 │ │ Function: removeBlock() (~line 600-650)                                                                                         │ │
 │ │                                                                                                                                 │ │
 │ │ Add instanced block check:                                                                                                      │ │
@@ -237,7 +237,7 @@
 │ │                                                                                                                                 │ │
 │ │ Step 2.5: Update addBlock() for Player Placement                                                                                │ │
 │ │                                                                                                                                 │ │
-│ │ File: src/VoxelWorld.js                                                                                                         │ │
+│ │ File: src/The Long Nights.js                                                                                                         │ │
 │ │ Function: addBlock() (~line 130-180)                                                                                            │ │
 │ │                                                                                                                                 │ │
 │ │ Keep player-placed blocks using regular mesh:                                                                                   │ │
@@ -276,7 +276,7 @@
 │ │                                                                                                                                 │ │
 │ │ Step 2.6: Handle Chunk Unloading                                                                                                │ │
 │ │                                                                                                                                 │ │
-│ │ File: src/VoxelWorld.js                                                                                                         │ │
+│ │ File: src/The Long Nights.js                                                                                                         │ │
 │ │ Function: updateChunks() (~line 5900-5950)                                                                                      │ │
 │ │                                                                                                                                 │ │
 │ │ Add instance hiding when chunks unload:                                                                                         │ │
@@ -291,7 +291,7 @@
 │ │                                                                                                                                 │ │
 │ │ Step 2.7: Save/Load Integration                                                                                                 │ │
 │ │                                                                                                                                 │ │
-│ │ File: src/VoxelWorld.js                                                                                                         │ │
+│ │ File: src/The Long Nights.js                                                                                                         │ │
 │ │ Functions: saveWorld() and loadWorld() (~line 5964, 6018)                                                                       │ │
 │ │                                                                                                                                 │ │
 │ │ No changes needed! The playerPlaced flag already distinguishes:                                                                 │ │

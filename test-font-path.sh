@@ -4,12 +4,12 @@ echo "Testing font loading in Electron ASAR..."
 echo ""
 
 # Extract a sample to test the actual file paths
-TEMP="/tmp/voxelworld-test"
+TEMP="/tmp/thelongnights-test"
 rm -rf "$TEMP"
 mkdir -p "$TEMP"
 
 echo "Extracting ASAR..."
-npx asar extract /home/brad/Documents/VoxelWorld-1/VoxelWorld-1-vite/dist-electron/win-unpacked/resources/app.asar "$TEMP" > /dev/null 2>&1
+npx asar extract /home/brad/Documents/The Long Nights-1/The Long Nights-1-vite/dist-electron/win-unpacked/resources/app.asar "$TEMP" > /dev/null 2>&1
 
 echo ""
 echo "File structure:"

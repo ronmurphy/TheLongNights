@@ -89,9 +89,9 @@ Turn off when not debugging for absolute maximum performance.
 **File**: `src/rendering/LODDebugOverlay.js`
 
 **Integration Points**:
-- VoxelWorld.js line 7048: Initialization
-- VoxelWorld.js line 9397-9403: 'L' key toggle
-- VoxelWorld.js line 8946-8949: Update loop
+- The Long Nights.js line 7048: Initialization
+- The Long Nights.js line 9397-9403: 'L' key toggle
+- The Long Nights.js line 8946-8949: Update loop
 
 **Rendering**:
 - Rings use `THREE.RingGeometry` with `MeshBasicMaterial`

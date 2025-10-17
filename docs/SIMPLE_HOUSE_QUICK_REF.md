@@ -70,7 +70,7 @@ giveItem("simple_house")  // Gives house with 4×4×4 defaults
 
 ### Code Location
 - **Generation**: `StructureGenerator.js` (lines 623-762)
-- **Integration**: `VoxelWorld.js` (lines 609-645)
+- **Integration**: `The Long Nights.js` (lines 609-645)
 - **UI Config**: `WorkbenchSystem.js` (lines 151-158)
 
 ---

@@ -232,7 +232,7 @@ function createWindow() {
       preload: preloadPath
     },
     icon: path.join(__dirname, 'build/icon.png'), // Add icon later
-    title: 'VoxelWorld',
+    title: 'The Long Nights',
     show: false, // Don't show until ready
   });
 
@@ -306,7 +306,7 @@ function createWindow() {
       label: 'Help',
       submenu: [
         {
-          label: 'About VoxelWorld',
+          label: 'About The Long Nights',
           click: () => {
             mainWindow.webContents.executeJavaScript(`
               (async function() {
@@ -332,7 +332,7 @@ function createWindow() {
                 modal.innerHTML = \`
                   <div class="voxel-modal character-creation-modal" style="max-width: 600px;">
                     <div class="modal-header">
-                      <h2>🎮 VoxelWorld</h2>
+                      <h2>🎮 The Long Nights</h2>
                       <p class="subtitle">A Voxel-Based Adventure Game</p>
                     </div>
 
@@ -345,7 +345,7 @@ function createWindow() {
 
                         <div style="margin: 20px 0;">
                           <h4 style="margin: 15px 0 8px 0; color: #333;">💻 Development</h4>
-                          <p style="margin: 5px 0; padding-left: 15px;"><strong>Original Code:</strong> Ron Murphy (<a href="https://github.com/ronmurphy/VoxelWorld" target="_blank" style="color: #0066cc;">solo.dev</a>)</p>
+                          <p style="margin: 5px 0; padding-left: 15px;"><strong>Original Code:</strong> Ron Murphy (<a href="https://github.com/ronmurphy/The Long Nights" target="_blank" style="color: #0066cc;">solo.dev</a>)</p>
                           <p style="margin: 5px 0; padding-left: 15px;"><strong>Code Refinements:</strong> Claude (Anthropic)</p>
                         </div>
 

@@ -69,7 +69,7 @@ Items that companions can equip:
 ## What Needs To Be Done Now:
 
 ### 1. ✅ Already Fixed (Grappling Hook):
-- Added to VoxelWorld.js enhanced graphics check
+- Added to The Long Nights.js enhanced graphics check
 - Added texture aliases in EnhancedGraphics.js
 - Both `grappling_hook` and `crafted_grappling_hook` work
 
@@ -96,7 +96,7 @@ this.textureAliases = {
 };
 ```
 
-Add to **VoxelWorld.js** enhanced graphics tool check (line ~2225):
+Add to **The Long Nights.js** enhanced graphics tool check (line ~2225):
 ```javascript
 if (['machete', 'workbench', 'backpack', 'stone_hammer', 'stick', 
      'compass', 'compass_upgrade', 'tool_bench', 
@@ -169,7 +169,7 @@ This means companions can equip:
 
 ### ✅ DO NOW (Before Testing):
 1. Add `crafted_` aliases for existing ToolBench items
-2. Add crafted tool variants to VoxelWorld.js enhanced graphics check
+2. Add crafted tool variants to The Long Nights.js enhanced graphics check
 3. Test that all ToolBench items show icons correctly
 
 ### ⏳ DO LATER (After Testing):
@@ -182,7 +182,7 @@ This means companions can equip:
 1. Create blueprint in `ToolBenchSystem.js`
 2. Add PNG to `/art/tools/` folder
 3. Add alias to `EnhancedGraphics.js` (if code name ≠ filename)
-4. Add `crafted_` version to enhanced graphics tool check in `VoxelWorld.js`
+4. Add `crafted_` version to enhanced graphics tool check in `The Long Nights.js`
 5. Add both versions to `CompanionCodex.js` equipment bonuses
 6. Test crafting → icon appears → companions can equip
 
@@ -197,7 +197,7 @@ const itemId = `crafted_${this.selectedBlueprint}`;
 
 **WHERE NEEDED:**
 - ✅ EnhancedGraphics.js textureAliases
-- ✅ VoxelWorld.js enhanced graphics tool check  
+- ✅ The Long Nights.js enhanced graphics tool check  
 - ✅ CompanionCodex.js equipment bonuses (for companion equipping)
 - ✅ Any system that handles both base and crafted versions
 

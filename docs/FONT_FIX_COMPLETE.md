@@ -38,11 +38,11 @@ Removed: `<link href="https://fonts.googleapis.com/...">`
 
 ## Build v0.2.7 Status
 
-**Location**: `/home/brad/Documents/VoxelWorld-1/VoxelWorld-1-vite/dist-electron/`
+**Location**: `/home/brad/Documents/The Long Nights-1/The Long Nights-1-vite/dist-electron/`
 
 ### Files:
-- `VoxelWorld-0.2.7-portable.exe` (Windows portable - 222MB)
-- `VoxelWorld-0.2.7.AppImage` (Linux native)
+- `The Long Nights-0.2.7-portable.exe` (Windows portable - 222MB)
+- `The Long Nights-0.2.7.AppImage` (Linux native)
 
 ### Verification ✅:
 - [x] Fonts unpacked to `app.asar.unpacked/dist/fonts/`
@@ -56,15 +56,15 @@ Removed: `<link href="https://fonts.googleapis.com/...">`
 
 ### Test with Wine (Windows build on Linux):
 ```bash
-cd /home/brad/Documents/VoxelWorld-1/VoxelWorld-1-vite/dist-electron
-wine VoxelWorld-0.2.7-portable.exe
+cd /home/brad/Documents/The Long Nights-1/The Long Nights-1-vite/dist-electron
+wine The Long Nights-0.2.7-portable.exe
 ```
 
 ### Test Native Linux:
 ```bash
-cd /home/brad/Documents/VoxelWorld-1/VoxelWorld-1-vite/dist-electron
-chmod +x VoxelWorld-0.2.7.AppImage
-./VoxelWorld-0.2.7.AppImage
+cd /home/brad/Documents/The Long Nights-1/The Long Nights-1-vite/dist-electron
+chmod +x The Long Nights-0.2.7.AppImage
+./The Long Nights-0.2.7.AppImage
 ```
 
 ## Expected Behavior
@@ -109,7 +109,7 @@ chmod +x VoxelWorld-0.2.7.AppImage
 
 4. **Enable Wine debug to see font loading**:
    ```bash
-   WINEDEBUG=+font wine VoxelWorld-0.2.7-portable.exe 2>&1 | grep -i font
+   WINEDEBUG=+font wine The Long Nights-0.2.7-portable.exe 2>&1 | grep -i font
    ```
 
 ## Technical Details

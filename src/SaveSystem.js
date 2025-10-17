@@ -100,7 +100,7 @@ export class SaveSystem {
     }
 
     /**
-     * 📦 Collect all save-worthy data from VoxelWorld
+     * 📦 Collect all save-worthy data from The Long Nights
      * @returns {object} Save data object
      */
     collectSaveData() {
@@ -207,7 +207,7 @@ export class SaveSystem {
      */
     saveToLocalStorage(slot, savePackage) {
         try {
-            const key = `VoxelWorld_Save_Slot_${slot}`;
+            const key = `The Long Nights_Save_Slot_${slot}`;
             const jsonData = JSON.stringify(savePackage);
             
             // Check size
@@ -251,7 +251,7 @@ export class SaveSystem {
             throw new Error(`No save data found in slot ${slot}`);
         }
 
-        // Apply save data to VoxelWorld
+        // Apply save data to The Long Nights
         this.applySaveData(savePackage.data);
 
         console.log(`✅ Game loaded from slot ${slot}!`);
@@ -290,7 +290,7 @@ export class SaveSystem {
      */
     loadFromLocalStorage(slot) {
         try {
-            const key = `VoxelWorld_Save_Slot_${slot}`;
+            const key = `The Long Nights_Save_Slot_${slot}`;
             const jsonData = localStorage.getItem(key);
             
             if (!jsonData) {
@@ -307,7 +307,7 @@ export class SaveSystem {
     }
 
     /**
-     * 🔄 Apply loaded save data to VoxelWorld
+     * 🔄 Apply loaded save data to The Long Nights
      */
     applySaveData(data) {
         const vw = this.voxelWorld;
@@ -434,7 +434,7 @@ export class SaveSystem {
             const filePath = `${this.saveDir}/${fileName}`;
             await this.electronAPI.deleteSaveFile(filePath);
         } else {
-            const key = `VoxelWorld_Save_Slot_${slot}`;
+            const key = `The Long Nights_Save_Slot_${slot}`;
             localStorage.removeItem(key);
         }
 

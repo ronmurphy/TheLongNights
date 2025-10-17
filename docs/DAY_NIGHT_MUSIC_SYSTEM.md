@@ -46,7 +46,7 @@ assets/music/forestNight.ogg  - Night ambience (calm, atmospheric)
 To add biome-specific music:
 
 ```javascript
-// In VoxelWorld.js initialization:
+// In The Long Nights.js initialization:
 if (currentBiome === 'forest') {
     await this.musicSystem.initDayNightMusic(
         '/music/forestDay.ogg',
@@ -302,7 +302,7 @@ this.nightTrack.pos(x, y, z);
 
 **Modified Files:**
 - `src/MusicSystem.js` - Added day/night crossfading (+~150 lines)
-- `src/VoxelWorld.js` - Integrated with day/night cycle (+10 lines)
+- `src/The Long Nights.js` - Integrated with day/night cycle (+10 lines)
 
 **New Music Files:**
 - `assets/music/forestNight.ogg` - New night ambience track

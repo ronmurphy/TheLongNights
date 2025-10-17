@@ -122,7 +122,7 @@ export class BlockResourcePool {
 
     /**
      * Register a material for a specific block type
-     * Called by VoxelWorld after materials are created with textures
+     * Called by The Long Nights after materials are created with textures
      * @param {string} blockType - Block type identifier ('grass', 'stone', etc.)
      * @param {THREE.Material} material - THREE.js material instance
      */
@@ -196,7 +196,7 @@ export class BlockResourcePool {
             material.dispose();
         }
 
-        // Note: Regular materials are managed by VoxelWorld, not disposed here
+        // Note: Regular materials are managed by The Long Nights, not disposed here
         // to avoid breaking existing mesh references
 
         this.geometries.clear();

@@ -168,7 +168,7 @@ this.textureAliases = {
 };
 ```
 
-### 3. Add functionality in VoxelWorld.js
+### 3. Add functionality in The Long Nights.js
 ```javascript
 // In appropriate handler (onMouseDown for tools, etc)
 if (activeItem === 'my_item' || activeItem === 'crafted_my_item') {

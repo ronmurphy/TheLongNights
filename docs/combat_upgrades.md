@@ -248,7 +248,7 @@ export class EquipmentSystem {
 ```
 
 **Integration:**
-- Import in `VoxelWorld.js`: `import { EquipmentSystem } from './EquipmentSystem.js';`
+- Import in `The Long Nights.js`: `import { EquipmentSystem } from './EquipmentSystem.js';`
 - Initialize: `this.equipmentSystem = new EquipmentSystem();`
 - Load in init: `await this.equipmentSystem.loadEquipment();`
 
@@ -739,8 +739,8 @@ playJumpAnimation() {
 
 - [ ] Create `src/data/equipment.json`
 - [ ] Create `src/EquipmentSystem.js`
-- [ ] Import EquipmentSystem in `VoxelWorld.js`
-- [ ] Initialize and load equipment in `VoxelWorld.init()`
+- [ ] Import EquipmentSystem in `The Long Nights.js`
+- [ ] Initialize and load equipment in `The Long Nights.init()`
 - [ ] Add equipment UI section to `CompanionCodex.js`
 - [ ] Add `createEquipmentSlot()` method to CompanionCodex
 - [ ] Add `openEquipmentSelector()` method to CompanionCodex

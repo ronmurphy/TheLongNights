@@ -1,7 +1,7 @@
 /**
  * 🎒 BackpackSystem - Backpack UI and Management (Adventurer's Theme)
  * 
- * Extracted from VoxelWorld.js to separate concerns
+ * Extracted from The Long Nights.js to separate concerns
  * Features:
  * - Modern parchment theme matching Explorer's Journal
  * - 70px slots with 36px icons

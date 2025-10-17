@@ -20,7 +20,7 @@ A **lightweight Level of Detail (LOD) system** that extends visual range using s
    - Debug tips
 
 ### Modified Files
-1. **`src/VoxelWorld.js`** - Integration points
+1. **`src/The Long Nights.js`** - Integration points
    - Import ChunkLODManager (line 23)
    - Initialize LOD manager after camera setup (line 7043)
    - Update LOD chunks in updateChunks() (line 8195)

@@ -8,7 +8,7 @@
 
 ## Overview
 
-Integrated `three-mesh-bvh` (Bounding Volume Hierarchy) to dramatically accelerate all raycasting operations in VoxelWorld. This makes block picking, breaking, placing, and collision detection **10-100x faster**.
+Integrated `three-mesh-bvh` (Bounding Volume Hierarchy) to dramatically accelerate all raycasting operations in The Long Nights. This makes block picking, breaking, placing, and collision detection **10-100x faster**.
 
 ---
 
@@ -57,7 +57,7 @@ With BVH:
 
 ## What Gets Accelerated
 
-### Every Raycast in VoxelWorld:
+### Every Raycast in The Long Nights:
 1. **Block picking** (every frame) - Finding block under crosshair
 2. **Block breaking** (on click) - Determining which block to remove
 3. **Block placing** (on click) - Finding adjacent face for new block
@@ -71,7 +71,7 @@ All of these now run **10-100x faster** automatically!
 
 ## Technical Implementation
 
-### 1. Import & Setup (VoxelWorld.js)
+### 1. Import & Setup (The Long Nights.js)
 ```javascript
 import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from 'three-mesh-bvh';
 
@@ -96,7 +96,7 @@ this.geometries.set('cube', cubeGeometry);
 - Zero runtime BVH computation overhead
 - All cube meshes get acceleration for free
 
-### 3. BVH on Dynamic Blocks (VoxelWorld.addBlock)
+### 3. BVH on Dynamic Blocks (The Long Nights.addBlock)
 ```javascript
 const cube = new THREE.Mesh(geo, mat);
 
@@ -136,7 +136,7 @@ this.scene.add(cube);
 ## Code Changes
 
 **Modified Files:**
-1. `src/VoxelWorld.js` - Added BVH imports and enabled acceleration (+5 lines)
+1. `src/The Long Nights.js` - Added BVH imports and enabled acceleration (+5 lines)
 2. `src/BlockResourcePool.js` - Pre-compute BVH on pooled geometries (+20 lines)
 
 **New Dependencies:**
@@ -200,7 +200,7 @@ console.timeEnd('raycast');
 3. **Multi-threaded BVH** - Build BVH in workers (for huge meshes)
 
 ### Currently Not Needed
-The current implementation is already extremely fast for VoxelWorld's use case.
+The current implementation is already extremely fast for The Long Nights's use case.
 
 ---
 
@@ -279,7 +279,7 @@ Root BoundingBox (entire world)
 
 ## Summary
 
-**BVH acceleration is now ACTIVE** for all raycasting in VoxelWorld!
+**BVH acceleration is now ACTIVE** for all raycasting in The Long Nights!
 
 ✅ **100x faster block picking**  
 ✅ **Smoother gameplay**  

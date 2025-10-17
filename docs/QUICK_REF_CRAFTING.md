@@ -116,7 +116,7 @@ See `ART_TODO_LIST.md` for details.
 
 ### Option 2: Install Systems (30 min)
 ```javascript
-// 1. Import in VoxelWorld.js
+// 1. Import in The Long Nights.js
 import { itemRegistry } from './ItemRegistry.js';
 import { CraftingUIEnhancer } from './CraftingUIEnhancer.js';
 import { MissingItemImplementations } from './MissingItemImplementations.js';

@@ -1,7 +1,7 @@
 /**
  * CombatSystem.js
  *
- * DCC TTRPG combat mechanics for VoxelWorld
+ * DCC TTRPG combat mechanics for The Long Nights
  * Opposed rolls, luck-based scaling, +3 margin to hit
  */
 

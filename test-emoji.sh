@@ -1,26 +1,26 @@
 #!/bin/bash
 
-echo "🎮 VoxelWorld v0.2.9 - Emoji Support Test"
+echo "🎮 The Long Nights v0.2.9 - Emoji Support Test"
 echo "========================================"
 echo ""
 
-cd /home/brad/Documents/VoxelWorld-1/VoxelWorld-1-vite/dist-electron
+cd /home/brad/Documents/The Long Nights-1/The Long Nights-1-vite/dist-electron
 
 echo "📦 Available builds:"
-ls -lh VoxelWorld-0.2.9* | awk '{print "  ", $9, "("$5")"}'
+ls -lh The Long Nights-0.2.9* | awk '{print "  ", $9, "("$5")"}'
 echo ""
 
 echo "🧪 Test Options:"
 echo "----------------"
 echo ""
 echo "1. Test Windows Portable with Wine (emoji via Noto Color Emoji)"
-echo "   wine VoxelWorld-0.2.9-portable.exe"
+echo "   wine The Long Nights-0.2.9-portable.exe"
 echo ""
 echo "2. Test Linux Native (guaranteed emoji support)"
-echo "   ./VoxelWorld-0.2.9.AppImage"
+echo "   ./The Long Nights-0.2.9.AppImage"
 echo ""
 echo "3. Debug emoji font loading in Wine"
-echo "   WINEDEBUG=+font wine VoxelWorld-0.2.9-portable.exe 2>&1 | grep -i emoji"
+echo "   WINEDEBUG=+font wine The Long Nights-0.2.9-portable.exe 2>&1 | grep -i emoji"
 echo ""
 echo "4. Check Wine emoji fonts"
 echo "   wine cmd /c 'fc-list' 2>/dev/null | grep -i emoji"
@@ -34,18 +34,18 @@ case $choice in
         echo "🍷 Testing Windows portable with Wine..."
         echo "Look for emoji in: file names, billboards, UI elements"
         echo ""
-        wine VoxelWorld-0.2.9-portable.exe
+        wine The Long Nights-0.2.9-portable.exe
         ;;
     2)
         echo ""
         echo "🐧 Testing Linux native..."
-        chmod +x VoxelWorld-0.2.9.AppImage
-        ./VoxelWorld-0.2.9.AppImage
+        chmod +x The Long Nights-0.2.9.AppImage
+        ./The Long Nights-0.2.9.AppImage
         ;;
     3)
         echo ""
         echo "🔍 Debugging emoji font loading..."
-        WINEDEBUG=+font wine VoxelWorld-0.2.9-portable.exe 2>&1 | grep -i emoji
+        WINEDEBUG=+font wine The Long Nights-0.2.9-portable.exe 2>&1 | grep -i emoji
         ;;
     4)
         echo ""
@@ -55,8 +55,8 @@ case $choice in
     *)
         echo ""
         echo "ℹ️  To test manually:"
-        echo "  cd /home/brad/Documents/VoxelWorld-1/VoxelWorld-1-vite/dist-electron"
-        echo "  wine VoxelWorld-0.2.9-portable.exe"
+        echo "  cd /home/brad/Documents/The Long Nights-1/The Long Nights-1-vite/dist-electron"
+        echo "  wine The Long Nights-0.2.9-portable.exe"
         ;;
 esac
 

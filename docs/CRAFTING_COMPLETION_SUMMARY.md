@@ -95,7 +95,7 @@ Based on analysis of your codebase:
 
 Follow `CRAFTING_ENHANCEMENT_INTEGRATION.md` step-by-step:
 
-1. Import new modules into VoxelWorld.js
+1. Import new modules into The Long Nights.js
 2. Initialize ItemRegistry on startup
 3. Enhance each crafting system's UI
 4. Install missing item implementations
@@ -106,7 +106,7 @@ Follow `CRAFTING_ENHANCEMENT_INTEGRATION.md` step-by-step:
 If you just want items to work, skip the UI enhancements:
 
 ```javascript
-// In VoxelWorld.js constructor
+// In The Long Nights.js constructor
 import { MissingItemImplementations } from './MissingItemImplementations.js';
 
 // After initialization

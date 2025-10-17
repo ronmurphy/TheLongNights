@@ -16,7 +16,7 @@ let worldSeed = 0;
 let biomes = null;
 let noiseParams = null;
 
-// 🎨 BLOCK COLOR REGISTRY - Must match VoxelWorld.js blockTypes!
+// 🎨 BLOCK COLOR REGISTRY - Must match The Long Nights.js blockTypes!
 // Used for LOD chunks to get exact block colors instead of biome gradients
 const BLOCK_COLORS = {
     grass: 0x228B22,      // Forest green
@@ -181,7 +181,7 @@ function generateChunk({ chunkX, chunkZ, chunkSize }) {
             waterMap[heightIndex] = (height < WATER_LEVEL) ? 1 : 0; // Mark if this position has water
 
             // NOTE: Tree generation disabled in worker - let main thread handle it
-            // Trees need to be registered in VoxelWorld's tree registry for harvesting
+            // Trees need to be registered in The Long Nights's tree registry for harvesting
             // Worker-generated trees would bypass the tree ID system
         }
     }
@@ -194,7 +194,7 @@ function generateChunk({ chunkX, chunkZ, chunkSize }) {
     const colors = new Uint32Array(blockCount); // Color as hex
     const flags = new Uint8Array(blockCount); // isPlayerPlaced, etc.
 
-    // Block type mapping (must match ChunkSerializer, WorkerManager, VoxelWorld.js!)
+    // Block type mapping (must match ChunkSerializer, WorkerManager, The Long Nights.js!)
     const blockTypeMap = {
         'bedrock': 0, 'grass': 1, 'sand': 2, 'stone': 3, 'iron': 4, 'snow': 5, 'water': 6, 'dirt': 7, 'pumpkin': 8, 'gold': 9,
         'oak_wood': 10, 'pine_wood': 11, 'birch_wood': 12, 'palm_wood': 13, 'dead_wood': 14,
@@ -379,7 +379,7 @@ function generateLODChunk({ chunkX, chunkZ, chunkSize }) {
                 const biome = getBiomeAt(worldX, worldZ);
                 const baseTreeChance = biome.treeChance || 0.08;
 
-                // 🌲 MATCH TREEWORKER: Use OLD working formula from VoxelWorld-X
+                // 🌲 MATCH TREEWORKER: Use OLD working formula from The Long Nights-X
                 const biomeDensityMultipliers = {
                     'Forest': 8,
                     'Plains': 10,
@@ -547,7 +547,7 @@ function getTreeTypeForBiome(biome) {
 }
 
 function getLeavesTypeForBiome(biome) {
-    // Map biome names to leaf types that exist in VoxelWorld.js
+    // Map biome names to leaf types that exist in The Long Nights.js
     if (biome.name === 'Forest') return 'forest_leaves';
     if (biome.name === 'Mountain') return 'mountain_leaves';
     if (biome.name === 'Plains') return 'plains_leaves';

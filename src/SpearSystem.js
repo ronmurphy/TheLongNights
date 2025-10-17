@@ -243,7 +243,7 @@ export class SpearSystem {
         const textureKey = 'stone_spear';
         let texture;
 
-        // Check if cache exists first (it's initialized in VoxelWorld constructor)
+        // Check if cache exists first (it's initialized in The Long Nights constructor)
         if (this.voxelWorld.billboardTextureCache && this.voxelWorld.billboardTextureCache.has(textureKey)) {
             texture = this.voxelWorld.billboardTextureCache.get(textureKey);
         } else {
@@ -347,7 +347,7 @@ export class SpearSystem {
 
     /**
      * Remove a spear from tracking when harvested
-     * Called by VoxelWorld when spear is harvested like a world item
+     * Called by The Long Nights when spear is harvested like a world item
      */
     removeSpear(spearMesh) {
         const index = this.thrownSpears.findIndex(s => s.mesh === spearMesh);

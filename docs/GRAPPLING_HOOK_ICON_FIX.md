@@ -11,7 +11,7 @@ The enhanced graphics system needed two things configured:
 
 ## Solution - Two Files Updated
 
-### 1. VoxelWorld.js - Added Grappling Hook to Tool List
+### 1. The Long Nights.js - Added Grappling Hook to Tool List
 **Line ~2225** - Added `grappling_hook` and `crafted_grappling_hook` to the enhanced graphics tool check:
 
 ```javascript
@@ -38,7 +38,7 @@ this.textureAliases = {
 ### Icon Loading Flow:
 1. Player crafts grappling hook → gets `crafted_grappling_hook` item
 2. Inventory displays the item → calls `getItemIcon('crafted_grappling_hook', 'hotbar')`
-3. VoxelWorld checks if it's in the enhanced graphics tool list → **YES** ✅
+3. The Long Nights checks if it's in the enhanced graphics tool list → **YES** ✅
 4. Calls `enhancedGraphics.getHotbarToolIcon('crafted_grappling_hook', '❓')`
 5. EnhancedGraphics checks textureAliases → maps to `'grapple'`
 6. Loads image from `art/tools/grapple.png`
@@ -60,7 +60,7 @@ The icon should now display correctly in:
 
 ## File Locations
 - Asset file: `/assets/art/tools/grapple.png` ✅
-- Code check: `VoxelWorld.js` line ~2225
+- Code check: `The Long Nights.js` line ~2225
 - Alias map: `EnhancedGraphics.js` line ~47
 - Icon definitions: `CompanionCodex.js` line 59, 66
 
@@ -68,14 +68,14 @@ The icon should now display correctly in:
 To add new tool icons, you need:
 
 1. **Place PNG file** in `/assets/art/tools/`
-2. **Add to tool list** in VoxelWorld.js `getItemIcon()` function
+2. **Add to tool list** in The Long Nights.js `getItemIcon()` function
 3. **Add texture alias** (if code name ≠ filename) in EnhancedGraphics.js
 4. **Define in CompanionCodex** (if used for companion stats)
 
 Example for a new "magic_wand" tool with file "wand.png":
 
 ```javascript
-// VoxelWorld.js - line ~2225
+// The Long Nights.js - line ~2225
 if (['machete', ..., 'magic_wand'].includes(itemType)) {
 
 // EnhancedGraphics.js - line ~47

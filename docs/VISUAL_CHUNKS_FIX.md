@@ -46,7 +46,7 @@ this.visualDistance = 3;  // ❌ Too far
 this.visualDistance = 2;  // ✅ renderDistance + 2 max
 ```
 
-### 4. Fixed Fog Fallback (VoxelWorld.js line 6893)
+### 4. Fixed Fog Fallback (The Long Nights.js line 6893)
 **Before:**
 ```javascript
 const visualDist = this.lodManager ? this.lodManager.visualDistance : 3;  // ❌ Wrong default
@@ -136,7 +136,7 @@ During the performance optimization, I accidentally:
    - Line 222: Removed duplicate broken function
    - Line 28: visualDistance = 2 (was 3)
 
-2. **`src/VoxelWorld.js`**
+2. **`src/The Long Nights.js`**
    - Line 6893: Fog fallback visualDistance = 2 (was 3)
 
 The visual chunks should now work exactly as you originally designed! 🎨✨

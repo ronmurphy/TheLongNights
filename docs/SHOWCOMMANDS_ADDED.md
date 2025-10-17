@@ -81,7 +81,7 @@ Now shows:
 When you run `showCommands()`, you see:
 
 ```
-🎮 VoxelWorld Console Commands
+🎮 The Long Nights Console Commands
 
 📦 Item & Block Commands:
   giveItem("name", quantity)     - Add item to inventory

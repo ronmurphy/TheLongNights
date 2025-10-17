@@ -79,7 +79,7 @@ const totalWidth = interiorWidth + 2;
 // 3. Sloped stone roof
 ```
 
-#### 2. **VoxelWorld.js** (Lines 609-645)
+#### 2. **The Long Nights.js** (Lines 609-645)
 
 **Integration Code:**
 ```javascript
@@ -145,7 +145,7 @@ if (this.selectedPlan === 'house') {
 
 ### getClosestSideToPlayer(buildingX, buildingZ)
 
-**Location:** VoxelWorld.js (Lines 533-551)
+**Location:** The Long Nights.js (Lines 533-551)
 
 **Purpose:** Determines which wall should have the door based on player position
 
@@ -280,7 +280,7 @@ Door:   2×2 cutout at groundY+1 and groundY+2
 
 **Problems:**
 - ❌ Used THREE.js Group with separate wall/floor/ceiling meshes
-- ❌ ~200 lines of mesh creation code in VoxelWorld.js
+- ❌ ~200 lines of mesh creation code in The Long Nights.js
 - ❌ Inconsistent with voxel world (not real blocks)
 - ❌ Complex collision detection setup
 - ❌ Difficult to modify or extend
@@ -383,7 +383,7 @@ if (this.biomeWorldGen && this.biomeWorldGen.structureGenerator) {
 
 - **BiomeWorldGen.js**: Provides StructureGenerator instance
 - **StructureGenerator.js**: Core house generation logic
-- **VoxelWorld.js**: Block placement and world integration
+- **The Long Nights.js**: Block placement and world integration
 - **WorkbenchSystem.js**: Crafting UI and dimension controls
 - **Inventory.js**: Material consumption and item management
 
@@ -406,7 +406,7 @@ if (this.biomeWorldGen && this.biomeWorldGen.structureGenerator) {
 
 ### Code Cleanup
 
-**Removed from VoxelWorld.js:**
+**Removed from The Long Nights.js:**
 - ~200 lines of THREE.js Group mesh creation
 - Complex wall/floor/ceiling geometry code
 - Manual collision body setup

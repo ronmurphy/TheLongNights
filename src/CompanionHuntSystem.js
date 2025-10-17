@@ -391,7 +391,7 @@ export class CompanionHuntSystem {
      * Get biome at a position
      */
     getBiomeAtPosition(position) {
-        // Use VoxelWorld's biome detection
+        // Use The Long Nights's biome detection
         if (this.voxelWorld.getBiomeAt) {
             return this.voxelWorld.getBiomeAt(position.x, position.z);
         }

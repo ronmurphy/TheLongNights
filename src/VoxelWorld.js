@@ -71,7 +71,7 @@ class NebulaVoxelApp {
         this.chunkSize = 8;  // Reduced from 12 for better performance
 
         // Load render distance from user preference first, then benchmark cache
-        const userPrefKey = 'voxelWorld_renderDistancePref';
+        const userPrefKey = 'longNights_renderDistancePref';
         const userPref = localStorage.getItem(userPrefKey);
 
         if (userPref !== null) {
@@ -80,7 +80,7 @@ class NebulaVoxelApp {
             console.log(`📊 Loaded user render distance preference: ${this.renderDistance}`);
         } else {
             // No user preference, use benchmark result
-            const benchmarkKey = 'voxelWorld_performanceBenchmark';
+            const benchmarkKey = 'longNights_performanceBenchmark';
             const storedBenchmark = localStorage.getItem(benchmarkKey);
             if (storedBenchmark) {
                 const result = JSON.parse(storedBenchmark);
@@ -3729,7 +3729,7 @@ class NebulaVoxelApp {
                 document.exitPointerLock();
             }
 
-            // Disable VoxelWorld input controls while journal is open
+            // Disable The Long Nights input controls while journal is open
             this.controlsEnabled = false;
             console.log('🔒 Disabled input controls for Explorer\'s Journal');
 
@@ -3752,7 +3752,7 @@ class NebulaVoxelApp {
             setTimeout(() => {
                 this.worldMapModal.style.display = 'none';
 
-                // Re-enable VoxelWorld input controls when journal closes
+                // Re-enable The Long Nights input controls when journal closes
                 this.controlsEnabled = true;
                 console.log('✅ Re-enabled input controls after closing Explorer\'s Journal');
 
@@ -4476,7 +4476,7 @@ class NebulaVoxelApp {
             this.workbenchCamera.lookAt(0, 0, 0);
 
             // 🎮 Use same GPU preference as main renderer (defaults to low-power)
-            const gpuPreference = localStorage.getItem('voxelWorld_gpuPreference') || 'low-power';
+            const gpuPreference = localStorage.getItem('longNights_gpuPreference') || 'low-power';
 
             this.workbenchRenderer = new THREE.WebGLRenderer({
                 antialias: true,
@@ -6614,7 +6614,7 @@ class NebulaVoxelApp {
         window.clearAllData = () => {
             console.log('🧹 Clearing all localStorage and IndexedDB data...');
             localStorage.clear(); // This includes campfire respawn data
-            indexedDB.deleteDatabase('VoxelWorld').onsuccess = () => {
+            indexedDB.deleteDatabase('The Long Nights').onsuccess = () => {
                 console.log('✅ All data cleared (including campfire respawn)! Reloading page...');
                 location.reload();
             };
@@ -6652,8 +6652,8 @@ class NebulaVoxelApp {
 
             // 6. Clear all IndexedDB databases
             console.log('🧹 Clearing IndexedDB databases...');
-            indexedDB.deleteDatabase('VoxelWorld').onsuccess = () => {
-                console.log('✅ VoxelWorld database deleted');
+            indexedDB.deleteDatabase('The Long Nights').onsuccess = () => {
+                console.log('✅ The Long Nights database deleted');
             };
             indexedDB.deleteDatabase('ChunkPersistence').onsuccess = () => {
                 console.log('✅ ChunkPersistence database deleted');
@@ -6790,7 +6790,7 @@ class NebulaVoxelApp {
                 this.workerManager.worker.postMessage({ type: 'CLEAR_CACHE' });
             }
 
-            // 5. Clear ChunkPersistence IndexedDB (terrain cache) but keep VoxelWorld (saved games)
+            // 5. Clear ChunkPersistence IndexedDB (terrain cache) but keep The Long Nights (saved games)
             console.log('🧹 Clearing ChunkPersistence database (terrain cache)...');
             indexedDB.deleteDatabase('ChunkPersistence').onsuccess = () => {
                 console.log('✅ ChunkPersistence database deleted');
@@ -6798,8 +6798,8 @@ class NebulaVoxelApp {
 
             // 6. Clear performance benchmarks (not game data)
             console.log('🧹 Clearing performance benchmarks...');
-            localStorage.removeItem('voxelWorld_performanceBenchmark');
-            localStorage.removeItem('voxelWorld_renderDistancePref');
+            localStorage.removeItem('longNights_performanceBenchmark');
+            localStorage.removeItem('longNights_renderDistancePref');
 
             // 7. Clear tutorial flags (you can see tutorials again)
             console.log('🧹 Clearing tutorial flags...');
@@ -7097,7 +7097,7 @@ class NebulaVoxelApp {
         // 📋 HELP UTILITY: Show all available commands
         // Can be called from browser console: showCommands()
         window.showCommands = () => {
-            console.log('%c🎮 VoxelWorld Console Commands', 'font-size: 16px; font-weight: bold; color: #4CAF50;');
+            console.log('%c🎮 The Long Nights Console Commands', 'font-size: 16px; font-weight: bold; color: #4CAF50;');
             console.log('');
             
             console.log('%c📦 Item & Block Commands:', 'font-weight: bold; color: #2196F3;');
@@ -7182,8 +7182,8 @@ class NebulaVoxelApp {
         // 🌱 DEBUG UTILITY: Clear saved seed
         // Can be called from browser console: clearSeed()
         window.clearSeed = () => {
-            localStorage.removeItem('voxelWorld_debugSeed');
-            localStorage.removeItem('voxelWorld_seed');
+            localStorage.removeItem('longNights_debugSeed');
+            localStorage.removeItem('longNights_seed');
             console.log('✅ Seed cleared! Refresh page to generate new random world.');
             this.updateStatus('🌱 Seed cleared! Refresh to generate new world.', 'success');
         };
@@ -7195,7 +7195,7 @@ class NebulaVoxelApp {
                 console.error('❌ Seed must be a number');
                 return;
             }
-            localStorage.setItem('voxelWorld_debugSeed', newSeed.toString());
+            localStorage.setItem('longNights_debugSeed', newSeed.toString());
             console.log(`✅ Seed set to ${newSeed}! Refresh page to apply.`);
             this.updateStatus(`🎲 Seed set to ${newSeed}! Refresh to apply.`, 'success');
         };
@@ -7208,9 +7208,9 @@ class NebulaVoxelApp {
         // Initialize seed system - persist across reloads
         let storedSeed = null;
         if (USE_DEBUG_SEED) {
-            storedSeed = localStorage.getItem('voxelWorld_debugSeed');
+            storedSeed = localStorage.getItem('longNights_debugSeed');
         } else {
-            storedSeed = localStorage.getItem('voxelWorld_seed');
+            storedSeed = localStorage.getItem('longNights_seed');
         }
 
         if (storedSeed) {
@@ -7219,11 +7219,11 @@ class NebulaVoxelApp {
         } else {
             if (USE_DEBUG_SEED) {
                 this.worldSeed = DEBUG_SEED;
-                localStorage.setItem('voxelWorld_debugSeed', this.worldSeed.toString());
+                localStorage.setItem('longNights_debugSeed', this.worldSeed.toString());
                 console.log(`🧪 DEBUG MODE: Using fixed seed: ${this.worldSeed}`);
             } else {
                 this.worldSeed = this.generateInitialSeed();
-                localStorage.setItem('voxelWorld_seed', this.worldSeed.toString());
+                localStorage.setItem('longNights_seed', this.worldSeed.toString());
                 console.log(`🌍 Generated new world seed: ${this.worldSeed}`);
             }
         }
@@ -7232,8 +7232,8 @@ class NebulaVoxelApp {
         // Hardware performance benchmark
         // Hardware performance benchmark - DUAL MODE SYSTEM
         this.runPerformanceBenchmark = async () => {
-            const benchmarkKey = 'voxelWorld_performanceBenchmark';
-            const gpuPreference = localStorage.getItem('voxelWorld_gpuPreference') || 'low-power';
+            const benchmarkKey = 'longNights_performanceBenchmark';
+            const gpuPreference = localStorage.getItem('longNights_gpuPreference') || 'low-power';
             const storedResult = localStorage.getItem(benchmarkKey);
 
             // Check if we have a valid cached benchmark for current GPU mode
@@ -7259,7 +7259,7 @@ class NebulaVoxelApp {
 
         // 🔋 LOW POWER BENCHMARK - Conservative thresholds for iGPU
         this.runLowPowerBenchmark = async () => {
-            const benchmarkKey = 'voxelWorld_performanceBenchmark';
+            const benchmarkKey = 'longNights_performanceBenchmark';
             this.updateStatus('Running low-power benchmark (iGPU optimized)...');
 
             // Smaller test scene for iGPU
@@ -7329,7 +7329,7 @@ class NebulaVoxelApp {
 
         // ⚡ HIGH PERFORMANCE BENCHMARK - Aggressive thresholds for dGPU
         this.runHighPerformanceBenchmark = async () => {
-            const benchmarkKey = 'voxelWorld_performanceBenchmark';
+            const benchmarkKey = 'longNights_performanceBenchmark';
             this.updateStatus('Running high-performance benchmark (dGPU optimized)...');
 
             // Larger test scene for dGPU
@@ -8206,7 +8206,7 @@ class NebulaVoxelApp {
         // 🌫️ Update fog now that LOD manager exists (fixes fog distance calculation)
         this.updateFog();
         // �🎮 Get user's GPU preference (default to low-power for broader compatibility)
-        const gpuPreference = localStorage.getItem('voxelWorld_gpuPreference') || 'low-power';
+        const gpuPreference = localStorage.getItem('longNights_gpuPreference') || 'low-power';
 
         this.renderer = new THREE.WebGLRenderer({
             antialias: true,
@@ -9690,7 +9690,7 @@ class NebulaVoxelApp {
 
         // Save/Load system methods
         this.updateStatus = (message) => {
-            console.log(`[VoxelWorld] ${message}`);
+            console.log(`[The Long Nights] ${message}`);
             // Could add UI status display here later
         };
 
@@ -11385,7 +11385,7 @@ class NebulaVoxelApp {
                     const normal = hit.face.normal;
                     const placePos = pos.clone().add(normal);
 
-                    // 🎯 Use HotbarSystem's selectedSlot (not VoxelWorld's old selectedSlot)
+                    // 🎯 Use HotbarSystem's selectedSlot (not The Long Nights's old selectedSlot)
                     const selectedSlot = this.hotbarSystem.getSelectedSlot();
                     const selectedBlock = selectedSlot?.itemType;
 
@@ -11959,7 +11959,7 @@ class NebulaVoxelApp {
         `;
         // Get max render distance from benchmark
         const getMaxRenderDistance = () => {
-            const benchmarkKey = 'voxelWorld_performanceBenchmark';
+            const benchmarkKey = 'longNights_performanceBenchmark';
             const storedResult = localStorage.getItem(benchmarkKey);
             if (storedResult) {
                 const result = JSON.parse(storedResult);
@@ -11970,7 +11970,7 @@ class NebulaVoxelApp {
 
         // Get current render distance setting (user preference or benchmark)
         const getCurrentRenderDistance = () => {
-            const userPref = localStorage.getItem('voxelWorld_renderDistancePref');
+            const userPref = localStorage.getItem('longNights_renderDistancePref');
             if (userPref !== null) {
                 return parseInt(userPref);
             }
@@ -11979,7 +11979,7 @@ class NebulaVoxelApp {
 
         // 🎮 Get GPU preference label
         const getGPUPreferenceLabel = () => {
-            const pref = localStorage.getItem('voxelWorld_gpuPreference') || 'low-power';
+            const pref = localStorage.getItem('longNights_gpuPreference') || 'low-power';
             const labels = {
                 'high-performance': '⚡ High Performance (dGPU)',
                 'low-power': '🔋 Low Power (iGPU)',
@@ -11990,7 +11990,7 @@ class NebulaVoxelApp {
 
         // 🎮 Get benchmark mode label
         const getBenchmarkLabel = () => {
-            const pref = localStorage.getItem('voxelWorld_gpuPreference') || 'low-power';
+            const pref = localStorage.getItem('longNights_gpuPreference') || 'low-power';
             const labels = {
                 'high-performance': '⚡ Re-run Benchmark (dGPU)',
                 'low-power': '🔋 Re-run Benchmark (iGPU)',
@@ -12794,8 +12794,8 @@ class NebulaVoxelApp {
         const reRunBenchmark = async () => {
             modal.style.display = 'none';
             // Clear stored benchmark result to force re-run
-            localStorage.removeItem('voxelWorld_performanceBenchmark');
-            localStorage.removeItem('voxelWorld_renderDistancePref'); // Clear user preference too
+            localStorage.removeItem('longNights_performanceBenchmark');
+            localStorage.removeItem('longNights_renderDistancePref'); // Clear user preference too
             await this.runPerformanceBenchmark();
         };
 
@@ -12807,7 +12807,7 @@ class NebulaVoxelApp {
             const next = current >= maxRenderDistance ? 0 : current + 1;
 
             // Save user preference
-            localStorage.setItem('voxelWorld_renderDistancePref', next.toString());
+            localStorage.setItem('longNights_renderDistancePref', next.toString());
             this.renderDistance = next;
 
             // 🌫️ Update fog for new render distance using centralized updateFog()
@@ -12828,12 +12828,12 @@ class NebulaVoxelApp {
         // 🎮 GPU Preference Cycling
         const cycleGPUPreference = () => {
             const preferences = ['high-performance', 'low-power', 'default'];
-            const current = localStorage.getItem('voxelWorld_gpuPreference') || 'low-power';
+            const current = localStorage.getItem('longNights_gpuPreference') || 'low-power';
             const currentIndex = preferences.indexOf(current);
             const next = preferences[(currentIndex + 1) % preferences.length];
 
             // Save preference
-            localStorage.setItem('voxelWorld_gpuPreference', next);
+            localStorage.setItem('longNights_gpuPreference', next);
 
             // Show message about automatic reload
             this.updateStatus('🎮 GPU preference changed! Reloading game...', 'info', false);
@@ -13312,7 +13312,7 @@ class NebulaVoxelApp {
         this.statusBar = statusBar;
         // Enhanced notification system
         this.updateStatus = (message, type = 'info', autoDismiss = true) => {
-            console.log(`[VoxelWorld] ${message}`);
+            console.log(`[The Long Nights] ${message}`);
 
             if (!this.statusBar || !this.statusIcon || !this.statusText) return;
 
@@ -13893,8 +13893,8 @@ class NebulaVoxelApp {
     }
 }
 
-export async function initVoxelWorld(container, splashScreen = null) {
-    console.log('🔧 initVoxelWorld called with container:', container);
+export async function initThe Long Nights(container, splashScreen = null) {
+    console.log('🔧 initThe Long Nights called with container:', container);
 
     try {
         if (splashScreen) {
@@ -13978,7 +13978,7 @@ export async function initVoxelWorld(container, splashScreen = null) {
         app.refreshAllBlockTextures();
         console.log('🔄 All block textures refreshed after Enhanced Graphics initialization');
 
-        console.log('✅ VoxelWorld initialization completed');
+        console.log('✅ The Long Nights initialization completed');
 
         // Note: First-time tutorial is handled by App.js intro sequence with companion selection
         // Returning players will get contextual tutorials as they play
@@ -13990,7 +13990,7 @@ export async function initVoxelWorld(container, splashScreen = null) {
 
         return app;
     } catch (error) {
-        console.error('❌ Error in initVoxelWorld:', error);
+        console.error('❌ Error in initThe Long Nights:', error);
         throw error;
     }
 }

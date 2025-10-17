@@ -18,7 +18,7 @@ share, sorry.  so we need to look at the new biome gen .. and we can look at the
     - Coordinate conversion issues between chunk and world coordinates
     - Missing or incorrect addBlock calls
   2. Need to Compare with Working Version:
-    - Look at VoxelWorld copy.js to see what the original working biome generation looked like
+    - Look at The Long Nights copy.js to see what the original working biome generation looked like
     - Understand the differences between old and new systems
     - Identify what we might have missed in the new implementation
   3. Analysis Required:
@@ -73,7 +73,7 @@ share, sorry.  so we need to look at the new biome gen .. and we can look at the
 
   Let me check what the original working system looked like.
 
-● Bash(grep -n -A 20 -B 5 "addBlock.*height" "/home/brad/Documents/VoxelWorld-1/VoxelWorld-1-vite/src/VoxelWorld copy.js")
+● Bash(grep -n -A 20 -B 5 "addBlock.*height" "/home/brad/Documents/The Long Nights-1/The Long Nights-1-vite/src/The Long Nights copy.js")
   ⎿  4211-                                   snowNoise > -0.3; // 70% chance for snow based on noise
      4212-
      4213-                    const surfaceBlock = hasSnow ? 'snow' : biome.surfaceBlock;
@@ -91,7 +91,7 @@ share, sorry.  so we need to look at the new biome gen .. and we can look at the
   So the block placement pattern isn't the issue. The problem must be in the height calculation! Let me check how height was calculated
    in the original system.
 
-● Bash(grep -n -A 10 -B 10 "height.*=" "/home/brad/Documents/VoxelWorld-1/VoxelWorld-1-vite/src/VoxelWorld copy.js" | grep -A 15 -B 15
+● Bash(grep -n -A 10 -B 10 "height.*=" "/home/brad/Documents/The Long Nights-1/The Long Nights-1-vite/src/The Long Nights copy.js" | grep -A 15 -B 15
       "biome\|noise")
   ⎿  452-            // Create canvas with emoji                     
      453-            const canvas = document.createElement('canvas');
@@ -155,7 +155,7 @@ share, sorry.  so we need to look at the new biome gen .. and we can look at the
 
   Now let me check what the original working biome definitions looked like to see what the heights should be.
 
-● Bash(grep -n -A 3 -B 1 "minHeight\|maxHeight" "/home/brad/Documents/VoxelWorld-1/VoxelWorld-1-vite/src/VoxelWorld copy.js")
+● Bash(grep -n -A 3 -B 1 "minHeight\|maxHeight" "/home/brad/Documents/The Long Nights-1/The Long Nights-1-vite/src/The Long Nights copy.js")
   ⎿  4097-                color: 0x228B22, // Forest green
      4098:                minHeight: -2,
      4099:                maxHeight: 4,
@@ -214,7 +214,7 @@ share, sorry.  so we need to look at the new biome gen .. and we can look at the
 
   Now I can see the issue! Let me check what the original seededNoise function looked like to compare the value ranges.
 
-● Bash(grep -n -A 10 "seededNoise.*=" "/home/brad/Documents/VoxelWorld-1/VoxelWorld-1-vite/src/VoxelWorld copy.js")
+● Bash(grep -n -A 10 "seededNoise.*=" "/home/brad/Documents/The Long Nights-1/The Long Nights-1-vite/src/The Long Nights copy.js")
   ⎿  597:        this.seededNoise = (x, z, seed) => {                                                     
      598-            // Use seed to create consistent but different noise patterns
      599-            const n1 = Math.sin((x * 0.05 + seed * 0.001)) * Math.cos((z * 0.05 + seed * 0.002));

@@ -67,7 +67,7 @@ setSeed(99999)
 
 ## Debug Mode Status
 
-**Current Settings** (in VoxelWorld.js):
+**Current Settings** (in The Long Nights.js):
 ```javascript
 const USE_DEBUG_SEED = true;  // Set to false for production
 const DEBUG_SEED = 12345;      // Fixed seed when debug mode on
@@ -192,7 +192,7 @@ The backpack spawns at world origin (0, ?, 0) on the ground. If you can't find i
 
 Before releasing:
 ```javascript
-// In VoxelWorld.js, change:
+// In The Long Nights.js, change:
 const USE_DEBUG_SEED = false;  // Disable debug mode
 
 // Optionally, remove debug commands:

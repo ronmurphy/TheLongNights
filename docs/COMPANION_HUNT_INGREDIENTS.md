@@ -147,6 +147,6 @@ Once eggs are obtainable:
 
 ## 📂 Related Files
 - `/src/KitchenBenchSystem.js` - Full recipe definitions
-- `/src/VoxelWorld.js` - Kitchen bench integration
+- `/src/The Long Nights.js` - Kitchen bench integration
 - `/src/WorkbenchSystem.js` - Kitchen bench crafting (2 oak_wood + 2 pine_wood + iron + coal)
 - `/docs/KITCHEN_BENCH_SYSTEM.md` - Complete system documentation

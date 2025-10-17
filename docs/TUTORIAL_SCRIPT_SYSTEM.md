@@ -54,7 +54,7 @@ if (app.tutorialSystem && !playerData.tutorialsSeen?.game_start) {
 }
 ```
 
-### 2. VoxelWorld.js - Machete Selection
+### 2. The Long Nights.js - Machete Selection
 ```javascript
 // FIND: Hotbar selection code (around line 2741)
 selectHotbarSlot(index) {
@@ -161,7 +161,7 @@ open() {
 }
 ```
 
-### 7. VoxelWorld.js - Block Placement
+### 7. The Long Nights.js - Block Placement
 ```javascript
 // FIND: Block placement code for workbench/campfire
 addBlock(x, y, z, type) {
@@ -312,7 +312,7 @@ game.tutorialSystem.tutorialsSeen
 
 - ✅ **System Built** - `TutorialScriptSystem.js` complete
 - ✅ **Scripts Written** - 20 tutorials in `tutorialScripts.json`
-- ✅ **System Initialized** - VoxelWorld.js line 306
+- ✅ **System Initialized** - The Long Nights.js line 306
 - ✅ **Build Successful** - 1,452.61 KB
 - ⚠️ **Needs Hooks** - Add 10 event hooks (see above)
 

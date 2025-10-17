@@ -1,9 +1,9 @@
-# 🎮 VoxelWorld GPU Switches - Quick Guide
+# 🎮 The Long Nights GPU Switches - Quick Guide
 
 ## 🪟 **Windows Users**
 
 ### Quick Setup (30 seconds):
-1. Right-click **VoxelWorld.exe**
+1. Right-click **The Long Nights.exe**
 2. Select "**Create shortcut**"
 3. Right-click the shortcut → "**Properties**"
 4. In "**Target**" field, add at the end:
@@ -12,7 +12,7 @@
    ```
 5. Should look like:
    ```
-   "C:\...\VoxelWorld.exe" --force_high_performance_gpu --disable-gpu-vsync
+   "C:\...\The Long Nights.exe" --force_high_performance_gpu --disable-gpu-vsync
    ```
 6. Click "**OK**"
 7. Use this shortcut to launch game
@@ -22,21 +22,21 @@
 ## 🐧 **Linux Users**
 
 ### Quick Setup (30 seconds):
-1. Open terminal where VoxelWorld is located
+1. Open terminal where The Long Nights is located
 2. Make executable (first time only):
    ```bash
-   chmod +x VoxelWorld
+   chmod +x The Long Nights
    ```
 3. Launch with switches:
    ```bash
-   ./VoxelWorld --force_high_performance_gpu --disable-gpu-vsync
+   ./The Long Nights --force_high_performance_gpu --disable-gpu-vsync
    ```
 
 Or create a launcher script:
 ```bash
 echo '#!/bin/bash
-cd /path/to/VoxelWorld
-./VoxelWorld --force_high_performance_gpu --disable-gpu-vsync' > ~/launch-voxel.sh
+cd /path/to/The Long Nights
+./The Long Nights --force_high_performance_gpu --disable-gpu-vsync' > ~/launch-voxel.sh
 chmod +x ~/launch-voxel.sh
 ~/launch-voxel.sh
 ```
@@ -63,7 +63,7 @@ Windows can override the switches. Fix:
 
 1. **Windows Settings** > **System** > **Display** > **Graphics Settings**
 2. Click "**Browse**"
-3. Find and select **VoxelWorld.exe**
+3. Find and select **The Long Nights.exe**
 4. Click "**Options**"
 5. Select "**High Performance**"
 6. Click "**Save**"
@@ -88,12 +88,12 @@ Windows can override the switches. Fix:
 
 ### Shortcut won't run (Windows)
 - Make sure switches are OUTSIDE the quotes:
-  - ✅ Correct: `"C:\...\VoxelWorld.exe" --force_high_performance_gpu`
-  - ❌ Wrong: `"C:\...\VoxelWorld.exe --force_high_performance_gpu"`
+  - ✅ Correct: `"C:\...\The Long Nights.exe" --force_high_performance_gpu`
+  - ❌ Wrong: `"C:\...\The Long Nights.exe --force_high_performance_gpu"`
 
 ### Command not found (Linux)
-- Use full path: `/full/path/to/VoxelWorld --force_high_performance_gpu`
-- Or navigate there first: `cd /path/to/VoxelWorld` then `./VoxelWorld --switches`
+- Use full path: `/full/path/to/The Long Nights --force_high_performance_gpu`
+- Or navigate there first: `cd /path/to/The Long Nights` then `./The Long Nights --switches`
 
 ### Switches don't work
 - Check Windows Graphics Settings (overrides switches)

@@ -1,5 +1,5 @@
 // CacheChunk.js
-// Hybrid RAM + Disk chunk caching layer for VoxelWorld
+// Hybrid RAM + Disk chunk caching layer for The Long Nights
 
 const RAM_CACHE_LIMIT = 256; // Max active chunks in memory
 const RAM_CACHE = new Map(); // Map<chunkId, ChunkData>

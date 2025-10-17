@@ -10,7 +10,7 @@ import * as THREE from 'three';
 export class MiniTextureCache {
     constructor() {
         this.db = null;
-        this.dbName = 'VoxelWorld_MiniTextures';
+        this.dbName = 'The Long Nights_MiniTextures';
         this.storeName = 'miniTextures';
         this.version = 1;
 

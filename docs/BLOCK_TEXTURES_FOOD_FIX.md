@@ -12,7 +12,7 @@
 
 **Fix Applied**:
 ```javascript
-// Added to materialsWithAssets in VoxelWorld.js
+// Added to materialsWithAssets in The Long Nights.js
 const materialsWithAssets = [
     // ... existing blocks ...
     'douglas_fir',               // ← Added wood type
@@ -37,7 +37,7 @@ const materialsWithAssets = [
 
 **Fix Applied**:
 ```javascript
-// Added to toolsAndDiscoveryItems in VoxelWorld.js
+// Added to toolsAndDiscoveryItems in The Long Nights.js
 const toolsAndDiscoveryItems = [
     // ... existing tools and discovery items ...
     // Food items (in /food/ folder - EnhancedGraphics loads these into toolImages)
@@ -150,7 +150,7 @@ Return: <img src="art/food/wheat_seeds.png" style="width: 36px;">
 
 ## 📝 Files Modified
 
-1. **`src/VoxelWorld.js`**:
+1. **`src/The Long Nights.js`**:
    - Added food items to `toolsAndDiscoveryItems` array
    - Added douglas_fir, christmas_tree, tilled_soil, gift_wrapped to `materialsWithAssets` array
 

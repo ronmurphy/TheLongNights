@@ -37,7 +37,7 @@ Successfully implemented a complete Stardew Valley-inspired farming system with:
 
 ## 🔧 Modified Files
 
-### VoxelWorld.js Changes
+### The Long Nights.js Changes
 - **Line ~25:** Added FarmingSystem and FarmingBlockTypes imports
 - **Line ~170:** Initialized FarmingSystem instance
 - **Line ~1106:** Added `getCurrentDay()` helper method
@@ -231,7 +231,7 @@ wheat, carrot, berry, corn_ear, rice
 ## 🏆 Achievement Unlocked!
 
 **Stardew Valley Mode Activated** 🌾  
-Your VoxelWorld now has a complete farming system ready for players to grow crops, harvest food, and build self-sustaining farms!
+Your The Long Nights now has a complete farming system ready for players to grow crops, harvest food, and build self-sustaining farms!
 
 ---
 

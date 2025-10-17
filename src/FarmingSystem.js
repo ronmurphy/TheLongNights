@@ -263,7 +263,7 @@ export class FarmingSystem {
     }
 
     /**
-     * Get farming block types for VoxelWorld integration
+     * Get farming block types for The Long Nights integration
      */
     getFarmingBlockTypes() {
         return farmingBlockTypes;
