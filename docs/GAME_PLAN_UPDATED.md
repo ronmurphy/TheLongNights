@@ -200,13 +200,17 @@ DOOR
 
 ## 🚀 Implementation Priorities
 
-### Phase 1: Core Survival (Current)
+### Phase 1: Blood Moon Core System (CURRENT PRIORITY) 🩸
 - [x] Sargem Quest Editor polish (Entity picker, Item picker, Debug refresh)
 - [x] Entity system (enemies from JSON, combat toggle)
+- [ ] **Week/Day tracking system** (7-day cycle counter)
+- [ ] **Blood moon detection** (Day 7 at 10pm trigger)
+- [ ] **HUD week/day display** (top right corner)
+- [ ] **Blood moon spawning** (10 + week×10 enemies)
+- [ ] **Enemy movement AI** (walk towards player)
+- [ ] **Attack fortifications** (damage player blocks)
 - [ ] **Stamina rebalance** (reduce movement cost, free gathering)
 - [ ] **Simple house fix** (4×4×4 correct dimensions)
-- [ ] Blood moon cycle system (7-day timer)
-- [ ] Enemy wave spawning
 
 ### Phase 2: Combat & Defense
 - [ ] Combat mechanics refinement

@@ -8322,8 +8322,17 @@ class NebulaVoxelApp {
             lastUpdate: Date.now(),
             directionalLight: directionalLight,
             ambientLight: ambientLight,
-            currentDay: 0, // Track total days passed for farming
-            lastDayTime: 12 // Track when day changed for comparison
+            currentDay: 1, // Track total days passed (changed from 0 to 1 for Week 1, Day 1)
+            lastDayTime: 12, // Track when day changed for comparison
+            
+            // 🩸 BLOOD MOON SYSTEM
+            currentWeek: 1, // Current week number (Week 1, Week 2, etc.)
+            dayOfWeek: 1, // Day within current week (1-7)
+            bloodMoonActive: false, // Is blood moon currently happening?
+            bloodMoonStartTime: 22, // 10:00 PM (22:00) - blood moon begins
+            bloodMoonEndTime: 2, // 2:00 AM (02:00) - blood moon ends (note: wraps past midnight)
+            enemiesSpawnedThisBloodMoon: false, // Prevent duplicate spawns per blood moon
+            totalBloodMoonsSurvived: 0 // Track total blood moons survived (achievement tracking)
         };
 
         // Biome definitions
@@ -9883,9 +9892,23 @@ class NebulaVoxelApp {
             this.dayNightCycle.currentTime += (24 / this.dayNightCycle.cycleDuration) * deltaTime * this.dayNightCycle.timeScale;
             if (this.dayNightCycle.currentTime >= 24) {
                 this.dayNightCycle.currentTime -= 24;
-                // 🌾 FARMING: Increment day counter when day rolls over
+                
+                // 🩸 BLOOD MOON: Increment day and check for week rollover
                 this.dayNightCycle.currentDay++;
-                console.log(`🌅 New day! Day ${this.dayNightCycle.currentDay}`);
+                this.dayNightCycle.dayOfWeek++;
+                
+                // Check if week ended (day 7 just passed)
+                if (this.dayNightCycle.dayOfWeek > 7) {
+                    this.dayNightCycle.currentWeek++;
+                    this.dayNightCycle.dayOfWeek = 1;
+                    console.log(`🩸 Week ${this.dayNightCycle.currentWeek} begins!`);
+                }
+                
+                console.log(`🌅 Day ${this.dayNightCycle.currentDay} (Week ${this.dayNightCycle.currentWeek}, Day ${this.dayNightCycle.dayOfWeek}/7)`);
+                
+                // Reset blood moon flags for new day
+                this.dayNightCycle.bloodMoonActive = false;
+                this.dayNightCycle.enemiesSpawnedThisBloodMoon = false;
             }
 
             // 🌾 FARMING: Track day changes (also handles initial dawn crossing)
@@ -10039,6 +10062,49 @@ class NebulaVoxelApp {
 
             // Update tool hotkey label colors for day/night contrast
             this.updateToolHotkeyColors(time);
+            
+            // 🩸 Update week/day display
+            this.updateWeekDayDisplay();
+        };
+
+        // 🩸 Update week/day display based on current progress
+        this.updateWeekDayDisplay = () => {
+            if (!this.weekDayDisplay) return;
+
+            const week = this.dayNightCycle.currentWeek;
+            const day = this.dayNightCycle.dayOfWeek;
+            
+            let text = `Week ${week} - Day ${day}/7`;
+            let color = '#F5E6D3'; // Default cream color
+            let bgColor = 'rgba(0, 0, 0, 0.4)';
+            let borderColor = 'rgba(101, 67, 33, 0.6)';
+            
+            // 🩸 BLOOD MOON ACTIVE - Red pulsing display
+            if (this.dayNightCycle.bloodMoonActive) {
+                text = '🩸 BLOOD MOON 🩸';
+                color = '#FF0000'; // Bright red
+                bgColor = 'rgba(139, 0, 0, 0.6)'; // Dark red background
+                borderColor = 'rgba(255, 0, 0, 0.8)'; // Red border
+                // Add pulsing animation
+                this.weekDayDisplay.style.animation = 'bloodMoonPulse 1.5s ease-in-out infinite';
+            }
+            // ⚠️ Day 7 WARNING - Orange alert before blood moon
+            else if (day === 7) {
+                text = `Week ${week} - Day ${day}/7 ⚠️`;
+                color = '#FF6B35'; // Orange-red
+                bgColor = 'rgba(139, 69, 19, 0.5)'; // Orange-brown background
+                borderColor = 'rgba(255, 107, 53, 0.7)'; // Orange border
+                this.weekDayDisplay.style.animation = 'none';
+            }
+            // Normal days
+            else {
+                this.weekDayDisplay.style.animation = 'none';
+            }
+            
+            this.weekDayDisplay.textContent = text;
+            this.weekDayDisplay.style.color = color;
+            this.weekDayDisplay.style.background = bgColor;
+            this.weekDayDisplay.style.borderColor = borderColor;
         };
 
         // Update tool hotkey label colors for day/night contrast
@@ -11932,15 +11998,52 @@ class NebulaVoxelApp {
         this.biomeDisplay.textContent = '🌍 Exploring...';
         explorerPanel.appendChild(this.biomeDisplay);
 
+        // 🩸 Week/Day display (blood moon tracker)
+        this.weekDayDisplay = document.createElement('div');
+        this.weekDayDisplay.className = 'week-day-info';
+        this.weekDayDisplay.style.cssText = `
+            color: #F5E6D3;
+            font-size: 11px;
+            text-align: center;
+            padding: 4px 6px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 4px;
+            border: 1px solid rgba(101, 67, 33, 0.6);
+            margin-top: 4px;
+            font-family: 'Orbitron', monospace;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+            transition: all 0.3s ease;
+        `;
+        this.weekDayDisplay.textContent = 'Week 1 - Day 1/7';
+        explorerPanel.appendChild(this.weekDayDisplay);
+
         contentArea.appendChild(explorerPanel);
 
-        // Add CSS animation for biome changes
+        // Add CSS animations for biome changes and blood moon
         const biomeStyle = document.createElement('style');
         biomeStyle.textContent = `
             @keyframes biomeFade {
                 0% { opacity: 0.6; transform: scale(0.98); }
                 50% { opacity: 1; transform: scale(1.02); }
                 100% { opacity: 1; transform: scale(1); }
+            }
+            
+            @keyframes bloodMoonPulse {
+                0% { 
+                    opacity: 0.8; 
+                    transform: scale(1); 
+                    box-shadow: 0 0 5px rgba(255, 0, 0, 0.5);
+                }
+                50% { 
+                    opacity: 1; 
+                    transform: scale(1.05); 
+                    box-shadow: 0 0 15px rgba(255, 0, 0, 0.9);
+                }
+                100% { 
+                    opacity: 0.8; 
+                    transform: scale(1); 
+                    box-shadow: 0 0 5px rgba(255, 0, 0, 0.5);
+                }
             }
         `;
         document.head.appendChild(biomeStyle);
