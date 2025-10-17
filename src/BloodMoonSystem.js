@@ -18,6 +18,10 @@ export class BloodMoonSystem {
         this.activeEnemies = new Map(); // Map<enemyId, enemyData>
         this.nextEnemyId = 0;
         
+        // Entity data (loaded from entities.json)
+        this.entityDatabase = null;
+        this.loadEntityData();
+        
         // Animation timing
         this.time = 0;
         this.lastUpdateTime = Date.now();
@@ -42,6 +46,40 @@ export class BloodMoonSystem {
         this.animationInterval = setInterval(() => this.updateEnemies(), 16); // ~60 FPS
         
         console.log('🩸 BloodMoonSystem initialized');
+    }
+    
+    /**
+     * Load entity data from entities.json
+     */
+    async loadEntityData() {
+        try {
+            const response = await fetch('art/entities/entities.json');
+            const data = await response.json();
+            this.entityDatabase = data;
+            console.log('🩸 Entity database loaded:', Object.keys(data).length, 'categories');
+        } catch (error) {
+            console.error('🩸 Failed to load entities.json:', error);
+        }
+    }
+    
+    /**
+     * Get entity data by ID
+     */
+    getEntityData(entityId) {
+        if (!this.entityDatabase) {
+            console.warn('🩸 Entity database not loaded yet');
+            return null;
+        }
+        
+        // Search through all categories (monsters, companions, etc.)
+        for (const category in this.entityDatabase) {
+            if (this.entityDatabase[category][entityId]) {
+                return this.entityDatabase[category][entityId];
+            }
+        }
+        
+        console.warn(`🩸 Entity "${entityId}" not found in database`);
+        return null;
     }
     
     /**
@@ -82,7 +120,7 @@ export class BloodMoonSystem {
      */
     spawnEnemy(entityId, x, y, z) {
         // Load enemy data from entities.json
-        const entityData = this.voxelWorld.enhancedGraphics.getEntityData(entityId);
+        const entityData = this.getEntityData(entityId);
         
         if (!entityData) {
             console.warn(`🩸 Enemy type "${entityId}" not found in entities.json`);
@@ -147,18 +185,19 @@ export class BloodMoonSystem {
      * Load entity texture from assets
      */
     loadEntityTexture(spriteName) {
-        // Get enhanced entity image path
-        const entityData = this.voxelWorld.enhancedGraphics.getEnhancedEntityImage(spriteName.replace('.png', '').replace('_enhanced', ''));
+        // Build path directly (sprites are in art/entities/)
+        const texturePath = `art/entities/${spriteName}`;
         
-        if (entityData && entityData.path) {
-            const texture = new THREE.TextureLoader().load(entityData.path);
+        try {
+            const texture = new THREE.TextureLoader().load(texturePath);
             texture.magFilter = THREE.NearestFilter; // Pixelated look
             texture.minFilter = THREE.NearestFilter;
+            console.log(`🩸 Loaded texture: ${texturePath}`);
             return texture;
+        } catch (error) {
+            console.warn(`🩸 Could not load texture: ${texturePath}`, error);
+            return null;
         }
-        
-        console.warn(`🩸 Could not load texture: ${spriteName}`);
-        return null;
     }
     
     /**
