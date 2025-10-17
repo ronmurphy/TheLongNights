@@ -63,6 +63,18 @@ export class RandyMStructureDesigner {
         this.cameraDistance = 20; // Distance from center
         this.cameraHeight = 15;   // Height above ground
         
+        // Axis lock toggles
+        this.axisLocks = {
+            x: false,
+            y: false,
+            z: false
+        };
+        
+        // Undo/Redo system
+        this.undoStack = [];
+        this.redoStack = [];
+        this.maxUndoSize = 50; // Limit history to prevent memory issues
+        
         console.log('🎨 RandyM Structure Designer initialized');
     }
     
@@ -305,8 +317,50 @@ export class RandyMStructureDesigner {
             background: #0a0a0a;
         `;
         
+        // Tool palette sidebar (right side)
+        const toolPaletteContainer = document.createElement('div');
+        toolPaletteContainer.id = 'randym-tool-palette';
+        toolPaletteContainer.style.cssText = `
+            width: 180px;
+            background: #1e2832;
+            border-left: 2px solid #4a9eff;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        `;
+        
+        const toolHeader = document.createElement('div');
+        toolHeader.style.cssText = `
+            padding: 10px;
+            background: #2c3e50;
+            color: #4a9eff;
+            font-weight: bold;
+            font-size: 14px;
+            border-bottom: 1px solid #4a9eff;
+            text-align: center;
+        `;
+        toolHeader.textContent = '🛠️ Tools';
+        
+        const toolContent = document.createElement('div');
+        toolContent.id = 'randym-tool-content';
+        toolContent.style.cssText = `
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+        `;
+        
+        // Add axis lock section
+        this.createAxisLockSection(toolContent);
+        
+        // Add undo/redo section
+        this.createUndoRedoSection(toolContent);
+        
+        toolPaletteContainer.appendChild(toolHeader);
+        toolPaletteContainer.appendChild(toolContent);
+        
         mainContent.appendChild(paletteContainer);
         mainContent.appendChild(canvasContainer);
+        mainContent.appendChild(toolPaletteContainer);
         
         // Info panel
         const infoPanel = document.createElement('div');
@@ -426,6 +480,266 @@ export class RandyMStructureDesigner {
         }
         
         console.log('✅ Block palette loaded');
+    }
+    
+    /**
+     * Create axis lock toggle section in tool palette
+     */
+    createAxisLockSection(container) {
+        // Section title
+        const sectionTitle = document.createElement('div');
+        sectionTitle.style.cssText = `
+            color: #ecf0f1;
+            font-size: 13px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #4a9eff;
+        `;
+        sectionTitle.textContent = 'Rotation Axis Lock';
+        
+        // Add CSS for toggle switches
+        const style = document.createElement('style');
+        style.textContent = `
+            .axis-lock-row {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 8px;
+                margin-bottom: 8px;
+                background: #2c3e50;
+                border-radius: 5px;
+                transition: background 0.2s;
+            }
+            .axis-lock-row:hover {
+                background: #34495e;
+            }
+            .axis-lock-label {
+                color: #ecf0f1;
+                font-size: 12px;
+                font-weight: bold;
+                text-transform: uppercase;
+            }
+            .axis-toggle-switch {
+                position: relative;
+                width: 50px;
+                height: 24px;
+                background: #7f8c8d;
+                border-radius: 12px;
+                cursor: pointer;
+                transition: background 0.3s;
+            }
+            .axis-toggle-switch.active {
+                background: #2ecc71;
+            }
+            .axis-toggle-knob {
+                position: absolute;
+                top: 2px;
+                left: 2px;
+                width: 20px;
+                height: 20px;
+                background: white;
+                border-radius: 50%;
+                transition: left 0.3s;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            }
+            .axis-toggle-switch.active .axis-toggle-knob {
+                left: 28px;
+            }
+        `;
+        document.head.appendChild(style);
+        
+        container.appendChild(sectionTitle);
+        
+        // Create toggle for each axis
+        ['X', 'Y', 'Z'].forEach(axis => {
+            const row = document.createElement('div');
+            row.className = 'axis-lock-row';
+            
+            const label = document.createElement('div');
+            label.className = 'axis-lock-label';
+            label.textContent = `${axis}-Axis`;
+            label.style.color = this.getAxisColor(axis);
+            
+            const toggleSwitch = document.createElement('div');
+            toggleSwitch.className = 'axis-toggle-switch';
+            toggleSwitch.id = `axis-lock-${axis.toLowerCase()}`;
+            
+            const knob = document.createElement('div');
+            knob.className = 'axis-toggle-knob';
+            
+            toggleSwitch.appendChild(knob);
+            
+            // Click handler
+            toggleSwitch.onclick = () => this.toggleAxisLock(axis.toLowerCase());
+            
+            row.appendChild(label);
+            row.appendChild(toggleSwitch);
+            container.appendChild(row);
+        });
+        
+        // Info text
+        const info = document.createElement('div');
+        info.style.cssText = `
+            margin-top: 15px;
+            padding: 10px;
+            background: rgba(74, 158, 255, 0.1);
+            border-radius: 5px;
+            color: #95a5a6;
+            font-size: 11px;
+            line-height: 1.4;
+        `;
+        info.textContent = 'Lock axes to constrain camera rotation. Useful for viewing from specific angles.';
+        container.appendChild(info);
+    }
+    
+    /**
+     * Get color for axis labels
+     */
+    getAxisColor(axis) {
+        const colors = {
+            'X': '#e74c3c', // Red
+            'Y': '#2ecc71', // Green
+            'Z': '#3498db'  // Blue
+        };
+        return colors[axis] || '#ecf0f1';
+    }
+    
+    /**
+     * Toggle axis lock
+     */
+    toggleAxisLock(axis) {
+        this.axisLocks[axis] = !this.axisLocks[axis];
+        
+        // Update UI
+        const toggle = document.getElementById(`axis-lock-${axis}`);
+        if (toggle) {
+            if (this.axisLocks[axis]) {
+                toggle.classList.add('active');
+            } else {
+                toggle.classList.remove('active');
+            }
+        }
+        
+        console.log(`🔒 ${axis.toUpperCase()}-axis lock: ${this.axisLocks[axis] ? 'LOCKED' : 'UNLOCKED'}`);
+    }
+    
+    /**
+     * Create undo/redo section in tool palette
+     */
+    createUndoRedoSection(container) {
+        // Section title
+        const sectionTitle = document.createElement('div');
+        sectionTitle.style.cssText = `
+            color: #ecf0f1;
+            font-size: 13px;
+            font-weight: bold;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #4a9eff;
+        `;
+        sectionTitle.textContent = 'History';
+        
+        // Button container
+        const buttonContainer = document.createElement('div');
+        buttonContainer.style.cssText = `
+            display: flex;
+            gap: 8px;
+        `;
+        
+        // Undo button
+        const undoBtn = document.createElement('button');
+        undoBtn.id = 'randym-undo-btn';
+        undoBtn.innerHTML = '↶ Undo';
+        undoBtn.style.cssText = `
+            flex: 1;
+            padding: 8px;
+            background: #34495e;
+            color: #ecf0f1;
+            border: 1px solid #4a9eff;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        `;
+        undoBtn.onclick = () => this.undo();
+        undoBtn.onmouseover = () => {
+            if (this.undoStack.length > 0) {
+                undoBtn.style.background = '#4a9eff';
+            }
+        };
+        undoBtn.onmouseout = () => {
+            undoBtn.style.background = '#34495e';
+        };
+        
+        // Redo button
+        const redoBtn = document.createElement('button');
+        redoBtn.id = 'randym-redo-btn';
+        redoBtn.innerHTML = '↷ Redo';
+        redoBtn.style.cssText = `
+            flex: 1;
+            padding: 8px;
+            background: #34495e;
+            color: #ecf0f1;
+            border: 1px solid #4a9eff;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        `;
+        redoBtn.onclick = () => this.redo();
+        redoBtn.onmouseover = () => {
+            if (this.redoStack.length > 0) {
+                redoBtn.style.background = '#4a9eff';
+            }
+        };
+        redoBtn.onmouseout = () => {
+            redoBtn.style.background = '#34495e';
+        };
+        
+        buttonContainer.appendChild(undoBtn);
+        buttonContainer.appendChild(redoBtn);
+        
+        // Info text
+        const info = document.createElement('div');
+        info.style.cssText = `
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(74, 158, 255, 0.1);
+            border-radius: 5px;
+            color: #95a5a6;
+            font-size: 11px;
+            line-height: 1.4;
+        `;
+        info.innerHTML = '<strong>Ctrl+Z:</strong> Undo<br><strong>Ctrl+Y:</strong> Redo';
+        
+        container.appendChild(sectionTitle);
+        container.appendChild(buttonContainer);
+        container.appendChild(info);
+        
+        // Update button states
+        this.updateUndoRedoButtons();
+    }
+    
+    /**
+     * Update undo/redo button states
+     */
+    updateUndoRedoButtons() {
+        const undoBtn = document.getElementById('randym-undo-btn');
+        const redoBtn = document.getElementById('randym-redo-btn');
+        
+        if (undoBtn) {
+            undoBtn.disabled = this.undoStack.length === 0;
+            undoBtn.style.opacity = this.undoStack.length === 0 ? '0.5' : '1';
+            undoBtn.style.cursor = this.undoStack.length === 0 ? 'not-allowed' : 'pointer';
+        }
+        
+        if (redoBtn) {
+            redoBtn.disabled = this.redoStack.length === 0;
+            redoBtn.style.opacity = this.redoStack.length === 0 ? '0.5' : '1';
+            redoBtn.style.cursor = this.redoStack.length === 0 ? 'not-allowed' : 'pointer';
+        }
     }
     
     /**
@@ -799,8 +1113,58 @@ export class RandyMStructureDesigner {
         this.scene.add(mesh);
         this.placedBlocks.set(key, { mesh, blockType: this.selectedBlockType });
         
+        // Record action for undo
+        this.pushUndoAction({
+            type: 'place',
+            position: { x: Math.floor(x), y: Math.floor(y), z: Math.floor(z) },
+            blockType: this.selectedBlockType
+        });
+        
         this.updateStats();
         console.log('✅ Placed block at', key, '| Type:', this.selectedBlockType);
+    }
+    
+    /**
+     * Place a block at specific coordinates (used by undo/redo)
+     */
+    placeBlockAt(x, y, z, blockType) {
+        const key = `${x},${y},${z}`;
+        
+        // Don't place if block already exists
+        if (this.placedBlocks.has(key)) {
+            return;
+        }
+        
+        // Create block mesh
+        const geometry = new THREE.BoxGeometry(1, 1, 1);
+        
+        // Try to get textured material from EnhancedGraphics
+        const enhancedGraphics = this.voxelWorld?.enhancedGraphics;
+        let material;
+        
+        if (enhancedGraphics && enhancedGraphics.assetsLoaded) {
+            const color = this.getBlockColor(blockType);
+            const fallbackMaterial = new THREE.MeshLambertMaterial({ 
+                color: color,
+                flatShading: true
+            });
+            
+            material = enhancedGraphics.getEnhancedBlockMaterial(blockType, fallbackMaterial);
+        } else {
+            const color = this.getBlockColor(blockType);
+            material = new THREE.MeshLambertMaterial({ 
+                color: color,
+                flatShading: true
+            });
+        }
+        
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.position.set(x + 0.5, y + 0.5, z + 0.5);
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        
+        this.scene.add(mesh);
+        this.placedBlocks.set(key, { mesh, blockType });
     }
     
     /**
@@ -811,6 +1175,13 @@ export class RandyMStructureDesigner {
         const block = this.placedBlocks.get(key);
         
         if (block) {
+            // Record action for undo
+            this.pushUndoAction({
+                type: 'remove',
+                position: { x, y, z },
+                blockType: block.blockType
+            });
+            
             this.scene.remove(block.mesh);
             block.mesh.geometry.dispose();
             
@@ -849,6 +1220,7 @@ export class RandyMStructureDesigner {
         this.onContextMenu = (event) => this.handleRightClick(event);
         this.onWheel = (event) => this.handleWheel(event);
         this.onResize = () => this.handleResize();
+        this.onKeyDown = (event) => this.handleKeyDown(event);
         
         this.canvas.addEventListener('mousemove', this.onMouseMove);
         this.canvas.addEventListener('mousedown', this.onMouseDown);
@@ -857,6 +1229,7 @@ export class RandyMStructureDesigner {
         this.canvas.addEventListener('contextmenu', this.onContextMenu);
         this.canvas.addEventListener('wheel', this.onWheel);
         window.addEventListener('resize', this.onResize);
+        window.addEventListener('keydown', this.onKeyDown);
     }
     
     /**
@@ -872,6 +1245,7 @@ export class RandyMStructureDesigner {
             this.canvas.removeEventListener('wheel', this.onWheel);
         }
         window.removeEventListener('resize', this.onResize);
+        window.removeEventListener('keydown', this.onKeyDown);
     }
     
     /**
@@ -998,6 +1372,125 @@ export class RandyMStructureDesigner {
         this.camera.updateProjectionMatrix();
         
         this.renderer.setSize(width, height);
+    }
+    
+    /**
+     * Handle keyboard shortcuts
+     */
+    handleKeyDown(event) {
+        // Undo: Ctrl+Z
+        if (event.ctrlKey && event.key === 'z' && !event.shiftKey) {
+            event.preventDefault();
+            this.undo();
+        }
+        
+        // Redo: Ctrl+Y or Ctrl+Shift+Z
+        if ((event.ctrlKey && event.key === 'y') || 
+            (event.ctrlKey && event.shiftKey && event.key === 'z')) {
+            event.preventDefault();
+            this.redo();
+        }
+    }
+    
+    /**
+     * Push action to undo stack
+     */
+    pushUndoAction(action) {
+        this.undoStack.push(action);
+        
+        // Limit stack size
+        if (this.undoStack.length > this.maxUndoSize) {
+            this.undoStack.shift();
+        }
+        
+        // Clear redo stack when new action is performed
+        this.redoStack = [];
+        
+        this.updateUndoRedoButtons();
+    }
+    
+    /**
+     * Undo last action
+     */
+    undo() {
+        if (this.undoStack.length === 0) {
+            console.log('⚠️ Nothing to undo');
+            return;
+        }
+        
+        const action = this.undoStack.pop();
+        
+        if (action.type === 'place') {
+            // Undo place = remove block
+            const { x, y, z } = action.position;
+            const key = `${x},${y},${z}`;
+            const block = this.placedBlocks.get(key);
+            
+            if (block) {
+                this.scene.remove(block.mesh);
+                block.mesh.geometry.dispose();
+                
+                if (Array.isArray(block.mesh.material)) {
+                    block.mesh.material.forEach(mat => mat.dispose());
+                } else {
+                    block.mesh.material.dispose();
+                }
+                
+                this.placedBlocks.delete(key);
+            }
+        } else if (action.type === 'remove') {
+            // Undo remove = place block back
+            this.placeBlockAt(action.position.x, action.position.y, action.position.z, action.blockType);
+        }
+        
+        // Push to redo stack
+        this.redoStack.push(action);
+        
+        this.updateStats();
+        this.updateUndoRedoButtons();
+        console.log('↶ Undid action:', action.type);
+    }
+    
+    /**
+     * Redo last undone action
+     */
+    redo() {
+        if (this.redoStack.length === 0) {
+            console.log('⚠️ Nothing to redo');
+            return;
+        }
+        
+        const action = this.redoStack.pop();
+        
+        if (action.type === 'place') {
+            // Redo place = place block again
+            this.placeBlockAt(action.position.x, action.position.y, action.position.z, action.blockType);
+        } else if (action.type === 'remove') {
+            // Redo remove = remove block again
+            const { x, y, z } = action.position;
+            const key = `${x},${y},${z}`;
+            const block = this.placedBlocks.get(key);
+            
+            if (block) {
+                this.scene.remove(block.mesh);
+                block.mesh.geometry.dispose();
+                
+                if (Array.isArray(block.mesh.material)) {
+                    block.mesh.material.forEach(mat => mat.dispose());
+                } else {
+                    block.mesh.material.dispose();
+                }
+                
+                this.placedBlocks.delete(key);
+            }
+        }
+        
+        // Push back to undo stack
+        this.undoStack.push(action);
+        
+        this.updateStats();
+        this.updateUndoRedoButtons();
+        console.log('↷ Redid action:', action.type);
     }
     
     /**

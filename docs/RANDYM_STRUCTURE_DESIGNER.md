@@ -1,8 +1,8 @@
-# RandyM Structure Designer - Phase 3 Complete! 🎨
+# RandyM Structure Designer - Phase 4 Complete! 🎨
 
 **Named after:** Randy (with M initial)  
 **Created:** October 17, 2025  
-**Status:** Phase 3 ✅ Textured Blocks & Enhanced Tools - **INTEGRATED** ✅
+**Status:** Phase 4 ✅ Advanced Placement Tools - **INTEGRATED** ✅
 
 ---
 
@@ -15,13 +15,15 @@ In the browser console:
 openStructureDesigner()
 ```
 
-### Controls (Phase 3)
+### Controls (Phase 4)
 
 | Action | Control |
 |--------|---------|
 | **Select Block** | Click block in left palette |
 | **Place Block** | Left Click in 3D view |
 | **Delete Block** | Right Click (hover shows red glow) |
+| **Undo** | Ctrl+Z or click Undo button |
+| **Redo** | Ctrl+Y / Ctrl+Shift+Z or click Redo button |
 | **Rotate Camera** | Ctrl + Left Click Drag |
 | **Zoom** | Mouse Wheel |
 | **Close** | Click "✕ Close" button |
@@ -42,7 +44,20 @@ openStructureDesigner()
 - ✅ Proper disposal of geometries/materials
 - ✅ Window resize handling
 
-## ✅ Phase 3 Features (COMPLETE)
+## ✅ Phase 4 Features (COMPLETE)
+
+- ✅ **Tool Palette** - Right sidebar with professional styling
+- ✅ **X/Y/Z Axis Lock Toggles** - Phone-style switches for future rotation
+- ✅ **Undo/Redo System** - Full history tracking (50 actions)
+- ✅ **Keyboard Shortcuts** - Ctrl+Z (undo), Ctrl+Y (redo)
+- ✅ **UI Buttons** - Click buttons for undo/redo
+- ✅ **Smart History** - Tracks both place and remove actions
+- ✅ **Memory Efficient** - Limited stack size (50 max)
+- ✅ **Visual Feedback** - Button states update based on history
+
+---
+
+## 🎨 Current Capabilities
 
 - ✅ **Textured Block Materials** using EnhancedGraphics
 - ✅ Multi-face texture support (sides, top-bottom variants)
