@@ -69,6 +69,11 @@ export class DevControlPanel {
                                 Open Sargem Editor
                             </button>
                         </div>
+                        <div class="button-grid">
+                            <button class="btn btn-primary" id="dev-open-randy">
+                                Open Randy Editor
+                            </button>
+                        </div>
                         <p class="help-text">Visual node editor for creating quests, tutorials, and storylines</p>
                     </div>
 
@@ -265,6 +270,11 @@ export class DevControlPanel {
         // Open Sargem Editor
         this.modal.querySelector('#dev-open-sargem').addEventListener('click', () => {
             this.executeCommand('openTutorialEditor', 'Opening Sargem Quest Editor...');
+        });
+
+        // Open Randy Editor
+        this.modal.querySelector('#dev-open-randy').addEventListener('click', () => {
+            this.executeCommand('openStructureDesigner', 'Opening Randy Structure Designer...', undefined, true);
         });
 
         // Toggle LOD
