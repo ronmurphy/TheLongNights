@@ -1,8 +1,10 @@
-# RandyM Structure Designer - Phase 4 Complete! 🎨
+# RandyM Structure Designer - Phase 5 Complete! 🎨
 
 **Named after:** Randy (with M initial)  
 **Created:** October 17, 2025  
-**Status:** Phase 4 ✅ Advanced Placement Tools - **INTEGRATED** ✅
+**Status:** Phase 5 ✅ Shape Tools - **INTEGRATED** ✅  
+**Current Mode:** 🎨 Creative/Debug (Unlimited Blocks)  
+**Future Mode:** 🎮 NPC Service (Player Inventory Integration)
 
 ---
 
@@ -15,12 +17,16 @@ In the browser console:
 openStructureDesigner()
 ```
 
-### Controls (Phase 4)
+### Controls (Phase 5)
 
 | Action | Control |
 |--------|---------|
 | **Select Block** | Click block in left palette |
-| **Place Block** | Left Click in 3D view |
+| **Select Tool Mode** | Click tool in right palette |
+| **Place Block** | Left Click (Place mode) |
+| **Shape Start Point** | Left Click (Shape mode) |
+| **Shape End Point** | Left Click again (Shape mode) |
+| **Cancel Shape** | ESC key (Shape mode) |
 | **Delete Block** | Right Click (hover shows red glow) |
 | **Undo** | Ctrl+Z or click Undo button |
 | **Redo** | Ctrl+Y / Ctrl+Shift+Z or click Redo button |
@@ -43,6 +49,23 @@ openStructureDesigner()
 - ✅ Full memory cleanup on close
 - ✅ Proper disposal of geometries/materials
 - ✅ Window resize handling
+
+## ✅ Phase 5 Features (COMPLETE)
+
+- ✅ **Tool Mode Selector** - Right sidebar with 6 tool modes
+- ✅ **Place Mode** - Single block placement (default)
+- ✅ **Fill Cube Tool** - Solid rectangular volumes (click 2 corners)
+- ✅ **Hollow Cube Tool** - Rectangular shells (only outer surface)
+- ✅ **Wall Tool** - Vertical planes (auto-detects XY or ZY orientation)
+- ✅ **Floor Tool** - Horizontal planes (XZ plane at selected height)
+- ✅ **Line Tool** - 3D lines using Bresenham algorithm
+- ✅ **Two-Point Selection** - First click sets start, second sets end
+- ✅ **Shape Preview** - Semi-transparent ghost blocks during selection
+- ✅ **Batch Undo** - Entire shapes undo as single action
+- ✅ **ESC to Cancel** - Cancel shape selection at any time
+- ✅ **Visual Feedback** - Active tool highlighted with green glow
+
+---
 
 ## ✅ Phase 4 Features (COMPLETE)
 
@@ -174,6 +197,106 @@ async loadBlockPalette() {
 
 ---
 
+## 🎮 Game Integration (Future)
+
+### Current Mode: Creative/Debug Mode
+RandyM currently operates in **unlimited creative mode** - perfect for:
+- 🛠️ **Debug/Testing** - Console access for developers
+- 👑 **Admin Mode** - Server administrators and moderators
+- 📐 **Blueprint Design** - Create structure templates without limits
+- 👁️ **Preview Mode** - Plan before building with real materials
+
+### Planned: NPC-Based Building System
+
+**Vision:**
+RandyM will be offered as a service by NPCs in the game world. Players interact with specific NPCs (e.g., "Master Builder") to access the structure designer.
+
+**Inventory Integration:**
+```javascript
+// Future implementation
+class RandyMStructureDesigner {
+    constructor(voxelWorld, inventoryMode = false) {
+        this.inventoryMode = inventoryMode;
+        this.playerInventory = inventoryMode ? voxelWorld.playerInventory : null;
+    }
+    
+    // Check if player has materials
+    canPlaceBlock(blockType) {
+        if (!this.inventoryMode) return true; // Creative mode
+        return this.playerInventory.hasItem(blockType, 1);
+    }
+    
+    // Deduct materials on placement
+    placeBlock() {
+        if (this.inventoryMode) {
+            if (!this.playerInventory.removeItem(this.selectedBlockType, 1)) {
+                this.showInsufficientMaterialsWarning();
+                return;
+            }
+        }
+        // ... place block logic
+    }
+    
+    // Refund materials on undo/delete
+    removeBlock(x, y, z) {
+        const block = this.placedBlocks.get(key);
+        if (this.inventoryMode && block) {
+            this.playerInventory.addItem(block.blockType, 1);
+        }
+        // ... remove block logic
+    }
+}
+```
+
+**UI Changes for Inventory Mode:**
+- Material counts shown in block palette (e.g., "Oak Wood x64")
+- Grayed out/disabled blocks when insufficient materials
+- Real-time material counter updates
+- "Insufficient Materials" warning popup
+- Cost preview tooltip on hover
+- Material refund on undo/delete operations
+
+**NPC Integration Points:**
+```javascript
+// Example NPC interaction
+class MasterBuilderNPC extends NPC {
+    onInteract(player) {
+        if (player.hasCompletedQuest('builder_license')) {
+            // Open RandyM with inventory mode
+            const randyM = new RandyMStructureDesigner(
+                this.voxelWorld, 
+                true // Enable inventory mode
+            );
+            randyM.open();
+        } else {
+            this.showDialogue("Complete my quest first!");
+        }
+    }
+}
+```
+
+**Planned NPC Types:**
+- 🏗️ **Master Builder** - General structures, teaches basics
+- 🏰 **Castle Architect** - Large fortifications, advanced shapes
+- 🌳 **Garden Designer** - Decorative structures, natural builds
+- ⚒️ **Engineer** - Functional structures, mechanisms
+
+**Additional Features:**
+- 💾 **Save as Blueprint** - Export structure to inventory item
+- 📜 **Blueprint Library** - Share designs between players
+- 💰 **Service Fee** - NPC charges coins/items for access
+- 🎓 **Tutorials** - NPCs teach building techniques
+- 🏆 **Achievements** - Rewards for complex structures
+
+**Benefits:**
+- Adds value to gathered materials
+- Encourages resource management
+- Creates interesting NPC interactions
+- Monetization of building skill
+- Social sharing of blueprints
+
+---
+
 ## 📋 Next Phases
 
 ### ~~Phase 2: Block Selector~~ ✅ COMPLETE
@@ -196,14 +319,18 @@ async loadBlockPalette() {
 - [ ] Copy/paste blocks
 - [ ] Mirror/flip tools
 
-### Phase 4: Shape Tools 📐
-- [ ] Hollow cube tool
-- [ ] Filled cube tool
-- [ ] Wall tool (vertical plane)
-- [ ] Floor tool (horizontal plane)
-- [ ] Pyramid/roof tools
+### Phase 5: Shape Tools 📐
+- ✅ Fill cube tool (solid rectangles)
+- ✅ Hollow cube tool (shells)
+- ✅ Wall tool (vertical planes)
+- ✅ Floor tool (horizontal planes)
+- ✅ Line tool (3D Bresenham)
+- ✅ Two-point selection system
+- ✅ Shape preview with ghost blocks
+- ✅ Batch undo for entire shapes
+- ✅ ESC to cancel selection
 
-### Phase 5: File System 💾
+### Phase 6: File System 💾
 - [ ] Save structure to JSON
 - [ ] Load structure from file
 - [ ] Export to filesystem
@@ -219,9 +346,68 @@ async loadBlockPalette() {
 
 ---
 
-## 🐛 Known Issues
+## �️ Shape Tools Guide (Phase 5)
 
-None yet! Phase 1 is stable.
+### Tool Modes
+
+1. **🖌️ Place** (Default)
+   - Single block placement
+   - Left click to place one block at a time
+   - Best for detailed work
+
+2. **🧊 Fill Cube**
+   - Creates solid rectangular volumes
+   - Click first corner, then second corner
+   - Fills entire volume with selected block
+   - Great for making large walls or foundations
+
+3. **📦 Hollow Cube**
+   - Creates rectangular shells
+   - Click first corner, then second corner
+   - Only places blocks on outer surfaces
+   - Perfect for making rooms or structures
+
+4. **🧱 Wall**
+   - Creates vertical planes
+   - Click first point, then second point
+   - Auto-detects best orientation (XY or ZY plane)
+   - Ideal for building walls quickly
+
+5. **⬛ Floor**
+   - Creates horizontal planes
+   - Click first corner, then diagonal corner
+   - Uses Y coordinate from first click
+   - Great for floors, ceilings, platforms
+
+6. **📏 Line**
+   - Creates straight lines in 3D space
+   - Click start point, then end point
+   - Uses 3D Bresenham algorithm for smooth lines
+   - Useful for beams, railings, details
+
+### Using Shape Tools
+
+1. **Select Tool**: Click tool mode in right palette (green highlight = active)
+2. **Choose Block**: Select block type from left palette
+3. **First Click**: Click to set start point (console shows coordinates)
+4. **Move Mouse**: See semi-transparent preview of final shape
+5. **Second Click**: Click to place entire shape (batch action)
+6. **Undo**: Press Ctrl+Z to undo entire shape at once
+7. **Cancel**: Press ESC to cancel and start over
+
+### Pro Tips
+
+- **Preview is Real-Time**: Shape updates as you move mouse after first click
+- **Batch Undo**: Entire shape undoes as one action (not block-by-block)
+- **ESC Anytime**: Cancel shape selection without penalty
+- **Mix Tools**: Switch between tools mid-workflow
+- **Combine Shapes**: Use Fill Cube + Hollow Cube for complex structures
+
+---
+
+## �🐛 Known Issues
+
+None yet! Phases 1-5 are stable.
 
 ---
 
@@ -235,6 +421,33 @@ None yet! Phase 1 is stable.
 6. **Zoom In**: Mouse wheel closer for detailed work
 7. **Mix Materials**: Combine different block types for variety
 8. **Clean Close**: Always use the Close button for proper cleanup
+
+---
+
+## 📝 Quick Examples
+
+### Building a Simple House
+
+1. **Floor**: Select Floor tool (⬛), click two corners → instant floor
+2. **Walls**: Select Wall tool (🧱), build 4 walls around floor
+3. **Hollow Room**: Select Hollow Cube (📦) for instant room frame
+4. **Details**: Switch to Place mode (🖌️) for doors, windows
+5. **Roof**: Use Floor tool at higher Y, or Fill Cube for peaked roof
+
+### Making Large Structures
+
+1. **Foundation**: Fill Cube (🧊) for solid base
+2. **Shell**: Hollow Cube (📦) for outer walls
+3. **Interior**: Place mode (🖌️) for rooms and details
+4. **Support Beams**: Line tool (📏) for pillars and beams
+5. **Platforms**: Floor tool (⬛) for multiple levels
+
+### Speed Building Workflow
+
+1. **Rough Shape**: Hollow Cube + Fill Cube for basic structure
+2. **Walls & Floors**: Wall + Floor tools for major surfaces
+3. **Details**: Place mode for fine details
+4. **Polish**: Use undo (Ctrl+Z) to perfect each step
 
 ---
 
@@ -252,6 +465,10 @@ None yet! Phase 1 is stable.
 - [x] Memory cleanup occurs
 - [x] No console errors after close
 - [x] Can reopen after closing
+- [x] Tool modes switch correctly
+- [x] Shape preview shows during selection
+- [x] Batch undo works for entire shapes
+- [x] ESC cancels shape selection
 
 ---
 

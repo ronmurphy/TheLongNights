@@ -39,6 +39,12 @@ export class RandyMStructureDesigner {
         // Current selected block type
         this.selectedBlockType = 'oak_wood';
         
+        // Tool mode and shape tools
+        this.toolMode = 'place'; // 'place', 'fill_cube', 'hollow_cube', 'wall', 'floor', 'line'
+        this.shapeStart = null; // First click position for shape tools
+        this.shapeEnd = null; // Second click position for shape tools
+        this.shapePreview = []; // Array of preview meshes
+        
         // DOM elements
         this.modalOverlay = null;
         this.container = null;
@@ -349,6 +355,9 @@ export class RandyMStructureDesigner {
             padding: 15px;
         `;
         
+        // Add tool mode selector
+        this.createToolModeSelector(toolContent);
+        
         // Add axis lock section
         this.createAxisLockSection(toolContent);
         
@@ -480,6 +489,468 @@ export class RandyMStructureDesigner {
         }
         
         console.log('✅ Block palette loaded');
+    }
+    
+    /**
+     * Create tool mode selector in tool palette
+     */
+    createToolModeSelector(container) {
+        // Section title
+        const sectionTitle = document.createElement('div');
+        sectionTitle.style.cssText = `
+            color: #ecf0f1;
+            font-size: 13px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #4a9eff;
+        `;
+        sectionTitle.textContent = 'Tool Mode';
+        
+        container.appendChild(sectionTitle);
+        
+        // Tool buttons
+        const tools = [
+            { id: 'place', icon: '🖌️', name: 'Place', desc: 'Single block placement' },
+            { id: 'fill_cube', icon: '🧊', name: 'Fill Cube', desc: 'Solid rectangular volume' },
+            { id: 'hollow_cube', icon: '📦', name: 'Hollow Cube', desc: 'Rectangular shell' },
+            { id: 'wall', icon: '🧱', name: 'Wall', desc: 'Vertical plane' },
+            { id: 'floor', icon: '⬛', name: 'Floor', desc: 'Horizontal plane' },
+            { id: 'line', icon: '📏', name: 'Line', desc: 'Straight line' }
+        ];
+        
+        tools.forEach(tool => {
+            const button = document.createElement('button');
+            button.id = `tool-${tool.id}`;
+            button.className = 'tool-mode-btn';
+            if (tool.id === this.toolMode) {
+                button.classList.add('active');
+            }
+            
+            button.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 18px;">${tool.icon}</span>
+                    <div style="flex: 1; text-align: left;">
+                        <div style="font-weight: bold; font-size: 12px;">${tool.name}</div>
+                        <div style="font-size: 10px; color: #95a5a6;">${tool.desc}</div>
+                    </div>
+                </div>
+            `;
+            
+            button.style.cssText = `
+                width: 100%;
+                padding: 10px;
+                margin-bottom: 8px;
+                background: #2c3e50;
+                color: #ecf0f1;
+                border: 2px solid transparent;
+                border-radius: 5px;
+                cursor: pointer;
+                transition: all 0.2s;
+                text-align: left;
+            `;
+            
+            button.onmouseover = () => {
+                if (!button.classList.contains('active')) {
+                    button.style.background = '#34495e';
+                    button.style.borderColor = '#4a9eff';
+                }
+            };
+            
+            button.onmouseout = () => {
+                if (!button.classList.contains('active')) {
+                    button.style.background = '#2c3e50';
+                    button.style.borderColor = 'transparent';
+                }
+            };
+            
+            button.onclick = () => this.setToolMode(tool.id);
+            
+            container.appendChild(button);
+        });
+        
+        // Add CSS for active state
+        const style = document.createElement('style');
+        style.textContent = `
+            .tool-mode-btn.active {
+                background: #34495e !important;
+                border-color: #2ecc71 !important;
+                box-shadow: 0 0 10px rgba(46, 204, 113, 0.3);
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    
+    /**
+     * Set tool mode
+     */
+    setToolMode(mode) {
+        this.toolMode = mode;
+        
+        // Clear any active shape selection
+        this.cancelShape();
+        
+        // Update UI
+        document.querySelectorAll('.tool-mode-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        
+        const activeBtn = document.getElementById(`tool-${mode}`);
+        if (activeBtn) {
+            activeBtn.classList.add('active');
+        }
+        
+        // Update status
+        const modeNames = {
+            'place': 'Single Block Placement',
+            'fill_cube': 'Fill Cube (click 2 corners)',
+            'hollow_cube': 'Hollow Cube (click 2 corners)',
+            'wall': 'Wall (click 2 points)',
+            'floor': 'Floor (click 2 points)',
+            'line': 'Line (click 2 points)'
+        };
+        
+        console.log(`🛠️ Tool mode: ${modeNames[mode]}`);
+    }
+    
+    /**
+     * Cancel current shape selection
+     */
+    cancelShape() {
+        this.shapeStart = null;
+        this.shapeEnd = null;
+        this.clearShapePreview();
+    }
+    
+    /**
+     * Clear shape preview meshes
+     */
+    clearShapePreview() {
+        this.shapePreview.forEach(mesh => {
+            this.scene.remove(mesh);
+            mesh.geometry.dispose();
+            mesh.material.dispose();
+        });
+        this.shapePreview = [];
+    }
+    
+    /**
+     * Update shape preview during mouse move
+     */
+    updateShapePreview(endPos) {
+        // Clear existing preview
+        this.clearShapePreview();
+        
+        if (!this.shapeStart || !endPos) return;
+        
+        // Get positions that would be affected by this shape
+        const positions = this.getShapePositions(this.shapeStart, endPos);
+        
+        // Create preview meshes (semi-transparent)
+        const geometry = new THREE.BoxGeometry(1, 1, 1);
+        const material = new THREE.MeshLambertMaterial({
+            color: this.getBlockColor(this.selectedBlockType),
+            transparent: true,
+            opacity: 0.4,
+            flatShading: true
+        });
+        
+        positions.forEach(pos => {
+            const mesh = new THREE.Mesh(geometry, material.clone());
+            mesh.position.set(pos.x + 0.5, pos.y + 0.5, pos.z + 0.5);
+            this.scene.add(mesh);
+            this.shapePreview.push(mesh);
+        });
+    }
+    
+    /**
+     * Get positions for shape based on tool mode
+     */
+    getShapePositions(start, end) {
+        switch (this.toolMode) {
+            case 'fill_cube':
+                return this.getFillCubePositions(start, end);
+            case 'hollow_cube':
+                return this.getHollowCubePositions(start, end);
+            case 'wall':
+                return this.getWallPositions(start, end);
+            case 'floor':
+                return this.getFloorPositions(start, end);
+            case 'line':
+                return this.getLinePositions(start, end);
+            default:
+                return [];
+        }
+    }
+    
+    /**
+     * Get positions for fill cube
+     */
+    getFillCubePositions(start, end) {
+        const positions = [];
+        const minX = Math.min(start.x, end.x);
+        const maxX = Math.max(start.x, end.x);
+        const minY = Math.min(start.y, end.y);
+        const maxY = Math.max(start.y, end.y);
+        const minZ = Math.min(start.z, end.z);
+        const maxZ = Math.max(start.z, end.z);
+        
+        for (let x = minX; x <= maxX; x++) {
+            for (let y = minY; y <= maxY; y++) {
+                for (let z = minZ; z <= maxZ; z++) {
+                    positions.push({ x, y, z });
+                }
+            }
+        }
+        return positions;
+    }
+    
+    /**
+     * Get positions for hollow cube
+     */
+    getHollowCubePositions(start, end) {
+        const positions = [];
+        const minX = Math.min(start.x, end.x);
+        const maxX = Math.max(start.x, end.x);
+        const minY = Math.min(start.y, end.y);
+        const maxY = Math.max(start.y, end.y);
+        const minZ = Math.min(start.z, end.z);
+        const maxZ = Math.max(start.z, end.z);
+        
+        for (let x = minX; x <= maxX; x++) {
+            for (let y = minY; y <= maxY; y++) {
+                for (let z = minZ; z <= maxZ; z++) {
+                    // Only place on the outer shell
+                    if (x === minX || x === maxX || 
+                        y === minY || y === maxY || 
+                        z === minZ || z === maxZ) {
+                        positions.push({ x, y, z });
+                    }
+                }
+            }
+        }
+        return positions;
+    }
+    
+    /**
+     * Get positions for wall (vertical plane)
+     */
+    getWallPositions(start, end) {
+        const positions = [];
+        const minX = Math.min(start.x, end.x);
+        const maxX = Math.max(start.x, end.x);
+        const minY = Math.min(start.y, end.y);
+        const maxY = Math.max(start.y, end.y);
+        const minZ = Math.min(start.z, end.z);
+        const maxZ = Math.max(start.z, end.z);
+        
+        // Determine if wall is along X or Z axis
+        const xRange = maxX - minX;
+        const zRange = maxZ - minZ;
+        
+        if (xRange >= zRange) {
+            // Wall along X axis (XY plane)
+            const z = start.z; // Use start Z
+            for (let x = minX; x <= maxX; x++) {
+                for (let y = minY; y <= maxY; y++) {
+                    positions.push({ x, y, z });
+                }
+            }
+        } else {
+            // Wall along Z axis (ZY plane)
+            const x = start.x; // Use start X
+            for (let z = minZ; z <= maxZ; z++) {
+                for (let y = minY; y <= maxY; y++) {
+                    positions.push({ x, y, z });
+                }
+            }
+        }
+        
+        return positions;
+    }
+    
+    /**
+     * Get positions for floor (horizontal plane)
+     */
+    getFloorPositions(start, end) {
+        const positions = [];
+        const minX = Math.min(start.x, end.x);
+        const maxX = Math.max(start.x, end.x);
+        const minZ = Math.min(start.z, end.z);
+        const maxZ = Math.max(start.z, end.z);
+        const y = start.y; // Use start Y for floor height
+        
+        for (let x = minX; x <= maxX; x++) {
+            for (let z = minZ; z <= maxZ; z++) {
+                positions.push({ x, y, z });
+            }
+        }
+        return positions;
+    }
+    
+    /**
+     * Get positions for line (3D Bresenham)
+     */
+    getLinePositions(start, end) {
+        const positions = [];
+        const dx = Math.abs(end.x - start.x);
+        const dy = Math.abs(end.y - start.y);
+        const dz = Math.abs(end.z - start.z);
+        const sx = start.x < end.x ? 1 : -1;
+        const sy = start.y < end.y ? 1 : -1;
+        const sz = start.z < end.z ? 1 : -1;
+        
+        let x = start.x;
+        let y = start.y;
+        let z = start.z;
+        
+        // 3D Bresenham algorithm
+        if (dx >= dy && dx >= dz) {
+            let err1 = 2 * dy - dx;
+            let err2 = 2 * dz - dx;
+            
+            while (x !== end.x) {
+                positions.push({ x, y, z });
+                
+                if (err1 > 0) {
+                    y += sy;
+                    err1 -= 2 * dx;
+                }
+                if (err2 > 0) {
+                    z += sz;
+                    err2 -= 2 * dx;
+                }
+                
+                err1 += 2 * dy;
+                err2 += 2 * dz;
+                x += sx;
+            }
+        } else if (dy >= dx && dy >= dz) {
+            let err1 = 2 * dx - dy;
+            let err2 = 2 * dz - dy;
+            
+            while (y !== end.y) {
+                positions.push({ x, y, z });
+                
+                if (err1 > 0) {
+                    x += sx;
+                    err1 -= 2 * dy;
+                }
+                if (err2 > 0) {
+                    z += sz;
+                    err2 -= 2 * dy;
+                }
+                
+                err1 += 2 * dx;
+                err2 += 2 * dz;
+                y += sy;
+            }
+        } else {
+            let err1 = 2 * dy - dz;
+            let err2 = 2 * dx - dz;
+            
+            while (z !== end.z) {
+                positions.push({ x, y, z });
+                
+                if (err1 > 0) {
+                    y += sy;
+                    err1 -= 2 * dz;
+                }
+                if (err2 > 0) {
+                    x += sx;
+                    err2 -= 2 * dz;
+                }
+                
+                err1 += 2 * dy;
+                err2 += 2 * dx;
+                z += sz;
+            }
+        }
+        
+        // Add final position
+        positions.push({ x: end.x, y: end.y, z: end.z });
+        
+        return positions;
+    }
+    
+    /**
+     * Fill cube with blocks
+     */
+    fillCube(start, end) {
+        const positions = this.getFillCubePositions(start, end);
+        const batchAction = { type: 'batch_place', blocks: [] };
+        
+        positions.forEach(pos => {
+            this.placeBlockAt(pos.x, pos.y, pos.z, this.selectedBlockType);
+            batchAction.blocks.push({ x: pos.x, y: pos.y, z: pos.z, blockType: this.selectedBlockType });
+        });
+        
+        this.pushUndoAction(batchAction);
+        this.clearRedoStack();
+    }
+    
+    /**
+     * Create hollow cube
+     */
+    hollowCube(start, end) {
+        const positions = this.getHollowCubePositions(start, end);
+        const batchAction = { type: 'batch_place', blocks: [] };
+        
+        positions.forEach(pos => {
+            this.placeBlockAt(pos.x, pos.y, pos.z, this.selectedBlockType);
+            batchAction.blocks.push({ x: pos.x, y: pos.y, z: pos.z, blockType: this.selectedBlockType });
+        });
+        
+        this.pushUndoAction(batchAction);
+        this.clearRedoStack();
+    }
+    
+    /**
+     * Create wall
+     */
+    createWall(start, end) {
+        const positions = this.getWallPositions(start, end);
+        const batchAction = { type: 'batch_place', blocks: [] };
+        
+        positions.forEach(pos => {
+            this.placeBlockAt(pos.x, pos.y, pos.z, this.selectedBlockType);
+            batchAction.blocks.push({ x: pos.x, y: pos.y, z: pos.z, blockType: this.selectedBlockType });
+        });
+        
+        this.pushUndoAction(batchAction);
+        this.clearRedoStack();
+    }
+    
+    /**
+     * Create floor
+     */
+    createFloor(start, end) {
+        const positions = this.getFloorPositions(start, end);
+        const batchAction = { type: 'batch_place', blocks: [] };
+        
+        positions.forEach(pos => {
+            this.placeBlockAt(pos.x, pos.y, pos.z, this.selectedBlockType);
+            batchAction.blocks.push({ x: pos.x, y: pos.y, z: pos.z, blockType: this.selectedBlockType });
+        });
+        
+        this.pushUndoAction(batchAction);
+        this.clearRedoStack();
+    }
+    
+    /**
+     * Create line
+     */
+    createLine(start, end) {
+        const positions = this.getLinePositions(start, end);
+        const batchAction = { type: 'batch_place', blocks: [] };
+        
+        positions.forEach(pos => {
+            this.placeBlockAt(pos.x, pos.y, pos.z, this.selectedBlockType);
+            batchAction.blocks.push({ x: pos.x, y: pos.y, z: pos.z, blockType: this.selectedBlockType });
+        });
+        
+        this.pushUndoAction(batchAction);
+        this.clearRedoStack();
     }
     
     /**
@@ -1269,6 +1740,14 @@ export class RandyMStructureDesigner {
             // Update rotation start for next frame
             this.rotationStart.set(event.clientX, event.clientY);
         }
+        
+        // Update shape preview if in shape mode and start point is set
+        if (this.toolMode !== 'place' && this.shapeStart && !this.isRotating) {
+            const currentPos = this.getPlacementPosition();
+            if (currentPos) {
+                this.updateShapePreview(currentPos);
+            }
+        }
     }
     
     /**
@@ -1305,7 +1784,7 @@ export class RandyMStructureDesigner {
     }
     
     /**
-     * Handle left click (place block)
+     * Handle left click (place block or shape selection)
      */
     handleClick(event) {
         // Don't place blocks if we were rotating
@@ -1314,7 +1793,106 @@ export class RandyMStructureDesigner {
         }
         
         event.preventDefault();
-        this.placeBlock();
+        
+        // Check tool mode
+        if (this.toolMode === 'place') {
+            // Single block placement
+            this.placeBlock();
+        } else {
+            // Shape tool - two-point selection
+            if (!this.shapeStart) {
+                // First click - set start point
+                const pos = this.getPlacementPosition();
+                if (pos) {
+                    this.shapeStart = pos.clone();
+                    console.log(`📍 Shape start: ${pos.x}, ${pos.y}, ${pos.z}`);
+                }
+            } else {
+                // Second click - set end point and execute shape
+                const pos = this.getPlacementPosition();
+                if (pos) {
+                    this.shapeEnd = pos.clone();
+                    console.log(`📍 Shape end: ${pos.x}, ${pos.y}, ${pos.z}`);
+                    this.executeShape();
+                }
+            }
+        }
+    }
+    
+    /**
+     * Get placement position from current mouse raycast
+     */
+    getPlacementPosition() {
+        this.raycaster.setFromCamera(this.mouse, this.camera);
+        
+        // Check for intersections with existing blocks
+        const blocks = Array.from(this.placedBlocks.values()).map(b => b.mesh);
+        const intersects = this.raycaster.intersectObjects(blocks);
+        
+        if (intersects.length > 0) {
+            // Place adjacent to existing block
+            const intersect = intersects[0];
+            const normal = intersect.face.normal;
+            const pos = intersect.object.position.clone();
+            
+            pos.x = Math.floor(pos.x) + normal.x;
+            pos.y = Math.floor(pos.y) + normal.y;
+            pos.z = Math.floor(pos.z) + normal.z;
+            
+            return pos;
+        } else {
+            // Place on ground plane
+            const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+            const planeIntersect = new THREE.Vector3();
+            this.raycaster.ray.intersectPlane(groundPlane, planeIntersect);
+            
+            if (planeIntersect) {
+                planeIntersect.x = Math.floor(planeIntersect.x);
+                planeIntersect.y = 0;
+                planeIntersect.z = Math.floor(planeIntersect.z);
+                return planeIntersect;
+            }
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Execute the selected shape tool
+     */
+    executeShape() {
+        if (!this.shapeStart || !this.shapeEnd) return;
+        
+        // Clear preview
+        this.clearShapePreview();
+        
+        // Execute appropriate shape tool
+        const blocksBefore = this.placedBlocks.size;
+        
+        switch (this.toolMode) {
+            case 'fill_cube':
+                this.fillCube(this.shapeStart, this.shapeEnd);
+                break;
+            case 'hollow_cube':
+                this.hollowCube(this.shapeStart, this.shapeEnd);
+                break;
+            case 'wall':
+                this.createWall(this.shapeStart, this.shapeEnd);
+                break;
+            case 'floor':
+                this.createFloor(this.shapeStart, this.shapeEnd);
+                break;
+            case 'line':
+                this.createLine(this.shapeStart, this.shapeEnd);
+                break;
+        }
+        
+        const blocksPlaced = this.placedBlocks.size - blocksBefore;
+        console.log(`✅ ${this.toolMode}: placed ${blocksPlaced} blocks`);
+        
+        // Reset for next shape
+        this.shapeStart = null;
+        this.shapeEnd = null;
     }
     
     /**
@@ -1378,6 +1956,15 @@ export class RandyMStructureDesigner {
      * Handle keyboard shortcuts
      */
     handleKeyDown(event) {
+        // ESC: Cancel shape selection
+        if (event.key === 'Escape') {
+            if (this.shapeStart) {
+                console.log('❌ Shape selection cancelled');
+                this.cancelShape();
+                event.preventDefault();
+            }
+        }
+        
         // Undo: Ctrl+Z
         if (event.ctrlKey && event.key === 'z' && !event.shiftKey) {
             event.preventDefault();
@@ -1441,6 +2028,25 @@ export class RandyMStructureDesigner {
         } else if (action.type === 'remove') {
             // Undo remove = place block back
             this.placeBlockAt(action.position.x, action.position.y, action.position.z, action.blockType);
+        } else if (action.type === 'batch_place') {
+            // Undo batch place = remove all blocks
+            action.blocks.forEach(blockInfo => {
+                const key = `${blockInfo.x},${blockInfo.y},${blockInfo.z}`;
+                const block = this.placedBlocks.get(key);
+                
+                if (block) {
+                    this.scene.remove(block.mesh);
+                    block.mesh.geometry.dispose();
+                    
+                    if (Array.isArray(block.mesh.material)) {
+                        block.mesh.material.forEach(mat => mat.dispose());
+                    } else {
+                        block.mesh.material.dispose();
+                    }
+                    
+                    this.placedBlocks.delete(key);
+                }
+            });
         }
         
         // Push to redo stack
@@ -1483,6 +2089,11 @@ export class RandyMStructureDesigner {
                 
                 this.placedBlocks.delete(key);
             }
+        } else if (action.type === 'batch_place') {
+            // Redo batch place = place all blocks again
+            action.blocks.forEach(blockInfo => {
+                this.placeBlockAt(blockInfo.x, blockInfo.y, blockInfo.z, blockInfo.blockType);
+            });
         }
         
         // Push back to undo stack
