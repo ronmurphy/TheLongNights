@@ -83,6 +83,23 @@ The rename was performed using `rename-to-long-nights.sh` script with:
 - Automatic backups
 - Smart filtering to avoid binary/build directories
 
+### ⚠️ Important Correction Applied
+
+After the initial rename, JavaScript build errors occurred because function and variable names cannot contain spaces. The following corrections were made:
+
+**Kept as code identifiers (cannot have spaces):**
+- ✅ `VoxelWorld.js` - Source filename
+- ✅ `initVoxelWorld()` - Function name
+- ✅ `window.voxelWorld` - Global reference
+
+**Changed to "The Long Nights" (strings/UI only):**
+- ✅ Database names: `'The Long Nights'`
+- ✅ HTML titles and UI text
+- ✅ Comments and documentation
+- ✅ Package name: `"the-long-nights"` (kebab-case)
+
+See `docs/JAVASCRIPT_NAMING_RULES.md` for complete guidelines.
+
 ---
 
 **Script Location:** `/home/brad/Documents/TheLongNights/rename-to-long-nights.sh`
