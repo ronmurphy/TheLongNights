@@ -45,6 +45,11 @@ export class RandyMStructureDesigner {
         this.shapeEnd = null; // Second click position for shape tools
         this.shapePreview = []; // Array of preview meshes
         
+        // Vertical adjustment mode (Shift+MouseMove)
+        this.isAdjustingVertical = false; // True when Shift is held after first click
+        this.verticalAdjustmentStart = 0; // Mouse Y position when Shift was first pressed
+        this.verticalOffset = 0; // Current Y offset from shapeStart
+        
         // DOM elements
         this.modalOverlay = null;
         this.container = null;
@@ -515,8 +520,9 @@ export class RandyMStructureDesigner {
             { id: 'fill_cube', icon: '🧊', name: 'Fill Cube', desc: 'Solid rectangular volume' },
             { id: 'wall', icon: '🧱', name: 'Wall', desc: 'Vertical plane' },
             { id: 'floor', icon: '⬛', name: 'Floor', desc: 'Horizontal plane' },
-            { id: 'line', icon: '📏', name: 'Line', desc: 'Straight line' },
-            { id: 'door', icon: '🚪', name: 'Door', desc: 'Cut 2x2 opening' }
+            { id: 'line', icon: '📏', name: 'Line', desc: 'Straight line' }
+            // Door tool removed - right-click already deletes blocks
+            // { id: 'door', icon: '🚪', name: 'Door', desc: 'Cut 2x2 opening' }
         ];
         
         tools.forEach(tool => {
@@ -733,6 +739,11 @@ export class RandyMStructureDesigner {
         this.shapeStart = null;
         this.shapeEnd = null;
         this.clearShapePreview();
+        
+        // Reset vertical adjustment state
+        this.isAdjustingVertical = false;
+        this.verticalOffset = 0;
+        this.hideVerticalIndicator();
     }
     
     /**
@@ -774,6 +785,47 @@ export class RandyMStructureDesigner {
             this.scene.add(mesh);
             this.shapePreview.push(mesh);
         });
+    }
+    
+    /**
+     * Update vertical indicator UI element
+     */
+    updateVerticalIndicator() {
+        // Create indicator if it doesn't exist
+        if (!this.verticalIndicator) {
+            this.verticalIndicator = document.createElement('div');
+            this.verticalIndicator.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: rgba(74, 158, 255, 0.95);
+                color: white;
+                padding: 15px 30px;
+                border-radius: 8px;
+                font-size: 24px;
+                font-weight: bold;
+                font-family: 'Courier New', monospace;
+                box-shadow: 0 0 20px rgba(74, 158, 255, 0.8);
+                pointer-events: none;
+                z-index: 50001;
+            `;
+            this.modalOverlay.appendChild(this.verticalIndicator);
+        }
+        
+        // Update text
+        const sign = this.verticalOffset >= 0 ? '+' : '';
+        this.verticalIndicator.textContent = `Height: ${sign}${this.verticalOffset} blocks`;
+        this.verticalIndicator.style.display = 'block';
+    }
+    
+    /**
+     * Hide vertical indicator
+     */
+    hideVerticalIndicator() {
+        if (this.verticalIndicator) {
+            this.verticalIndicator.style.display = 'none';
+        }
     }
     
     /**
@@ -2075,9 +2127,46 @@ export class RandyMStructureDesigner {
         
         // Update shape preview if in shape mode and start point is set
         if (this.toolMode !== 'place' && this.shapeStart && !this.isRotating) {
-            const currentPos = this.getPlacementPosition();
-            if (currentPos) {
-                this.updateShapePreview(currentPos);
+            // Check if Shift key is held for vertical adjustment
+            if (event.shiftKey) {
+                // Enter vertical adjustment mode
+                if (!this.isAdjustingVertical) {
+                    this.isAdjustingVertical = true;
+                    this.verticalAdjustmentStart = event.clientY;
+                    console.log('📏 Vertical adjustment mode activated (hold Shift + move mouse up/down)');
+                }
+                
+                // Calculate vertical offset based on mouse movement
+                // Negative because mouse Y is inverted (up = negative)
+                const deltaY = this.verticalAdjustmentStart - event.clientY;
+                this.verticalOffset = Math.round(deltaY / 20); // 20 pixels per block
+                
+                // Update preview with vertical offset
+                const currentPos = this.getPlacementPosition();
+                if (currentPos) {
+                    // Create adjusted end position with vertical offset
+                    const adjustedPos = currentPos.clone();
+                    adjustedPos.y += this.verticalOffset;
+                    this.updateShapePreview(adjustedPos);
+                    
+                    // Update vertical indicator
+                    this.updateVerticalIndicator();
+                }
+            } else {
+                // Exit vertical adjustment mode when Shift is released
+                if (this.isAdjustingVertical) {
+                    this.isAdjustingVertical = false;
+                    console.log(`📏 Vertical adjustment complete: ${this.verticalOffset > 0 ? '+' : ''}${this.verticalOffset} blocks`);
+                }
+                
+                // Normal horizontal preview
+                const currentPos = this.getPlacementPosition();
+                if (currentPos) {
+                    this.updateShapePreview(currentPos);
+                }
+                
+                // Hide vertical indicator
+                this.hideVerticalIndicator();
             }
         }
     }
@@ -2130,15 +2219,18 @@ export class RandyMStructureDesigner {
         if (this.toolMode === 'place') {
             // Single block placement
             this.placeBlock();
-        } else if (this.toolMode === 'door') {
-            // Door tool - single click
-            const pos = this.getPlacementPosition();
-            if (pos) {
-                this.shapeStart = pos.clone();
-                this.shapeEnd = pos.clone(); // Door only needs one point
-                this.executeShape();
-            }
-        } else {
+        } 
+        // Door tool removed - right-click already deletes blocks
+        // else if (this.toolMode === 'door') {
+        //     // Door tool - single click
+        //     const pos = this.getPlacementPosition();
+        //     if (pos) {
+        //         this.shapeStart = pos.clone();
+        //         this.shapeEnd = pos.clone(); // Door only needs one point
+        //         this.executeShape();
+        //     }
+        // } 
+        else {
             // Shape tool - two-point selection
             if (!this.shapeStart) {
                 // First click - set start point
@@ -2146,14 +2238,27 @@ export class RandyMStructureDesigner {
                 if (pos) {
                     this.shapeStart = pos.clone();
                     console.log(`📍 Shape start: ${pos.x}, ${pos.y}, ${pos.z}`);
+                    console.log('💡 Move mouse for XZ dimensions, hold Shift + move mouse for height');
                 }
             } else {
                 // Second click - set end point and execute shape
                 const pos = this.getPlacementPosition();
                 if (pos) {
+                    // Apply vertical offset if in vertical adjustment mode
+                    if (event.shiftKey && this.verticalOffset !== 0) {
+                        pos.y += this.verticalOffset;
+                        console.log(`📍 Shape end (with vertical offset): ${pos.x}, ${pos.y}, ${pos.z} (${this.verticalOffset > 0 ? '+' : ''}${this.verticalOffset})`);
+                    } else {
+                        console.log(`📍 Shape end: ${pos.x}, ${pos.y}, ${pos.z}`);
+                    }
+                    
                     this.shapeEnd = pos.clone();
-                    console.log(`📍 Shape end: ${pos.x}, ${pos.y}, ${pos.z}`);
                     this.executeShape();
+                    
+                    // Reset vertical adjustment state
+                    this.isAdjustingVertical = false;
+                    this.verticalOffset = 0;
+                    this.hideVerticalIndicator();
                 }
             }
         }

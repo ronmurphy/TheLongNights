@@ -1,8 +1,8 @@
-# RandyM Structure Designer - Phase 5 Complete! 🎨
+# RandyM Structure Designer - Phase 5.6 Complete! 🎨
 
 **Named after:** Randy (with M initial)  
 **Created:** October 17, 2025  
-**Status:** Phase 5 ✅ Shape Tools - **INTEGRATED** ✅  
+**Status:** Phase 5.6 ✅ Vertical Adjustment Mode - **INTEGRATED** ✅  
 **Current Mode:** 🎨 Creative/Debug (Unlimited Blocks)  
 **Future Mode:** 🎮 NPC Service (Player Inventory Integration)
 
@@ -17,15 +17,18 @@ In the browser console:
 openStructureDesigner()
 ```
 
-### Controls (Phase 5)
+### Controls (Phase 5.6)
 
 | Action | Control |
 |--------|---------|
 | **Select Block** | Click block in left palette |
 | **Select Tool Mode** | Click tool in right palette |
+| **Expand Hollow Shapes** | Click Hollow Shapes chevron |
 | **Place Block** | Left Click (Place mode) |
 | **Shape Start Point** | Left Click (Shape mode) |
 | **Shape End Point** | Left Click again (Shape mode) |
+| **Vertical Adjustment** | Hold Shift + Move Mouse Up/Down |
+| **Place with Height** | Shift + Left Click (Shape mode) |
 | **Cancel Shape** | ESC key (Shape mode) |
 | **Delete Block** | Right Click (hover shows red glow) |
 | **Undo** | Ctrl+Z or click Undo button |
@@ -50,33 +53,46 @@ openStructureDesigner()
 - ✅ Proper disposal of geometries/materials
 - ✅ Window resize handling
 
-## ✅ Phase 5 Features (COMPLETE)
+## ✅ Phase 5.6 Features (COMPLETE)
 
 - ✅ **Tool Mode Selector** - Right sidebar with 6 tool modes
 - ✅ **Place Mode** - Single block placement (default)
 - ✅ **Fill Cube Tool** - Solid rectangular volumes (click 2 corners)
-- ✅ **Hollow Cube Tool** - Rectangular shells (only outer surface)
+- ✅ **Hollow Shapes Menu** - Expandable submenu with chevron
+  - ✅ **Hollow Cube** - Rectangular shells (only outer surface)
+  - ✅ **Hollow Sphere** - Spherical shells (clipped at Y=0)
+  - ✅ **Hollow Cylinder** - Cylindrical shells (no caps)
+  - ✅ **Hollow Pyramid** - Pyramidal shells (tapered layers)
 - ✅ **Wall Tool** - Vertical planes (auto-detects XY or ZY orientation)
 - ✅ **Floor Tool** - Horizontal planes (XZ plane at selected height)
 - ✅ **Line Tool** - 3D lines using Bresenham algorithm
+- ✅ **Vertical Adjustment** - Shift + MouseMove for Y-axis control
+  - Hold Shift after first click to adjust height
+  - Move mouse up/down to change vertical offset
+  - Real-time preview shows full 3D shape with height
+  - Blue indicator displays current height offset
+  - Works with all hollow shapes, cubes, walls, floors, lines
 - ✅ **Two-Point Selection** - First click sets start, second sets end
 - ✅ **Shape Preview** - Semi-transparent ghost blocks during selection
-- ✅ **Batch Undo** - Entire shapes undo as single action
+- ✅ **Batch Undo/Redo** - Entire shapes undo as single action
 - ✅ **ESC to Cancel** - Cancel shape selection at any time
 - ✅ **Visual Feedback** - Active tool highlighted with green glow
+- ✅ **Ground Clipping** - Shapes won't render below Y=0
 
 ---
 
 ## ✅ Phase 4 Features (COMPLETE)
 
 - ✅ **Tool Palette** - Right sidebar with professional styling
-- ✅ **X/Y/Z Axis Lock Toggles** - Phone-style switches for future rotation
+- ✅ **X/Y/Z Axis Lock Toggles** - Phone-style switches for rotation control
+- ✅ **Camera Rotation** - Ctrl+drag to rotate 360° around structure
 - ✅ **Undo/Redo System** - Full history tracking (50 actions)
 - ✅ **Keyboard Shortcuts** - Ctrl+Z (undo), Ctrl+Y (redo)
 - ✅ **UI Buttons** - Click buttons for undo/redo
-- ✅ **Smart History** - Tracks both place and remove actions
+- ✅ **Smart History** - Tracks place, remove, and batch actions
 - ✅ **Memory Efficient** - Limited stack size (50 max)
 - ✅ **Visual Feedback** - Button states update based on history
+- ✅ **Grid Snapping** - Always enabled (kept for precision)
 
 ---
 
@@ -312,14 +328,13 @@ class MasterBuilderNPC extends NPC {
 - ✅ Hover highlight for deletion (red glow)
 - ✅ Visual feedback for tools
 
-### Phase 4: Advanced Placement 🎯
-- [ ] Camera rotation (X/Y/Z axis buttons)
-- [ ] Grid snapping toggle
-- [ ] Undo/redo stack
-- [ ] Copy/paste blocks
-- [ ] Mirror/flip tools
+### ~~Phase 4: Advanced Placement~~ ✅ COMPLETE
+- ✅ Camera rotation (Ctrl+drag horizontal orbit)
+- ✅ Grid snapping (always enabled for precision)
+- ✅ Undo/redo stack (50 action history)
+- ✅ X/Y/Z axis lock toggles
 
-### Phase 5: Shape Tools 📐
+### ~~Phase 5: Shape Tools~~ ✅ COMPLETE
 - ✅ Fill cube tool (solid rectangles)
 - ✅ Hollow cube tool (shells)
 - ✅ Wall tool (vertical planes)
@@ -330,14 +345,30 @@ class MasterBuilderNPC extends NPC {
 - ✅ Batch undo for entire shapes
 - ✅ ESC to cancel selection
 
-### Phase 6: File System 💾
+### ~~Phase 5.5: Advanced Shapes~~ ✅ COMPLETE
+- ✅ Hollow shapes expandable menu
+- ✅ Hollow sphere (spherical shells)
+- ✅ Hollow cylinder (cylindrical shells)
+- ✅ Hollow pyramid (pyramidal shells)
+- ✅ Ground clipping (no blocks below Y=0)
+
+### ~~Phase 5.6: Vertical Adjustment~~ ✅ COMPLETE
+- ✅ Shift + MouseMove for Y-axis adjustment
+- ✅ Real-time 3D preview during vertical adjustment
+- ✅ Visual height indicator (blue overlay)
+- ✅ Works with all shape tools
+- ✅ 20 pixels = 1 block height sensitivity
+- ✅ Removed redundant door tool (right-click deletes)
+
+### Phase 6: File System 💾 (IN PROGRESS)
 - [ ] Save structure to JSON
 - [ ] Load structure from file
-- [ ] Export to filesystem
-- [ ] Structure metadata
+- [ ] File browser UI
+- [ ] Structure metadata (name, author, date)
 - [ ] Material cost calculator
+- [ ] "-placed" suffix for deployed structures
 
-### Phase 6: Polish ✨
+### Phase 7: Polish ✨
 - [ ] Camera pan controls
 - [ ] Selection box
 - [ ] Measurement tools
@@ -346,7 +377,7 @@ class MasterBuilderNPC extends NPC {
 
 ---
 
-## �️ Shape Tools Guide (Phase 5)
+## 🛠️ Shape Tools Guide (Phase 5.6)
 
 ### Tool Modes
 
@@ -390,24 +421,31 @@ class MasterBuilderNPC extends NPC {
 1. **Select Tool**: Click tool mode in right palette (green highlight = active)
 2. **Choose Block**: Select block type from left palette
 3. **First Click**: Click to set start point (console shows coordinates)
-4. **Move Mouse**: See semi-transparent preview of final shape
-5. **Second Click**: Click to place entire shape (batch action)
-6. **Undo**: Press Ctrl+Z to undo entire shape at once
-7. **Cancel**: Press ESC to cancel and start over
+4. **Move Mouse (XZ)**: See semi-transparent preview, move for horizontal dimensions
+5. **Hold Shift (Y)**: Adjust vertical height by moving mouse up/down
+   - Blue indicator shows current height offset (+5 blocks, etc.)
+   - Preview updates in real-time showing full 3D shape
+   - 20 pixels of mouse movement = 1 block height
+6. **Second Click**: Click to place entire shape (Shift+Click if adjusting height)
+7. **Undo**: Press Ctrl+Z to undo entire shape at once
+8. **Cancel**: Press ESC to cancel and start over
 
 ### Pro Tips
 
-- **Preview is Real-Time**: Shape updates as you move mouse after first click
+- **Vertical Building Made Easy**: Click ground point, hold Shift, move mouse up to build tall structures in one action!
+- **No Support Needed**: You can now build hollow shapes high in the air without stacking layer-by-layer
+- **Preview is Real-Time**: Shape updates as you move mouse (both XZ and Y dimensions)
 - **Batch Undo**: Entire shape undoes as one action (not block-by-block)
 - **ESC Anytime**: Cancel shape selection without penalty
 - **Mix Tools**: Switch between tools mid-workflow
 - **Combine Shapes**: Use Fill Cube + Hollow Cube for complex structures
+- **Delete Blocks**: Right-click any block to delete (no door tool needed!)
 
 ---
 
-## �🐛 Known Issues
+## 🐛 Known Issues
 
-None yet! Phases 1-5 are stable.
+None yet! Phases 1-5.6 are stable.
 
 ---
 
@@ -429,25 +467,26 @@ None yet! Phases 1-5 are stable.
 ### Building a Simple House
 
 1. **Floor**: Select Floor tool (⬛), click two corners → instant floor
-2. **Walls**: Select Wall tool (🧱), build 4 walls around floor
-3. **Hollow Room**: Select Hollow Cube (📦) for instant room frame
-4. **Details**: Switch to Place mode (🖌️) for doors, windows
+2. **Walls**: Select Hollow Cube (📦), click first corner on ground, hold Shift + move mouse up for height, Shift+Click
+3. **Instant Room**: You just built a full room in seconds!
+4. **Details**: Switch to Place mode (🖌️) for details, right-click to cut doors/windows
 5. **Roof**: Use Floor tool at higher Y, or Fill Cube for peaked roof
 
 ### Making Large Structures
 
 1. **Foundation**: Fill Cube (🧊) for solid base
-2. **Shell**: Hollow Cube (📦) for outer walls
+2. **Tall Shell**: Hollow Cube (📦) + Shift for instant multi-story outer walls
 3. **Interior**: Place mode (🖌️) for rooms and details
-4. **Support Beams**: Line tool (📏) for pillars and beams
+4. **Support Beams**: Line tool (📏) + Shift for tall pillars in one action
 5. **Platforms**: Floor tool (⬛) for multiple levels
 
-### Speed Building Workflow
+### Speed Building Workflow (NEW!)
 
-1. **Rough Shape**: Hollow Cube + Fill Cube for basic structure
-2. **Walls & Floors**: Wall + Floor tools for major surfaces
-3. **Details**: Place mode for fine details
-4. **Polish**: Use undo (Ctrl+Z) to perfect each step
+1. **Single-Action Tall Builds**: Click → Shift+MouseUp → Shift+Click = instant tall structure!
+2. **No Layer Stacking**: Build 10-block tall hollow spheres in one action
+3. **Quick Cylinders**: Perfect for towers and silos (click → Shift+up → done)
+4. **Rapid Pyramids**: Great for roofs and landmarks
+5. **Polish**: Use undo (Ctrl+Z) to perfect each step
 
 ---
 
