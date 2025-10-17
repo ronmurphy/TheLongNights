@@ -4,6 +4,83 @@ Continuation of CHANGELOG.md for new development sessions.
 
 ---
 
+## 2025-10-16 - 🩸 Blood Moon System - Progressive Spawning & Combat
+
+**Status: PHASE 1 COMPLETE ✅**
+
+### 🌕 Blood Moon Event System - 7-Day Survival Horror!
+
+Implemented a comprehensive blood moon event system that transforms Day 7 into a terrifying survival challenge. Enemies spawn progressively throughout the day, getting faster as darkness approaches, creating escalating tension and strategic gameplay.
+
+**Key Features:**
+- ✅ 7-day weekly cycle with blood moon on Day 7
+- ✅ Minimap-integrated UI showing Week/Day counter
+- ✅ Progressive hourly enemy spawning (Noon to Midnight)
+- ✅ Speed increases with darkness (+5% per hour)
+- ✅ Blood red sky transformation (10pm-2am)
+- ✅ Spear combat system integration
+- ✅ One-hit kills on zombie crawlers
+- ✅ 50-70 total enemies per blood moon
+
+**Progressive Spawn System:**
+- **12:00 (Noon)**: 2-3 crawlers spawn - First warning signs
+- **13:00-18:00**: 3-5 crawlers per hour - Building threat
+- **19:00-21:00**: 5-8 crawlers per hour - PANIC! Run to base!
+- **22:00-23:00**: 8-12 crawlers per hour - Peak chaos + blood moon sky
+- **00:00 (Midnight)**: Spawning stops, enemies persist until 2am cleanup
+
+**Progressive Speed Boost:**
+- Hour 12 (Noon): 1.00x speed = 0.15 blocks/sec (manageable)
+- Hour 17: 1.25x speed = 0.19 blocks/sec (noticeable threat)
+- Hour 19: 1.35x speed = 0.20 blocks/sec (sprint to base!)
+- Hour 23: 1.55x speed = 0.23 blocks/sec (terrifying!)
+
+**Combat System:**
+- Zombie crawlers: 1 HP (one-hit kills with spear)
+- Spear hit detection: 1.5 block range during flight
+- Kill feedback: "💀 You killed a zombie_crawler!"
+- Spear sticks at kill location for retrieval
+
+**UI Integration:**
+- Week/Day display below minimap (seamless design)
+- Normal days: Cream text "Week X - Day Y/7"
+- Day 7: Orange warning "Week X - Day 7/7 ⚠️"
+- Blood moon active: Red pulsing "🩸 BLOOD MOON 🩸"
+- CSS animations: Smooth scaling and glow effects
+
+**Technical Implementation:**
+- `BloodMoonSystem.js`: New 500+ line enemy management system
+- `VoxelWorld.js`: Week/day tracking in dayNightCycle
+- `SpearSystem.js`: Enemy hit detection during spear flight
+- Entity data loaded from `art/entities/entities.json`
+- Texture loading via `EnhancedGraphics.loadEntityTexture()`
+- 60 FPS animation loop for enemy movement
+- Frame-rate independent movement using deltaTime
+
+**Files Created:**
+- `src/BloodMoonSystem.js`: Enemy spawning, AI, and combat
+- `docs/BLOOD_MOON_SYSTEM_OVERVIEW.md`: Complete game design
+- `docs/BLOOD_MOON_PHASE_1_IMPLEMENTATION.md`: Technical guide
+
+**Files Modified:**
+- `src/VoxelWorld.js`: Day/week tracking, blood moon detection, UI
+- `src/SpearSystem.js`: Enemy collision detection
+- Enemy assets in `assets/art/entities/` (zombie crawler sprites)
+
+**Atmospheric Success:**
+- 12 hours of escalating tension on Day 7
+- Friend's suggestion: "More time to panic and run back to base" ✅
+- Spooky music + blood red sky + slow crawlers = genuine horror
+- Player quote: "I may have a hard time sleeping tonight" 😱
+
+**Next Phases (Future):**
+- Phase 2: Player/block damage system
+- Phase 3: Sleep mechanics to skip blood moon
+- Phase 4: Additional enemy types per week
+- Phase 5: Victory/defeat conditions and rewards
+
+---
+
 ## 2025-10-15 - 🏠 Voxel-Based Simple House System
 
 **Status: IMPLEMENTED ✅**
