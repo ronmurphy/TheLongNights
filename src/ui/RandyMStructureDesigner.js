@@ -513,10 +513,10 @@ export class RandyMStructureDesigner {
         const tools = [
             { id: 'place', icon: '🖌️', name: 'Place', desc: 'Single block placement' },
             { id: 'fill_cube', icon: '🧊', name: 'Fill Cube', desc: 'Solid rectangular volume' },
-            { id: 'hollow_cube', icon: '📦', name: 'Hollow Cube', desc: 'Rectangular shell' },
             { id: 'wall', icon: '🧱', name: 'Wall', desc: 'Vertical plane' },
             { id: 'floor', icon: '⬛', name: 'Floor', desc: 'Horizontal plane' },
-            { id: 'line', icon: '📏', name: 'Line', desc: 'Straight line' }
+            { id: 'line', icon: '📏', name: 'Line', desc: 'Straight line' },
+            { id: 'door', icon: '🚪', name: 'Door', desc: 'Cut 2x2 opening' }
         ];
         
         tools.forEach(tool => {
@@ -569,6 +569,9 @@ export class RandyMStructureDesigner {
             container.appendChild(button);
         });
         
+        // Hollow Shapes expandable section
+        this.createHollowShapesSection(container);
+        
         // Add CSS for active state
         const style = document.createElement('style');
         style.textContent = `
@@ -579,6 +582,112 @@ export class RandyMStructureDesigner {
             }
         `;
         document.head.appendChild(style);
+    }
+    
+    /**
+     * Create hollow shapes expandable section
+     */
+    createHollowShapesSection(container) {
+        // Hollow Shapes header button
+        const headerBtn = document.createElement('button');
+        headerBtn.innerHTML = `
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 18px;">📦</span>
+                    <span style="font-weight: bold; font-size: 12px;">Hollow Shapes</span>
+                </div>
+                <span id="hollow-chevron" style="transition: transform 0.2s;">▼</span>
+            </div>
+        `;
+        
+        headerBtn.style.cssText = `
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 8px;
+            background: #34495e;
+            color: #ecf0f1;
+            border: 2px solid #4a9eff;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s;
+        `;
+        
+        // Submenu container
+        const submenu = document.createElement('div');
+        submenu.id = 'hollow-submenu';
+        submenu.style.cssText = `
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            margin-bottom: 8px;
+        `;
+        
+        const hollowShapes = [
+            { id: 'hollow_cube', icon: '📦', name: 'Cube', desc: 'Rectangular shell' },
+            { id: 'hollow_sphere', icon: '⚽', name: 'Sphere', desc: 'Spherical shell' },
+            { id: 'hollow_cylinder', icon: '🛢️', name: 'Cylinder', desc: 'Cylindrical shell' },
+            { id: 'hollow_pyramid', icon: '🔺', name: 'Pyramid', desc: 'Pyramidal shell' }
+        ];
+        
+        hollowShapes.forEach(shape => {
+            const btn = document.createElement('button');
+            btn.id = `tool-${shape.id}`;
+            btn.className = 'tool-mode-btn hollow-shape-btn';
+            if (shape.id === this.toolMode) {
+                btn.classList.add('active');
+            }
+            
+            btn.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 8px; padding-left: 10px;">
+                    <span style="font-size: 16px;">${shape.icon}</span>
+                    <div style="flex: 1; text-align: left;">
+                        <div style="font-weight: bold; font-size: 11px;">${shape.name}</div>
+                        <div style="font-size: 9px; color: #95a5a6;">${shape.desc}</div>
+                    </div>
+                </div>
+            `;
+            
+            btn.style.cssText = `
+                width: 100%;
+                padding: 8px;
+                margin-bottom: 6px;
+                background: #2c3e50;
+                color: #ecf0f1;
+                border: 2px solid transparent;
+                border-radius: 5px;
+                cursor: pointer;
+                transition: all 0.2s;
+            `;
+            
+            btn.onmouseover = () => {
+                if (!btn.classList.contains('active')) {
+                    btn.style.background = '#34495e';
+                    btn.style.borderColor = '#4a9eff';
+                }
+            };
+            
+            btn.onmouseout = () => {
+                if (!btn.classList.contains('active')) {
+                    btn.style.background = '#2c3e50';
+                    btn.style.borderColor = 'transparent';
+                }
+            };
+            
+            btn.onclick = () => this.setToolMode(shape.id);
+            
+            submenu.appendChild(btn);
+        });
+        
+        // Toggle submenu
+        let isExpanded = false;
+        headerBtn.onclick = () => {
+            isExpanded = !isExpanded;
+            submenu.style.maxHeight = isExpanded ? '300px' : '0';
+            document.getElementById('hollow-chevron').style.transform = isExpanded ? 'rotate(180deg)' : 'rotate(0deg)';
+        };
+        
+        container.appendChild(headerBtn);
+        container.appendChild(submenu);
     }
     
     /**
@@ -605,9 +714,13 @@ export class RandyMStructureDesigner {
             'place': 'Single Block Placement',
             'fill_cube': 'Fill Cube (click 2 corners)',
             'hollow_cube': 'Hollow Cube (click 2 corners)',
+            'hollow_sphere': 'Hollow Sphere (click center & radius)',
+            'hollow_cylinder': 'Hollow Cylinder (click base center & radius)',
+            'hollow_pyramid': 'Hollow Pyramid (click 2 corners)',
             'wall': 'Wall (click 2 points)',
             'floor': 'Floor (click 2 points)',
-            'line': 'Line (click 2 points)'
+            'line': 'Line (click 2 points)',
+            'door': 'Door (click bottom-left corner)'
         };
         
         console.log(`🛠️ Tool mode: ${modeNames[mode]}`);
@@ -672,12 +785,20 @@ export class RandyMStructureDesigner {
                 return this.getFillCubePositions(start, end);
             case 'hollow_cube':
                 return this.getHollowCubePositions(start, end);
+            case 'hollow_sphere':
+                return this.getHollowSpherePositions(start, end);
+            case 'hollow_cylinder':
+                return this.getHollowCylinderPositions(start, end);
+            case 'hollow_pyramid':
+                return this.getHollowPyramidPositions(start, end);
             case 'wall':
                 return this.getWallPositions(start, end);
             case 'floor':
                 return this.getFloorPositions(start, end);
             case 'line':
                 return this.getLinePositions(start, end);
+            case 'door':
+                return this.getDoorPositions(start);
             default:
                 return [];
         }
@@ -725,6 +846,120 @@ export class RandyMStructureDesigner {
                         y === minY || y === maxY || 
                         z === minZ || z === maxZ) {
                         positions.push({ x, y, z });
+                    }
+                }
+            }
+        }
+        return positions;
+    }
+    
+    /**
+     * Get positions for hollow sphere
+     */
+    getHollowSpherePositions(start, end) {
+        const positions = [];
+        const center = start;
+        const radius = Math.round(Math.sqrt(
+            Math.pow(end.x - start.x, 2) +
+            Math.pow(end.y - start.y, 2) +
+            Math.pow(end.z - start.z, 2)
+        ));
+        
+        // Create sphere shell (thickness = 1 block)
+        for (let x = center.x - radius; x <= center.x + radius; x++) {
+            for (let y = center.y - radius; y <= center.y + radius; y++) {
+                for (let z = center.z - radius; z <= center.z + radius; z++) {
+                    // Skip blocks below ground level
+                    if (y < 0) continue;
+                    
+                    const dist = Math.sqrt(
+                        Math.pow(x - center.x, 2) +
+                        Math.pow(y - center.y, 2) +
+                        Math.pow(z - center.z, 2)
+                    );
+                    // Only place blocks on the outer shell
+                    if (dist >= radius - 0.5 && dist <= radius + 0.5) {
+                        positions.push({ x, y, z });
+                    }
+                }
+            }
+        }
+        return positions;
+    }
+    
+    /**
+     * Get positions for hollow cylinder
+     */
+    getHollowCylinderPositions(start, end) {
+        const positions = [];
+        const baseCenter = { x: start.x, y: start.y, z: start.z };
+        const radius = Math.round(Math.sqrt(
+            Math.pow(end.x - start.x, 2) +
+            Math.pow(end.z - start.z, 2)
+        ));
+        const height = Math.abs(end.y - start.y);
+        
+        // Create cylinder shell (no caps)
+        for (let x = baseCenter.x - radius; x <= baseCenter.x + radius; x++) {
+            for (let z = baseCenter.z - radius; z <= baseCenter.z + radius; z++) {
+                const dist = Math.sqrt(
+                    Math.pow(x - baseCenter.x, 2) +
+                    Math.pow(z - baseCenter.z, 2)
+                );
+                // Only place blocks on the outer ring
+                if (dist >= radius - 0.5 && dist <= radius + 0.5) {
+                    for (let y = baseCenter.y; y <= baseCenter.y + height; y++) {
+                        // Skip blocks below ground
+                        if (y >= 0) {
+                            positions.push({ x, y, z });
+                        }
+                    }
+                }
+            }
+        }
+        return positions;
+    }
+    
+    /**
+     * Get positions for hollow pyramid
+     */
+    getHollowPyramidPositions(start, end) {
+        const positions = [];
+        const minX = Math.min(start.x, end.x);
+        const maxX = Math.max(start.x, end.x);
+        const minY = Math.min(start.y, end.y);
+        const maxY = Math.max(start.y, end.y);
+        const minZ = Math.min(start.z, end.z);
+        const maxZ = Math.max(start.z, end.z);
+        
+        const baseWidth = maxX - minX + 1;
+        const baseDepth = maxZ - minZ + 1;
+        const height = maxY - minY + 1;
+        const centerX = (minX + maxX) / 2;
+        const centerZ = (minZ + maxZ) / 2;
+        
+        // Create pyramid by layers
+        for (let y = 0; y < height; y++) {
+            const layer = minY + y;
+            const progress = y / height;
+            const layerWidth = Math.round(baseWidth * (1 - progress));
+            const layerDepth = Math.round(baseDepth * (1 - progress));
+            
+            if (layerWidth <= 0 || layerDepth <= 0) break;
+            
+            const layerMinX = Math.round(centerX - layerWidth / 2);
+            const layerMaxX = Math.round(centerX + layerWidth / 2);
+            const layerMinZ = Math.round(centerZ - layerDepth / 2);
+            const layerMaxZ = Math.round(centerZ + layerDepth / 2);
+            
+            // Only place blocks on edges of each layer
+            for (let x = layerMinX; x <= layerMaxX; x++) {
+                for (let z = layerMinZ; z <= layerMaxZ; z++) {
+                    if (x === layerMinX || x === layerMaxX || z === layerMinZ || z === layerMaxZ) {
+                        // Skip blocks below ground
+                        if (layer >= 0) {
+                            positions.push({ x, y: layer, z });
+                        }
                     }
                 }
             }
@@ -951,6 +1186,103 @@ export class RandyMStructureDesigner {
         
         this.pushUndoAction(batchAction);
         this.clearRedoStack();
+    }
+    
+    /**
+     * Create hollow sphere
+     */
+    hollowSphere(start, end) {
+        const positions = this.getHollowSpherePositions(start, end);
+        const batchAction = { type: 'batch_place', blocks: [] };
+        
+        positions.forEach(pos => {
+            this.placeBlockAt(pos.x, pos.y, pos.z, this.selectedBlockType);
+            batchAction.blocks.push({ x: pos.x, y: pos.y, z: pos.z, blockType: this.selectedBlockType });
+        });
+        
+        this.pushUndoAction(batchAction);
+        this.clearRedoStack();
+    }
+    
+    /**
+     * Create hollow cylinder
+     */
+    hollowCylinder(start, end) {
+        const positions = this.getHollowCylinderPositions(start, end);
+        const batchAction = { type: 'batch_place', blocks: [] };
+        
+        positions.forEach(pos => {
+            this.placeBlockAt(pos.x, pos.y, pos.z, this.selectedBlockType);
+            batchAction.blocks.push({ x: pos.x, y: pos.y, z: pos.z, blockType: this.selectedBlockType });
+        });
+        
+        this.pushUndoAction(batchAction);
+        this.clearRedoStack();
+    }
+    
+    /**
+     * Create hollow pyramid
+     */
+    hollowPyramid(start, end) {
+        const positions = this.getHollowPyramidPositions(start, end);
+        const batchAction = { type: 'batch_place', blocks: [] };
+        
+        positions.forEach(pos => {
+            this.placeBlockAt(pos.x, pos.y, pos.z, this.selectedBlockType);
+            batchAction.blocks.push({ x: pos.x, y: pos.y, z: pos.z, blockType: this.selectedBlockType });
+        });
+        
+        this.pushUndoAction(batchAction);
+        this.clearRedoStack();
+    }
+    
+    /**
+     * Create door (remove 2x2 blocks)
+     */
+    createDoor(pos) {
+        const positions = this.getDoorPositions(pos);
+        const batchAction = { type: 'batch_remove', blocks: [] };
+        
+        positions.forEach(p => {
+            const key = `${p.x},${p.y},${p.z}`;
+            const block = this.placedBlocks.get(key);
+            
+            if (block) {
+                // Store block info for undo
+                batchAction.blocks.push({ x: p.x, y: p.y, z: p.z, blockType: block.blockType });
+                
+                // Remove block
+                this.scene.remove(block.mesh);
+                block.mesh.geometry.dispose();
+                
+                if (Array.isArray(block.mesh.material)) {
+                    block.mesh.material.forEach(mat => mat.dispose());
+                } else {
+                    block.mesh.material.dispose();
+                }
+                
+                this.placedBlocks.delete(key);
+            }
+        });
+        
+        if (batchAction.blocks.length > 0) {
+            this.pushUndoAction(batchAction);
+            this.clearRedoStack();
+            this.updateStats();
+        }
+    }
+    
+    /**
+     * Get positions for door (2x2 opening)
+     */
+    getDoorPositions(pos) {
+        // Bottom-left corner at pos, create 2 wide x 2 tall
+        return [
+            { x: pos.x, y: pos.y, z: pos.z },
+            { x: pos.x + 1, y: pos.y, z: pos.z },
+            { x: pos.x, y: pos.y + 1, z: pos.z },
+            { x: pos.x + 1, y: pos.y + 1, z: pos.z }
+        ];
     }
     
     /**
@@ -1798,6 +2130,14 @@ export class RandyMStructureDesigner {
         if (this.toolMode === 'place') {
             // Single block placement
             this.placeBlock();
+        } else if (this.toolMode === 'door') {
+            // Door tool - single click
+            const pos = this.getPlacementPosition();
+            if (pos) {
+                this.shapeStart = pos.clone();
+                this.shapeEnd = pos.clone(); // Door only needs one point
+                this.executeShape();
+            }
         } else {
             // Shape tool - two-point selection
             if (!this.shapeStart) {
@@ -1876,6 +2216,15 @@ export class RandyMStructureDesigner {
             case 'hollow_cube':
                 this.hollowCube(this.shapeStart, this.shapeEnd);
                 break;
+            case 'hollow_sphere':
+                this.hollowSphere(this.shapeStart, this.shapeEnd);
+                break;
+            case 'hollow_cylinder':
+                this.hollowCylinder(this.shapeStart, this.shapeEnd);
+                break;
+            case 'hollow_pyramid':
+                this.hollowPyramid(this.shapeStart, this.shapeEnd);
+                break;
             case 'wall':
                 this.createWall(this.shapeStart, this.shapeEnd);
                 break;
@@ -1884,6 +2233,9 @@ export class RandyMStructureDesigner {
                 break;
             case 'line':
                 this.createLine(this.shapeStart, this.shapeEnd);
+                break;
+            case 'door':
+                this.createDoor(this.shapeStart);
                 break;
         }
         
@@ -1991,9 +2343,16 @@ export class RandyMStructureDesigner {
         }
         
         // Clear redo stack when new action is performed
-        this.redoStack = [];
+        this.clearRedoStack();
         
         this.updateUndoRedoButtons();
+    }
+    
+    /**
+     * Clear redo stack
+     */
+    clearRedoStack() {
+        this.redoStack = [];
     }
     
     /**
@@ -2047,6 +2406,11 @@ export class RandyMStructureDesigner {
                     this.placedBlocks.delete(key);
                 }
             });
+        } else if (action.type === 'batch_remove') {
+            // Undo batch remove = place all blocks back
+            action.blocks.forEach(blockInfo => {
+                this.placeBlockAt(blockInfo.x, blockInfo.y, blockInfo.z, blockInfo.blockType);
+            });
         }
         
         // Push to redo stack
@@ -2093,6 +2457,25 @@ export class RandyMStructureDesigner {
             // Redo batch place = place all blocks again
             action.blocks.forEach(blockInfo => {
                 this.placeBlockAt(blockInfo.x, blockInfo.y, blockInfo.z, blockInfo.blockType);
+            });
+        } else if (action.type === 'batch_remove') {
+            // Redo batch remove = remove all blocks again
+            action.blocks.forEach(blockInfo => {
+                const key = `${blockInfo.x},${blockInfo.y},${blockInfo.z}`;
+                const block = this.placedBlocks.get(key);
+                
+                if (block) {
+                    this.scene.remove(block.mesh);
+                    block.mesh.geometry.dispose();
+                    
+                    if (Array.isArray(block.mesh.material)) {
+                        block.mesh.material.forEach(mat => mat.dispose());
+                    } else {
+                        block.mesh.material.dispose();
+                    }
+                    
+                    this.placedBlocks.delete(key);
+                }
             });
         }
         
