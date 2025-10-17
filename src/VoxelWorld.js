@@ -9916,6 +9916,11 @@ class NebulaVoxelApp {
                 // Reset blood moon flags for new day
                 this.dayNightCycle.bloodMoonActive = false;
                 this.dayNightCycle.enemiesSpawnedThisBloodMoon = false;
+                
+                // Reset progressive spawn tracking
+                if (this.bloodMoonSystem) {
+                    this.bloodMoonSystem.lastSpawnHour = -1;
+                }
             }
 
             // 🌾 FARMING: Track day changes (also handles initial dawn crossing)
@@ -9927,35 +9932,39 @@ class NebulaVoxelApp {
 
             // 🩸 BLOOD MOON DETECTION: Check if we should trigger blood moon
             if (this.dayNightCycle.dayOfWeek === 7) {
-                // Day 7 - Check for blood moon window (10pm-2am)
                 const currentTime = this.dayNightCycle.currentTime;
+                
+                // 🩸 PROGRESSIVE SPAWN: Noon (12:00) to Midnight (24:00)
+                // Enemies spawn every hour with increasing intensity
+                if (this.bloodMoonSystem && currentTime >= 12 && currentTime < 24) {
+                    this.bloodMoonSystem.checkProgressiveSpawn(
+                        this.dayNightCycle.currentWeek,
+                        currentTime
+                    );
+                }
+                
+                // Check for blood moon sky effect window (10pm-2am)
                 const isBloodMoonTime = currentTime >= this.dayNightCycle.bloodMoonStartTime || currentTime < this.dayNightCycle.bloodMoonEndTime;
                 
                 if (isBloodMoonTime && !this.dayNightCycle.bloodMoonActive) {
-                    // 🩸 START BLOOD MOON!
+                    // 🩸 START BLOOD MOON SKY!
                     this.dayNightCycle.bloodMoonActive = true;
                     console.log(`🩸🌕 BLOOD MOON RISES! Week ${this.dayNightCycle.currentWeek}, Night 7`);
                     
                     // Show dramatic notification
                     this.updateStatus('🩸 THE BLOOD MOON RISES! Prepare for battle...', 'danger');
-                    
-                    // 🩸 Spawn enemies!
-                    if (this.bloodMoonSystem && !this.dayNightCycle.enemiesSpawnedThisBloodMoon) {
-                        this.bloodMoonSystem.spawnEnemies(this.dayNightCycle.currentWeek);
-                        this.dayNightCycle.enemiesSpawnedThisBloodMoon = true;
-                    }
                 } else if (!isBloodMoonTime && this.dayNightCycle.bloodMoonActive) {
-                    // 🌅 END BLOOD MOON (2am has passed)
+                    // Blood moon sky ends at 2am, but DON'T clean up enemies yet
+                    // Enemies persist until the entire Day 7 ends (handled in day rollover)
                     this.dayNightCycle.bloodMoonActive = false;
-                    this.dayNightCycle.totalBloodMoonsSurvived++;
-                    console.log(`🌅 Blood moon has ended. You survived Week ${this.dayNightCycle.currentWeek}!`);
-                    this.updateStatus(`You survived the blood moon! Week ${this.dayNightCycle.currentWeek} complete. +10 XP`, 'success');
-                    
-                    // 🩸 Clean up remaining enemies
-                    if (this.bloodMoonSystem) {
-                        this.bloodMoonSystem.cleanup();
-                    }
+                    console.log(`🌅 Blood moon sky has ended (2am), but enemies remain...`);
                 }
+            } else if (this.dayNightCycle.dayOfWeek !== 7 && this.bloodMoonSystem && this.bloodMoonSystem.activeEnemies.size > 0) {
+                // 🌅 Day 7 has ended - NOW clean up remaining enemies
+                console.log(`🌅 Day 7 complete! You survived Week ${this.dayNightCycle.currentWeek - 1}!`);
+                this.updateStatus(`You survived the blood moon! Week ${this.dayNightCycle.currentWeek - 1} complete. +10 XP`, 'success');
+                this.dayNightCycle.totalBloodMoonsSurvived++;
+                this.bloodMoonSystem.cleanup();
             }
 
             // Calculate sun position based on time of day

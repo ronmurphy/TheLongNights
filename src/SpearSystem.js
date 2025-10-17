@@ -187,6 +187,33 @@ export class SpearSystem {
                     }
                 }
                 
+                // 🩸 Check for blood moon enemy collision during flight
+                if (this.voxelWorld.bloodMoonSystem && progress > 0.1) {
+                    const spearPos = new THREE.Vector3(currentPos.x, currentPos.y, currentPos.z);
+                    const enemies = this.voxelWorld.bloodMoonSystem.activeEnemies;
+                    
+                    for (const [enemyId, enemy] of enemies) {
+                        if (enemy.health <= 0) continue;
+                        
+                        const enemyPos = enemy.sprite.position;
+                        const distance = spearPos.distanceTo(enemyPos);
+                        if (distance < 1.5) { // Hit detection range
+                            // HIT!
+                            console.log(`🎯 Spear hit ${enemy.entityType}!`);
+                            this.voxelWorld.bloodMoonSystem.hitEnemy(enemyId, 1);
+                            
+                            // Stop animation early, spear lands where enemy was
+                            this.stickSpearInGround(spearMesh, {
+                                x: enemyPos.x,
+                                y: enemyPos.y,
+                                z: enemyPos.z
+                            }, selectedItem);
+                            
+                            return true; // Stop animation callback
+                        }
+                    }
+                }
+                
                 // Make spear point in direction of travel (optional rotation)
                 if (progress > 0.01) {
                     const prevPos = spearMesh.userData.prevPos || startPos;

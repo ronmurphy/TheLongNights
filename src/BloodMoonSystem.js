@@ -25,6 +25,10 @@ export class BloodMoonSystem {
         this.time = 0;
         this.lastUpdateTime = Date.now();
         
+        // Progressive spawn tracking (Day 7: Noon to Midnight)
+        this.lastSpawnHour = -1;
+        this.spawnedThisBloodMoon = false;
+        
         // Spawn config
         this.config = {
             spawnDistance: 30,       // Blocks away from player
@@ -82,13 +86,92 @@ export class BloodMoonSystem {
     }
     
     /**
-     * Spawn blood moon enemies based on current week
+     * Progressive spawn system - spawns more enemies each hour from Noon to Midnight on Day 7
+     * This creates a building sense of panic as the player needs to return to base
      */
-    spawnEnemies(week) {
+    checkProgressiveSpawn(week, currentTime) {
+        // Only spawn during Day 7, from 12:00 (noon) to 24:00 (midnight)
+        const currentHour = Math.floor(currentTime);
+        
+        // Check if we're in the spawn window (12:00 to 23:59)
+        if (currentHour < 12 || currentHour >= 24) {
+            return;
+        }
+        
+        // Check if we already spawned this hour
+        if (currentHour === this.lastSpawnHour) {
+            return;
+        }
+        
         // Check if entity database is loaded
         if (!this.entityDatabase) {
             console.warn('🩸 Cannot spawn enemies - entity database not loaded yet. Retrying in 100ms...');
-            setTimeout(() => this.spawnEnemies(week), 100);
+            setTimeout(() => this.checkProgressiveSpawn(week, currentTime), 100);
+            return;
+        }
+        
+        // Calculate spawn count based on time of day
+        // Noon (12): 2-3 crawlers (warning signs)
+        // Afternoon (14-18): 3-5 crawlers per hour (building threat)
+        // Evening (19-21): 5-8 crawlers per hour (panic mode)
+        // Night (22-23): 8-12 crawlers per hour (peak chaos)
+        let spawnCount;
+        if (currentHour === 12) {
+            spawnCount = 2 + Math.floor(Math.random() * 2); // 2-3
+        } else if (currentHour < 19) {
+            spawnCount = 3 + Math.floor(Math.random() * 3); // 3-5
+        } else if (currentHour < 22) {
+            spawnCount = 5 + Math.floor(Math.random() * 4); // 5-8
+        } else {
+            spawnCount = 8 + Math.floor(Math.random() * 5); // 8-12
+        }
+        
+        // Scale with week difficulty
+        spawnCount = Math.floor(spawnCount * (1 + week * 0.3));
+        
+        // 🌙 PROGRESSIVE SPEED BOOST: As darkness approaches, they get faster!
+        // Hour 12 (noon): 1.0x speed (base: 0.15 blocks/sec)
+        // Hour 13-23: +0.05x speed per hour compounded
+        // Hour 23 (11pm): ~1.7x speed (0.26 blocks/sec)
+        // This creates escalating terror as night falls
+        const hoursFromNoon = currentHour - 12;
+        const speedMultiplier = 1.0 + (hoursFromNoon * 0.05);
+        
+        console.log(`🩸 Hour ${currentHour}:00 - Spawning ${spawnCount} crawlers (${speedMultiplier.toFixed(2)}x speed)...`);
+        
+        // Get player position
+        const playerPos = this.voxelWorld.player.position;
+        
+        // Spawn enemies in a circle around player
+        for (let i = 0; i < spawnCount; i++) {
+            // Random angle around player
+            const angle = Math.random() * Math.PI * 2;
+            const distance = this.config.spawnDistance + Math.random() * this.config.spawnDistanceVariation;
+            
+            const x = playerPos.x + Math.cos(angle) * distance;
+            const z = playerPos.z + Math.sin(angle) * distance;
+            
+            // Get ground height at spawn location
+            const y = this.voxelWorld.getGroundHeight(x, z) + this.config.spawnHeight;
+            
+            // Spawn zombie crawler with speed boost
+            this.spawnEnemy('zombie_crawler', x, y, z, speedMultiplier);
+        }
+        
+        // Update last spawn hour
+        this.lastSpawnHour = currentHour;
+        
+        console.log(`🩸 Total active enemies: ${this.activeEnemies.size}`);
+    }
+    
+    /**
+     * OLD: Spawn all blood moon enemies at once (kept for reference/backwards compatibility)
+     */
+    spawnEnemiesAllAtOnce(week) {
+        // Check if entity database is loaded
+        if (!this.entityDatabase) {
+            console.warn('🩸 Cannot spawn enemies - entity database not loaded yet. Retrying in 100ms...');
+            setTimeout(() => this.spawnEnemiesAllAtOnce(week), 100);
             return;
         }
         
@@ -131,9 +214,10 @@ export class BloodMoonSystem {
     
     /**
      * Spawn individual enemy
+     * @param {number} speedMultiplier - Speed boost from time of day (default 1.0)
      */
-    spawnEnemy(entityId, x, y, z) {
-        console.log(`🩸 spawnEnemy called: ${entityId} at (${x.toFixed(1)}, ${y.toFixed(1)}, ${z.toFixed(1)})`);
+    spawnEnemy(entityId, x, y, z, speedMultiplier = 1.0) {
+        console.log(`🩸 spawnEnemy called: ${entityId} at (${x.toFixed(1)}, ${y.toFixed(1)}, ${z.toFixed(1)}) [${speedMultiplier.toFixed(2)}x speed]`);
         
         // Load enemy data from entities.json
         const entityData = this.getEntityData(entityId);
@@ -169,6 +253,10 @@ export class BloodMoonSystem {
         
         // Create enemy data
         const enemyId = `bloodmoon_${this.nextEnemyId++}`;
+        
+        // 🎯 Zombie crawlers are weak - 1 hit kill (they have no legs!)
+        const crawlerHP = entityId === 'zombie_crawler' ? 1 : entityData.hp;
+        
         const enemyData = {
             id: enemyId,
             entityType: entityId,
@@ -177,11 +265,12 @@ export class BloodMoonSystem {
             attackTexture: attackTexture,
             
             // Stats from entities.json
-            health: entityData.hp,
-            maxHealth: entityData.hp,
+            health: crawlerHP,
+            maxHealth: crawlerHP,
             attack: entityData.attack,
             defense: entityData.defense,
-            speed: entityData.speed * 0.01, // Convert to blocks/frame (speed=2 → 0.02 blocks/frame)
+            baseSpeed: entityData.speed * 0.01, // Base speed from entities.json
+            speedMultiplier: speedMultiplier,    // Time-of-day speed boost
             
             // AI state
             target: { 
@@ -264,7 +353,8 @@ export class BloodMoonSystem {
             if (distance > this.config.attackRange) {
                 // Move towards player (VERY slow crawl - they have no legs!)
                 // Use deltaTime to make it frame-rate independent
-                const crawlSpeed = this.config.crawlSpeed * deltaTime;
+                // Apply time-of-day speed multiplier (faster as darkness approaches)
+                const crawlSpeed = this.config.crawlSpeed * deltaTime * enemy.speedMultiplier;
                 const moveX = (dx / distance) * crawlSpeed;
                 const moveZ = (dz / distance) * crawlSpeed;
                 
@@ -323,31 +413,67 @@ export class BloodMoonSystem {
     
     /**
      * Find nearest player-placed block within attack range
+     * TODO: This needs proper integration with block tracking system
      */
     findNearestPlayerBlock(position) {
+        // For now, return null - block damage system not yet implemented
+        // This will make zombies go after the player directly
+        // Future: integrate with voxelWorld's block tracking system
+        return null;
+        
+        /* PLACEHOLDER for future block damage system:
         let nearest = null;
         let minDistance = this.config.attackRange;
         
-        // Check modified blocks for player-placed blocks
-        for (const [key, blockData] of this.voxelWorld.modifiedBlocks) {
-            // Skip removed blocks (null)
-            if (blockData === null) continue;
+        // Check if modifiedBlocks exists and is iterable
+        if (this.voxelWorld.modifiedBlocks && 
+            typeof this.voxelWorld.modifiedBlocks[Symbol.iterator] === 'function') {
             
-            const [x, y, z] = key.split(',').map(Number);
-            
-            // Calculate distance
-            const dx = x - position.x;
-            const dy = y - position.y;
-            const dz = z - position.z;
-            const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
-            
-            if (distance < minDistance) {
-                minDistance = distance;
-                nearest = { x, y, z, type: blockData };
+            for (const [key, blockData] of this.voxelWorld.modifiedBlocks) {
+                if (blockData === null) continue;
+                
+                const [x, y, z] = key.split(',').map(Number);
+                const dx = x - position.x;
+                const dy = y - position.y;
+                const dz = z - position.z;
+                const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+                
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    nearest = { x, y, z, type: blockData };
+                }
             }
         }
         
         return nearest;
+        */
+    }
+    
+    /**
+     * Hit enemy with weapon (called by SpearSystem)
+     */
+    hitEnemy(enemyId, damage = 1) {
+        const enemy = this.activeEnemies.get(enemyId);
+        if (!enemy) return;
+        
+        // Apply damage
+        enemy.health -= damage;
+        
+        console.log(`🎯 ${enemy.entityType} hit! HP: ${enemy.health}/${enemy.maxHealth}`);
+        
+        if (enemy.health <= 0) {
+            // KILLED!
+            console.log(`💀 ${enemy.entityType} defeated!`);
+            this.voxelWorld.updateStatus(`💀 You killed a ${enemy.entityType}!`, 'success');
+            
+            // Remove from game
+            this.removeEnemy(enemyId);
+            
+            // TODO: Drop loot (zombie flesh, bones, etc.)
+        } else {
+            // Still alive, show damage
+            this.voxelWorld.updateStatus(`🎯 Hit ${enemy.entityType}! (${enemy.health} HP left)`, 'info');
+        }
     }
     
     /**
