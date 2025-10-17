@@ -12,7 +12,6 @@ export class BloodMoonSystem {
     constructor(voxelWorld) {
         this.voxelWorld = voxelWorld;
         this.scene = voxelWorld.scene;
-        this.camera = voxelWorld.camera;
         
         // Enemy tracking
         this.activeEnemies = new Map(); // Map<enemyId, enemyData>
@@ -34,7 +33,7 @@ export class BloodMoonSystem {
             
             // Animation
             animationSpeed: 2.0,     // Speed of animation cycle (crawler push-ups)
-            crawlSpeed: 0.5,         // Blocks per second (SLOW - no legs!)
+            crawlSpeed: 0.15,        // Blocks per second (VERY SLOW - no legs! Relentless but slow)
             
             // AI
             attackRange: 2,          // Blocks - distance to start attacking
@@ -86,6 +85,13 @@ export class BloodMoonSystem {
      * Spawn blood moon enemies based on current week
      */
     spawnEnemies(week) {
+        // Check if entity database is loaded
+        if (!this.entityDatabase) {
+            console.warn('🩸 Cannot spawn enemies - entity database not loaded yet. Retrying in 100ms...');
+            setTimeout(() => this.spawnEnemies(week), 100);
+            return;
+        }
+        
         // Calculate enemy count based on week (10 + 10 per week)
         const enemyCount = 10 + (week * 10);
         const maxEnemies = 100; // Cap at 100
@@ -93,8 +99,9 @@ export class BloodMoonSystem {
         
         console.log(`🩸 Spawning ${finalCount} zombie crawlers for Week ${week}...`);
         
-        // Get player position
-        const playerPos = this.camera.position;
+        // Get player position (same as Animal system)
+        const playerPos = this.voxelWorld.player.position;
+        console.log(`🩸 Player position: (${playerPos.x.toFixed(1)}, ${playerPos.y.toFixed(1)}, ${playerPos.z.toFixed(1)})`);
         
         // Spawn enemies in a circle around player
         for (let i = 0; i < finalCount; i++) {
@@ -108,8 +115,15 @@ export class BloodMoonSystem {
             // Get ground height at spawn location
             const y = this.voxelWorld.getGroundHeight(x, z) + this.config.spawnHeight;
             
+            console.log(`🩸 Attempting to spawn zombie ${i+1}/${finalCount} at (${x.toFixed(1)}, ${y.toFixed(1)}, ${z.toFixed(1)})`);
+            
             // Spawn zombie crawler (only enemy type for now)
-            this.spawnEnemy('zombie_crawler', x, y, z);
+            const enemy = this.spawnEnemy('zombie_crawler', x, y, z);
+            if (enemy) {
+                console.log(`✅ Zombie ${i+1} spawned successfully`);
+            } else {
+                console.error(`❌ Failed to spawn zombie ${i+1}`);
+            }
         }
         
         console.log(`🩸 Spawned ${this.activeEnemies.size} enemies`);
@@ -119,6 +133,8 @@ export class BloodMoonSystem {
      * Spawn individual enemy
      */
     spawnEnemy(entityId, x, y, z) {
+        console.log(`🩸 spawnEnemy called: ${entityId} at (${x.toFixed(1)}, ${y.toFixed(1)}, ${z.toFixed(1)})`);
+        
         // Load enemy data from entities.json
         const entityData = this.getEntityData(entityId);
         
@@ -127,14 +143,13 @@ export class BloodMoonSystem {
             return null;
         }
         
+        console.log(`🩸 Entity data found:`, entityData);
+        
         // Load textures for animation (ready_pose and attack_pose)
+        // Note: Textures load asynchronously, so we don't validate them here
+        console.log(`🩸 Loading textures: ${entityData.sprite_ready}, ${entityData.sprite_attack}`);
         const readyTexture = this.loadEntityTexture(entityData.sprite_ready);
         const attackTexture = this.loadEntityTexture(entityData.sprite_attack);
-        
-        if (!readyTexture || !attackTexture) {
-            console.warn(`🩸 Failed to load textures for ${entityId}`);
-            return null;
-        }
         
         // Create sprite material with ready pose
         const material = new THREE.SpriteMaterial({
@@ -169,7 +184,11 @@ export class BloodMoonSystem {
             speed: entityData.speed * 0.01, // Convert to blocks/frame (speed=2 → 0.02 blocks/frame)
             
             // AI state
-            target: { x: this.camera.position.x, y: this.camera.position.y, z: this.camera.position.z },
+            target: { 
+                x: this.voxelWorld.player.position.x, 
+                y: this.voxelWorld.player.position.y, 
+                z: this.voxelWorld.player.position.z 
+            },
             lastAttackTime: 0,
             
             // Animation state
@@ -183,21 +202,13 @@ export class BloodMoonSystem {
     
     /**
      * Load entity texture from assets
+     * Uses EnhancedGraphics for proper texture loading with filters
      */
     loadEntityTexture(spriteName) {
-        // Build path directly (sprites are in art/entities/)
-        const texturePath = `art/entities/${spriteName}`;
-        
-        try {
-            const texture = new THREE.TextureLoader().load(texturePath);
-            texture.magFilter = THREE.NearestFilter; // Pixelated look
-            texture.minFilter = THREE.NearestFilter;
-            console.log(`🩸 Loaded texture: ${texturePath}`);
-            return texture;
-        } catch (error) {
-            console.warn(`🩸 Could not load texture: ${texturePath}`, error);
-            return null;
-        }
+        // Use EnhancedGraphics like the Animal system does
+        // This ensures proper texture filters and loading
+        const texturePath = `entities/${spriteName}`;
+        return this.voxelWorld.enhancedGraphics.loadEntityTexture(texturePath);
     }
     
     /**
@@ -211,8 +222,8 @@ export class BloodMoonSystem {
         this.lastUpdateTime = now;
         this.time += deltaTime;
         
-        // Update player position (target)
-        const playerPos = this.camera.position;
+        // Update player position (target) - same as Animal system
+        const playerPos = this.voxelWorld.player.position;
         
         // Update each enemy
         for (const [enemyId, enemy] of this.activeEnemies) {
@@ -251,9 +262,11 @@ export class BloodMoonSystem {
             
             // Movement - crawl towards player
             if (distance > this.config.attackRange) {
-                // Move towards player (slow crawl)
-                const moveX = (dx / distance) * enemy.speed;
-                const moveZ = (dz / distance) * enemy.speed;
+                // Move towards player (VERY slow crawl - they have no legs!)
+                // Use deltaTime to make it frame-rate independent
+                const crawlSpeed = this.config.crawlSpeed * deltaTime;
+                const moveX = (dx / distance) * crawlSpeed;
+                const moveZ = (dz / distance) * crawlSpeed;
                 
                 enemy.sprite.position.x += moveX;
                 enemy.sprite.position.z += moveZ;
