@@ -52,6 +52,10 @@ export class RandyMStructureDesigner {
         this.previewBlock = null;
         this.previewPosition = null;
         
+        // Hover highlight for deletion
+        this.hoveredBlock = null;
+        this.originalEmissive = null;
+        
         // Camera rotation state
         this.isRotating = false;
         this.rotationStart = new THREE.Vector2();
@@ -643,6 +647,9 @@ export class RandyMStructureDesigner {
             ...Array.from(this.placedBlocks.values()).map(b => b.mesh)
         ]);
         
+        // Check if hovering over an existing block (for delete highlight)
+        this.updateHoverHighlight(intersects);
+        
         if (intersects.length > 0) {
             const intersect = intersects[0];
             const point = intersect.point;
@@ -671,6 +678,46 @@ export class RandyMStructureDesigner {
                 this.previewBlock.visible = false;
             }
             this.previewPosition = null;
+        }
+    }
+    
+    /**
+     * Update hover highlight for block deletion
+     */
+    updateHoverHighlight(intersects) {
+        // Find if we're hovering over a placed block (not ground)
+        const blockIntersect = intersects.find(i => i.object !== this.groundPlane);
+        
+        // Reset previous hover
+        if (this.hoveredBlock && this.hoveredBlock !== blockIntersect?.object) {
+            // Restore original emissive
+            if (Array.isArray(this.hoveredBlock.material)) {
+                this.hoveredBlock.material.forEach(mat => {
+                    if (mat.emissive) mat.emissive.setHex(0x000000);
+                });
+            } else if (this.hoveredBlock.material.emissive) {
+                this.hoveredBlock.material.emissive.setHex(0x000000);
+            }
+            this.hoveredBlock = null;
+        }
+        
+        // Set new hover
+        if (blockIntersect && blockIntersect.object !== this.groundPlane) {
+            this.hoveredBlock = blockIntersect.object;
+            
+            // Add red emissive glow for delete indication
+            if (Array.isArray(this.hoveredBlock.material)) {
+                this.hoveredBlock.material.forEach(mat => {
+                    if (mat.emissive) mat.emissive.setHex(0xff0000);
+                });
+            } else if (this.hoveredBlock.material.emissive) {
+                this.hoveredBlock.material.emissive.setHex(0xff0000);
+            }
+            
+            // Change cursor
+            this.canvas.style.cursor = 'pointer';
+        } else if (!this.isRotating) {
+            this.canvas.style.cursor = 'default';
         }
     }
     
@@ -721,12 +768,28 @@ export class RandyMStructureDesigner {
         // Create block mesh
         const geometry = new THREE.BoxGeometry(1, 1, 1);
         
-        // Create material with color based on block type
-        const color = this.getBlockColor(this.selectedBlockType);
-        const material = new THREE.MeshLambertMaterial({ 
-            color: color,
-            flatShading: true
-        });
+        // Try to get textured material from EnhancedGraphics
+        const enhancedGraphics = this.voxelWorld?.enhancedGraphics;
+        let material;
+        
+        if (enhancedGraphics && enhancedGraphics.assetsLoaded) {
+            // Get the color as fallback
+            const color = this.getBlockColor(this.selectedBlockType);
+            const fallbackMaterial = new THREE.MeshLambertMaterial({ 
+                color: color,
+                flatShading: true
+            });
+            
+            // Try to get enhanced material (textured)
+            material = enhancedGraphics.getEnhancedBlockMaterial(this.selectedBlockType, fallbackMaterial);
+        } else {
+            // No EnhancedGraphics available, use colored material
+            const color = this.getBlockColor(this.selectedBlockType);
+            material = new THREE.MeshLambertMaterial({ 
+                color: color,
+                flatShading: true
+            });
+        }
         
         const mesh = new THREE.Mesh(geometry, material);
         mesh.position.set(x + 0.5, y + 0.5, z + 0.5);
@@ -750,7 +813,14 @@ export class RandyMStructureDesigner {
         if (block) {
             this.scene.remove(block.mesh);
             block.mesh.geometry.dispose();
-            block.mesh.material.dispose();
+            
+            // Handle both single materials and material arrays (multi-face textures)
+            if (Array.isArray(block.mesh.material)) {
+                block.mesh.material.forEach(mat => mat.dispose());
+            } else {
+                block.mesh.material.dispose();
+            }
+            
             this.placedBlocks.delete(key);
             this.updateStats();
             console.log('🗑️ Removed block at', key);
@@ -940,7 +1010,13 @@ export class RandyMStructureDesigner {
         this.placedBlocks.forEach(block => {
             this.scene.remove(block.mesh);
             block.mesh.geometry.dispose();
-            block.mesh.material.dispose();
+            
+            // Handle both single materials and material arrays (multi-face textures)
+            if (Array.isArray(block.mesh.material)) {
+                block.mesh.material.forEach(mat => mat.dispose());
+            } else {
+                block.mesh.material.dispose();
+            }
         });
         this.placedBlocks.clear();
         

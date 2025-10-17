@@ -1,8 +1,8 @@
-# RandyM Structure Designer - Phase 2 Complete! 🎨
+# RandyM Structure Designer - Phase 3 Complete! 🎨
 
 **Named after:** Randy (with M initial)  
 **Created:** October 17, 2025  
-**Status:** Phase 2 ✅ Block Selector with Mini Textures - **INTEGRATED** ✅
+**Status:** Phase 3 ✅ Textured Blocks & Enhanced Tools - **INTEGRATED** ✅
 
 ---
 
@@ -15,13 +15,13 @@ In the browser console:
 openStructureDesigner()
 ```
 
-### Controls (Phase 2)
+### Controls (Phase 3)
 
 | Action | Control |
 |--------|---------|
 | **Select Block** | Click block in left palette |
 | **Place Block** | Left Click in 3D view |
-| **Remove Block** | Right Click |
+| **Delete Block** | Right Click (hover shows red glow) |
 | **Rotate Camera** | Ctrl + Left Click Drag |
 | **Zoom** | Mouse Wheel |
 | **Close** | Click "✕ Close" button |
@@ -42,7 +42,21 @@ openStructureDesigner()
 - ✅ Proper disposal of geometries/materials
 - ✅ Window resize handling
 
-## ✅ Phase 2 Features (COMPLETE)
+## ✅ Phase 3 Features (COMPLETE)
+
+- ✅ **Textured Block Materials** using EnhancedGraphics
+- ✅ Multi-face texture support (sides, top-bottom variants)
+- ✅ Wood blocks show proper bark/top textures
+- ✅ Leaf blocks use transparent textures
+- ✅ Automatic fallback to colored materials if textures unavailable
+- ✅ **Hover Highlight for Deletion** - Red glow on mouseover
+- ✅ Cursor changes to pointer when hovering blocks
+- ✅ Visual feedback makes right-click delete obvious
+- ✅ Full integration with game's texture system
+
+---
+
+## 🎨 Current Capabilities
 
 - ✅ Scrollable block palette sidebar (200px wide)
 - ✅ EnhancedGraphics integration with mini textures
@@ -70,18 +84,20 @@ openStructureDesigner()
 3. **Mini Textures**: Fast-loading 32x32 thumbnails from chunkMinis
 4. **Block Selection**: Click any block in palette to select
 5. **Smart Preview**: Ghost block shows color of selected type
-6. **Block Placement**: Place any selected block type
-7. **Height Stacking**: Blocks snap to grid and stack properly
-8. **Block Removal**: Right-click any block to delete it
-9. **Statistics**: Real-time block count display
-10. **Zoom**: Mouse wheel adjusts camera zoom (0.5x - 3x)
+6. **Textured Blocks**: Placed blocks use full textures (not just colors!)
+7. **Multi-Face Textures**: Wood blocks show bark on sides, rings on top
+8. **Block Placement**: Place any selected block type with textures
+9. **Height Stacking**: Blocks snap to grid and stack properly
+10. **Delete Tool**: Right-click removes blocks (hover shows red glow)
+11. **Camera Rotation**: Ctrl+drag to rotate view 360°
+12. **Statistics**: Real-time block count display
+13. **Zoom**: Mouse wheel adjusts camera zoom (0.5x - 3x)
 
 ### Current Limitations
 
 - ❌ No shape tools (manual placement only)
 - ❌ No save/load functionality
 - ❌ No undo/redo
-- ❌ Placed blocks show as colored cubes (not textured yet)
 - ❌ Camera rotation limited to horizontal orbit
 
 ---
@@ -152,7 +168,13 @@ async loadBlockPalette() {
 - ✅ Preview selected block type
 - ⚠️ Material categories (future enhancement)
 
-### Phase 3: Advanced Placement 🎯
+### ~~Phase 3: Textured Blocks~~ ✅ COMPLETE
+- ✅ EnhancedGraphics integration for full textures
+- ✅ Multi-face texture support (sides, top-bottom)
+- ✅ Hover highlight for deletion (red glow)
+- ✅ Visual feedback for tools
+
+### Phase 4: Advanced Placement 🎯
 - [ ] Camera rotation (X/Y/Z axis buttons)
 - [ ] Grid snapping toggle
 - [ ] Undo/redo stack
