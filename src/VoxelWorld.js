@@ -9918,6 +9918,31 @@ class NebulaVoxelApp {
             }
             this.dayNightCycle.lastDayTime = this.dayNightCycle.currentTime;
 
+            // 🩸 BLOOD MOON DETECTION: Check if we should trigger blood moon
+            if (this.dayNightCycle.dayOfWeek === 7) {
+                // Day 7 - Check for blood moon window (10pm-2am)
+                const currentTime = this.dayNightCycle.currentTime;
+                const isBloodMoonTime = currentTime >= this.dayNightCycle.bloodMoonStartTime || currentTime < this.dayNightCycle.bloodMoonEndTime;
+                
+                if (isBloodMoonTime && !this.dayNightCycle.bloodMoonActive) {
+                    // 🩸 START BLOOD MOON!
+                    this.dayNightCycle.bloodMoonActive = true;
+                    console.log(`🩸🌕 BLOOD MOON RISES! Week ${this.dayNightCycle.currentWeek}, Night 7`);
+                    
+                    // Show dramatic notification
+                    this.updateStatus('🩸 THE BLOOD MOON RISES! Prepare for battle...', 'danger');
+                    
+                    // TODO: Spawn enemies (Phase 1, Step 3)
+                    // this.spawnBloodMoonEnemies();
+                } else if (!isBloodMoonTime && this.dayNightCycle.bloodMoonActive) {
+                    // 🌅 END BLOOD MOON (2am has passed)
+                    this.dayNightCycle.bloodMoonActive = false;
+                    this.dayNightCycle.totalBloodMoonsSurvived++;
+                    console.log(`🌅 Blood moon has ended. You survived Week ${this.dayNightCycle.currentWeek}!`);
+                    this.updateStatus(`You survived the blood moon! Week ${this.dayNightCycle.currentWeek} complete. +10 XP`, 'success');
+                }
+            }
+
             // Calculate sun position based on time of day
             const sunAngle = ((this.dayNightCycle.currentTime - 6) / 12) * Math.PI; // Sun rises at 6am, peaks at noon, sets at 6pm
             const sunX = Math.cos(sunAngle) * 20;
@@ -9976,6 +10001,14 @@ class NebulaVoxelApp {
                 }
             }
 
+            // 🩸 BLOOD MOON OVERRIDE: Change sky to blood red during blood moon
+            if (this.dayNightCycle.bloodMoonActive) {
+                skyColor = new THREE.Color(0x8B0000); // Dark blood red
+                intensity = 0.15; // Dim red light
+                color = new THREE.Color(0xCC0000); // Red-tinted directional light
+                ambientIntensity = 0.1; // Very dark ambient
+            }
+
             this.dayNightCycle.directionalLight.intensity = intensity;
             this.dayNightCycle.directionalLight.color.copy(color);
             this.dayNightCycle.ambientLight.intensity = ambientIntensity;
@@ -9991,7 +10024,8 @@ class NebulaVoxelApp {
             
             // 🌫️ Update fog based on time of day using centralized updateFog()
             const isNight = this.dayNightCycle.currentTime >= 19 || this.dayNightCycle.currentTime < 6;
-            const fogColor = isNight ? 0x0a0a0f : skyColor.getHex(); // Dark at night, sky color during day
+            // 🩸 Use blood red fog during blood moon
+            const fogColor = this.dayNightCycle.bloodMoonActive ? 0x4A0000 : (isNight ? 0x0a0a0f : skyColor.getHex());
             this.updateFog(fogColor); // Use centralized fog calculation (prevents memory leak)
             
             this.scene.background = skyColor;
