@@ -29,6 +29,7 @@ import { CompanionPortrait } from './ui/CompanionPortrait.js';
 import { TutorialScriptSystem } from './ui/TutorialScriptSystem.js';
 import { SargemQuestEditor } from './ui/SargemQuestEditor.js';
 import { DevControlPanel } from './ui/DevControlPanel.js';
+import { RandyMStructureDesigner } from './ui/RandyMStructureDesigner.js';
 import { NPCManager } from './entities/NPC.js';
 import { ChunkLODManager } from './rendering/ChunkLODManager.js';
 import { LODDebugOverlay } from './rendering/LODDebugOverlay.js';
@@ -315,6 +316,9 @@ class NebulaVoxelApp {
 
         // 🛠️ Initialize Dev Control Panel (developer console/modal)
         this.devControlPanel = new DevControlPanel(this);
+
+        // 🎨 Initialize RandyM Structure Designer (3D voxel structure editor)
+        this.randyMDesigner = new RandyMStructureDesigner(this);
 
         // 👥 Initialize NPC Manager
         this.npcManager = new NPCManager(this);
@@ -7180,6 +7184,15 @@ class NebulaVoxelApp {
         // Make unlockUI() globally accessible for testing
         window.unlockUI = () => this.unlockUI();
 
+        // 🏗️ Open RandyM Structure Designer (3D voxel structure editor)
+        window.openStructureDesigner = () => {
+            if (this.randyMDesigner) {
+                this.randyMDesigner.open();
+            } else {
+                console.error('❌ RandyM Structure Designer not initialized');
+            }
+        };
+
         window.giveItem = (itemName, quantity = 1) => {
             // Auto-unlock UI if not already unlocked (for testing convenience)
             if (!this.hasBackpack) {
@@ -7442,7 +7455,13 @@ class NebulaVoxelApp {
             console.log('    Example: makeRuins("large")');
             console.log('');
             
-            console.log('%c🌍 Seed Commands:', 'font-weight: bold; color: #9C27B0;');
+            console.log('%c�️ Structure Designer:', 'font-weight: bold; color: #00BCD4;');
+            console.log('  openStructureDesigner()        - Open 3D voxel structure editor (RandyM)');
+            console.log('    • Click to place blocks, right-click to remove');
+            console.log('    • Mouse wheel to zoom');
+            console.log('');
+            
+            console.log('%c�🌍 Seed Commands:', 'font-weight: bold; color: #9C27B0;');
             console.log('  setSeed(number)                - Set world seed (requires refresh)');
             console.log('    Example: setSeed(12345)');
             console.log('');
