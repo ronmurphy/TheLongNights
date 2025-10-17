@@ -86,6 +86,10 @@ export class RandyMStructureDesigner {
         this.redoStack = [];
         this.maxUndoSize = 50; // Limit history to prevent memory issues
         
+        // Object pooling for performance
+        this.sharedGeometry = null; // One geometry shared by ALL blocks
+        this.materialCache = new Map(); // Cache materials per block type
+        
         console.log('🎨 RandyM Structure Designer initialized');
     }
     
@@ -147,6 +151,274 @@ export class RandyMStructureDesigner {
     }
     
     /**
+     * Open save modal to save current structure
+     */
+    openSaveModal() {
+        if (this.placedBlocks.size === 0) {
+            alert('⚠️ No blocks to save! Place some blocks first.');
+            return;
+        }
+        
+        console.log('💾 Opening Save Modal...');
+        
+        // Create modal overlay (z-index: 50002)
+        const saveOverlay = document.createElement('div');
+        saveOverlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 50002;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        `;
+        
+        // Save modal container
+        const saveModal = document.createElement('div');
+        saveModal.style.cssText = `
+            background: #1a1a1a;
+            border: 3px solid #27ae60;
+            border-radius: 10px;
+            padding: 30px;
+            width: 500px;
+            box-shadow: 0 0 30px rgba(39, 174, 96, 0.5);
+        `;
+        
+        // Title
+        const title = document.createElement('h2');
+        title.textContent = '💾 Save Structure';
+        title.style.cssText = `
+            color: #27ae60;
+            margin: 0 0 20px 0;
+            font-size: 24px;
+            text-shadow: 0 0 10px rgba(39, 174, 96, 0.5);
+        `;
+        
+        // Filename input
+        const label = document.createElement('label');
+        label.textContent = 'Structure Name:';
+        label.style.cssText = `
+            color: #4a9eff;
+            display: block;
+            margin-bottom: 10px;
+            font-size: 16px;
+        `;
+        
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.placeholder = 'my_castle';
+        input.value = `structure_${Date.now()}`;
+        input.style.cssText = `
+            width: 100%;
+            padding: 10px;
+            background: #2c3e50;
+            border: 2px solid #4a9eff;
+            border-radius: 5px;
+            color: white;
+            font-size: 16px;
+            font-family: 'Courier New', monospace;
+            margin-bottom: 20px;
+            box-sizing: border-box;
+        `;
+        
+        // Material count display
+        const materialStats = this.calculateMaterialCost();
+        const statsDiv = document.createElement('div');
+        statsDiv.style.cssText = `
+            background: #2c3e50;
+            border: 2px solid #4a9eff;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
+            color: #ecf0f1;
+        `;
+        
+        let statsHTML = `<div style="font-weight: bold; margin-bottom: 10px; color: #4a9eff;">📊 Structure Info:</div>`;
+        statsHTML += `<div style="margin-bottom: 5px;">Total Blocks: <span style="color: #27ae60; font-weight: bold;">${materialStats.total}</span></div>`;
+        statsHTML += `<div style="font-weight: bold; margin-top: 10px; margin-bottom: 5px;">Materials Used:</div>`;
+        
+        for (const [blockType, count] of Object.entries(materialStats.byType)) {
+            const displayName = blockType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            statsHTML += `<div style="margin-left: 10px;">• ${displayName}: <span style="color: #3498db;">${count}</span></div>`;
+        }
+        
+        statsDiv.innerHTML = statsHTML;
+        
+        // Button container
+        const buttonContainer = document.createElement('div');
+        buttonContainer.style.cssText = `
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        `;
+        
+        // Save button
+        const saveBtn = document.createElement('button');
+        saveBtn.textContent = '💾 Save';
+        saveBtn.style.cssText = `
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 10px 30px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        `;
+        saveBtn.onmouseover = () => saveBtn.style.background = '#229954';
+        saveBtn.onmouseout = () => saveBtn.style.background = '#27ae60';
+        saveBtn.onclick = () => {
+            const filename = input.value.trim();
+            if (filename) {
+                this.saveStructure(filename);
+                document.body.removeChild(saveOverlay);
+            } else {
+                alert('⚠️ Please enter a filename!');
+            }
+        };
+        
+        // Cancel button
+        const cancelBtn = document.createElement('button');
+        cancelBtn.textContent = '✕ Cancel';
+        cancelBtn.style.cssText = `
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 10px 30px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        `;
+        cancelBtn.onmouseover = () => cancelBtn.style.background = '#c0392b';
+        cancelBtn.onmouseout = () => cancelBtn.style.background = '#e74c3c';
+        cancelBtn.onclick = () => document.body.removeChild(saveOverlay);
+        
+        // Assemble modal
+        buttonContainer.appendChild(cancelBtn);
+        buttonContainer.appendChild(saveBtn);
+        
+        saveModal.appendChild(title);
+        saveModal.appendChild(label);
+        saveModal.appendChild(input);
+        saveModal.appendChild(statsDiv);
+        saveModal.appendChild(buttonContainer);
+        
+        saveOverlay.appendChild(saveModal);
+        document.body.appendChild(saveOverlay);
+        
+        // Focus input
+        input.focus();
+        input.select();
+        
+        // Close on background click
+        saveOverlay.onclick = (e) => {
+            if (e.target === saveOverlay) {
+                document.body.removeChild(saveOverlay);
+            }
+        };
+    }
+    
+    /**
+     * Open load modal to browse and load structures
+     */
+    openLoadModal() {
+        console.log('📂 Opening Load Modal...');
+        
+        // Create modal overlay (z-index: 50002)
+        const loadOverlay = document.createElement('div');
+        loadOverlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 50002;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        `;
+        
+        // Load modal container
+        const loadModal = document.createElement('div');
+        loadModal.style.cssText = `
+            background: #1a1a1a;
+            border: 3px solid #3498db;
+            border-radius: 10px;
+            padding: 30px;
+            width: 800px;
+            max-height: 80vh;
+            box-shadow: 0 0 30px rgba(52, 152, 219, 0.5);
+            display: flex;
+            flex-direction: column;
+        `;
+        
+        // Title
+        const title = document.createElement('h2');
+        title.textContent = '📂 Load Structure';
+        title.style.cssText = `
+            color: #3498db;
+            margin: 0 0 20px 0;
+            font-size: 24px;
+            text-shadow: 0 0 10px rgba(52, 152, 219, 0.5);
+        `;
+        
+        // Structure grid container (scrollable)
+        const gridContainer = document.createElement('div');
+        gridContainer.style.cssText = `
+            flex: 1;
+            overflow-y: auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            padding: 10px;
+            background: #0d1117;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        `;
+        
+        // Load saved structures
+        this.loadStructureList(gridContainer);
+        
+        // Close button
+        const closeBtn = document.createElement('button');
+        closeBtn.textContent = '✕ Close';
+        closeBtn.style.cssText = `
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 10px 30px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+            align-self: flex-end;
+        `;
+        closeBtn.onmouseover = () => closeBtn.style.background = '#c0392b';
+        closeBtn.onmouseout = () => closeBtn.style.background = '#e74c3c';
+        closeBtn.onclick = () => document.body.removeChild(loadOverlay);
+        
+        // Assemble modal
+        loadModal.appendChild(title);
+        loadModal.appendChild(gridContainer);
+        loadModal.appendChild(closeBtn);
+        
+        loadOverlay.appendChild(loadModal);
+        document.body.appendChild(loadOverlay);
+        
+        // Close on background click
+        loadOverlay.onclick = (e) => {
+            if (e.target === loadOverlay) {
+                document.body.removeChild(loadOverlay);
+            }
+        };
+    }
+    
+    /**
      * Create the modal overlay and container
      */
     createModal() {
@@ -202,6 +474,51 @@ export class RandyMStructureDesigner {
             text-shadow: 0 0 10px rgba(74, 158, 255, 0.5);
         `;
         
+        // Button container for Save/Load/Close
+        const buttonContainer = document.createElement('div');
+        buttonContainer.style.cssText = `
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        `;
+        
+        // Save button
+        const saveButton = document.createElement('button');
+        saveButton.textContent = '💾 Save';
+        saveButton.id = 'randym-save-btn';
+        saveButton.style.cssText = `
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        `;
+        saveButton.onmouseover = () => saveButton.style.background = '#229954';
+        saveButton.onmouseout = () => saveButton.style.background = '#27ae60';
+        saveButton.onclick = () => this.openSaveModal();
+        
+        // Load button
+        const loadButton = document.createElement('button');
+        loadButton.textContent = '📂 Load';
+        loadButton.id = 'randym-load-btn';
+        loadButton.style.cssText = `
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        `;
+        loadButton.onmouseover = () => loadButton.style.background = '#2980b9';
+        loadButton.onmouseout = () => loadButton.style.background = '#3498db';
+        loadButton.onclick = () => this.openLoadModal();
+        
+        // Close button
         const closeButton = document.createElement('button');
         closeButton.textContent = '✕ Close';
         closeButton.id = 'randym-close-btn';
@@ -219,8 +536,12 @@ export class RandyMStructureDesigner {
         closeButton.onmouseout = () => closeButton.style.background = '#e74c3c';
         closeButton.onclick = () => this.close();
         
+        buttonContainer.appendChild(saveButton);
+        buttonContainer.appendChild(loadButton);
+        buttonContainer.appendChild(closeButton);
+        
         header.appendChild(title);
-        header.appendChild(closeButton);
+        header.appendChild(buttonContainer);
         
         // Main content area (side-by-side layout)
         const mainContent = document.createElement('div');
@@ -1686,6 +2007,386 @@ export class RandyMStructureDesigner {
     }
     
     /**
+     * Calculate material cost (block count by type)
+     */
+    calculateMaterialCost() {
+        const byType = {};
+        let total = 0;
+        
+        for (const block of this.placedBlocks.values()) {
+            const type = block.blockType;
+            byType[type] = (byType[type] || 0) + 1;
+            total++;
+        }
+        
+        return { total, byType };
+    }
+    
+    /**
+     * Save structure to localStorage (will be changed to file system later)
+     */
+    saveStructure(filename) {
+        try {
+            // Serialize placedBlocks Map to array
+            const blocks = [];
+            for (const [key, block] of this.placedBlocks.entries()) {
+                const [x, y, z] = key.split(',').map(Number);
+                blocks.push({
+                    x, y, z,
+                    blockType: block.blockType
+                });
+            }
+            
+            // Calculate bounds
+            let minX = Infinity, minY = Infinity, minZ = Infinity;
+            let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
+            
+            for (const block of blocks) {
+                minX = Math.min(minX, block.x);
+                minY = Math.min(minY, block.y);
+                minZ = Math.min(minZ, block.z);
+                maxX = Math.max(maxX, block.x);
+                maxY = Math.max(maxY, block.y);
+                maxZ = Math.max(maxZ, block.z);
+            }
+            
+            // Get material stats
+            const materials = this.calculateMaterialCost();
+            
+            // Create structure data
+            const structureData = {
+                name: filename,
+                version: '1.0',
+                date: new Date().toISOString(),
+                blockCount: blocks.length,
+                bounds: {
+                    min: { x: minX, y: minY, z: minZ },
+                    max: { x: maxX, y: maxY, z: maxZ },
+                    size: {
+                        x: maxX - minX + 1,
+                        y: maxY - minY + 1,
+                        z: maxZ - minZ + 1
+                    }
+                },
+                materials: materials.byType,
+                blocks: blocks
+            };
+            
+            // Generate screenshot thumbnail
+            const screenshot = this.generateScreenshot();
+            
+            // Save to localStorage (temporary - will be file system later)
+            const structureKey = `randym_structure_${filename}`;
+            const thumbnailKey = `randym_thumbnail_${filename}`;
+            
+            localStorage.setItem(structureKey, JSON.stringify(structureData));
+            localStorage.setItem(thumbnailKey, screenshot);
+            
+            console.log(`✅ Structure saved: ${filename} (${blocks.length} blocks)`);
+            alert(`✅ Structure "${filename}" saved successfully!\n\n${blocks.length} blocks saved.`);
+            
+        } catch (error) {
+            console.error('❌ Error saving structure:', error);
+            alert(`❌ Error saving structure: ${error.message}`);
+        }
+    }
+    
+    /**
+     * Generate screenshot of current structure
+     */
+    generateScreenshot() {
+        try {
+            // Render current frame
+            this.renderer.render(this.scene, this.camera);
+            
+            // Get canvas data as base64 image
+            const dataURL = this.renderer.domElement.toDataURL('image/png');
+            return dataURL;
+        } catch (error) {
+            console.error('❌ Error generating screenshot:', error);
+            return null;
+        }
+    }
+    
+    /**
+     * Load structure list into grid
+     */
+    loadStructureList(gridContainer) {
+        // Get all saved structures from localStorage
+        const structures = [];
+        
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key.startsWith('randym_structure_')) {
+                const filename = key.replace('randym_structure_', '');
+                const data = JSON.parse(localStorage.getItem(key));
+                const thumbnail = localStorage.getItem(`randym_thumbnail_${filename}`);
+                
+                structures.push({
+                    filename,
+                    data,
+                    thumbnail
+                });
+            }
+        }
+        
+        // Sort by date (newest first)
+        structures.sort((a, b) => new Date(b.data.date) - new Date(a.data.date));
+        
+        if (structures.length === 0) {
+            const emptyMsg = document.createElement('div');
+            emptyMsg.textContent = 'No saved structures yet. Create something and save it!';
+            emptyMsg.style.cssText = `
+                grid-column: 1 / -1;
+                text-align: center;
+                color: #7f8c8d;
+                padding: 40px 20px;
+                font-size: 16px;
+            `;
+            gridContainer.appendChild(emptyMsg);
+            return;
+        }
+        
+        // Create structure cards
+        structures.forEach(structure => {
+            const card = this.createStructureCard(structure, gridContainer);
+            gridContainer.appendChild(card);
+        });
+    }
+    
+    /**
+     * Create structure card for load modal
+     */
+    createStructureCard(structure, gridContainer) {
+        const card = document.createElement('div');
+        card.style.cssText = `
+            background: #1a1a1a;
+            border: 2px solid #34495e;
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.3s;
+        `;
+        
+        card.onmouseover = () => {
+            card.style.borderColor = '#3498db';
+            card.style.transform = 'scale(1.05)';
+            card.style.boxShadow = '0 0 20px rgba(52, 152, 219, 0.5)';
+        };
+        
+        card.onmouseout = () => {
+            card.style.borderColor = '#34495e';
+            card.style.transform = 'scale(1)';
+            card.style.boxShadow = 'none';
+        };
+        
+        // Thumbnail
+        const thumbnail = document.createElement('div');
+        thumbnail.style.cssText = `
+            width: 100%;
+            height: 150px;
+            background: #0d1117;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        `;
+        
+        if (structure.thumbnail) {
+            const img = document.createElement('img');
+            img.src = structure.thumbnail;
+            img.style.cssText = `
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            `;
+            thumbnail.appendChild(img);
+        } else {
+            thumbnail.textContent = '🏗️';
+            thumbnail.style.fontSize = '48px';
+        }
+        
+        // Info section
+        const info = document.createElement('div');
+        info.style.cssText = `
+            padding: 15px;
+        `;
+        
+        const name = document.createElement('div');
+        name.textContent = structure.filename;
+        name.style.cssText = `
+            color: #3498db;
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 8px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        `;
+        
+        const stats = document.createElement('div');
+        stats.style.cssText = `
+            color: #7f8c8d;
+            font-size: 12px;
+            margin-bottom: 5px;
+        `;
+        stats.textContent = `📦 ${structure.data.blockCount} blocks`;
+        
+        const date = document.createElement('div');
+        date.style.cssText = `
+            color: #7f8c8d;
+            font-size: 11px;
+        `;
+        const dateObj = new Date(structure.data.date);
+        date.textContent = `📅 ${dateObj.toLocaleDateString()} ${dateObj.toLocaleTimeString()}`;
+        
+        // Button container
+        const buttonContainer = document.createElement('div');
+        buttonContainer.style.cssText = `
+            display: flex;
+            gap: 5px;
+            margin-top: 10px;
+        `;
+        
+        // Load button
+        const loadBtn = document.createElement('button');
+        loadBtn.textContent = '📂 Load';
+        loadBtn.style.cssText = `
+            flex: 1;
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 8px;
+            font-size: 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.3s;
+        `;
+        loadBtn.onmouseover = () => loadBtn.style.background = '#229954';
+        loadBtn.onmouseout = () => loadBtn.style.background = '#27ae60';
+        loadBtn.onclick = (e) => {
+            e.stopPropagation();
+            this.loadStructure(structure.filename);
+            document.querySelector('[style*="z-index: 50002"]')?.remove();
+        };
+        
+        // Delete button
+        const deleteBtn = document.createElement('button');
+        deleteBtn.textContent = '🗑️';
+        deleteBtn.style.cssText = `
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            font-size: 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.3s;
+        `;
+        deleteBtn.onmouseover = () => deleteBtn.style.background = '#c0392b';
+        deleteBtn.onmouseout = () => deleteBtn.style.background = '#e74c3c';
+        deleteBtn.onclick = (e) => {
+            e.stopPropagation();
+            if (confirm(`Delete structure "${structure.filename}"?`)) {
+                this.deleteStructure(structure.filename);
+                gridContainer.removeChild(card);
+                
+                // Check if grid is now empty
+                if (gridContainer.children.length === 0) {
+                    const emptyMsg = document.createElement('div');
+                    emptyMsg.textContent = 'No saved structures yet. Create something and save it!';
+                    emptyMsg.style.cssText = `
+                        grid-column: 1 / -1;
+                        text-align: center;
+                        color: #7f8c8d;
+                        padding: 40px 20px;
+                        font-size: 16px;
+                    `;
+                    gridContainer.appendChild(emptyMsg);
+                }
+            }
+        };
+        
+        buttonContainer.appendChild(loadBtn);
+        buttonContainer.appendChild(deleteBtn);
+        
+        info.appendChild(name);
+        info.appendChild(stats);
+        info.appendChild(date);
+        info.appendChild(buttonContainer);
+        
+        card.appendChild(thumbnail);
+        card.appendChild(info);
+        
+        // Click card to load
+        card.onclick = () => {
+            this.loadStructure(structure.filename);
+            document.querySelector('[style*="z-index: 50002"]')?.remove();
+        };
+        
+        return card;
+    }
+    
+    /**
+     * Load structure from localStorage
+     */
+    loadStructure(filename) {
+        try {
+            const key = `randym_structure_${filename}`;
+            const dataStr = localStorage.getItem(key);
+            
+            if (!dataStr) {
+                throw new Error('Structure not found');
+            }
+            
+            const data = JSON.parse(dataStr);
+            
+            console.log(`📂 Loading structure: ${filename} (${data.blockCount} blocks)...`);
+            
+            // Clear existing blocks (don't dispose - using object pooling)
+            for (const [key, block] of this.placedBlocks.entries()) {
+                this.scene.remove(block.mesh);
+                // DON'T dispose geometry or materials - they're shared/cached!
+            }
+            this.placedBlocks.clear();
+            
+            // Clear undo/redo stacks
+            this.undoStack = [];
+            this.redoStack = [];
+            this.updateUndoRedoButtons();
+            
+            // Load blocks with their correct block types
+            for (const block of data.blocks) {
+                // Pass blockType to placeBlockAt so textures are applied correctly
+                this.placeBlockAt(block.x, block.y, block.z, block.blockType);
+            }
+            
+            // Update stats
+            this.updateStats();
+            
+            console.log(`✅ Structure loaded: ${filename} (${data.blockCount} blocks)`);
+            alert(`✅ Structure "${filename}" loaded successfully!\n\n${data.blockCount} blocks loaded.`);
+            
+        } catch (error) {
+            console.error('❌ Error loading structure:', error);
+            alert(`❌ Error loading structure: ${error.message}`);
+        }
+    }
+    
+    /**
+     * Delete structure from localStorage
+     */
+    deleteStructure(filename) {
+        try {
+            localStorage.removeItem(`randym_structure_${filename}`);
+            localStorage.removeItem(`randym_thumbnail_${filename}`);
+            console.log(`🗑️ Deleted structure: ${filename}`);
+        } catch (error) {
+            console.error('❌ Error deleting structure:', error);
+        }
+    }
+    
+    /**
      * Initialize THREE.js scene
      */
     initScene() {
@@ -1735,6 +2436,10 @@ export class RandyMStructureDesigner {
         
         // Add ground plane (for raycasting)
         this.addGroundPlane();
+        
+        // Initialize object pooling - ONE geometry for ALL blocks
+        this.sharedGeometry = new THREE.BoxGeometry(1, 1, 1);
+        console.log('✅ Object pooling initialized (shared geometry)');
         
         console.log('✅ THREE.js scene initialized');
     }
@@ -1990,30 +2695,36 @@ export class RandyMStructureDesigner {
             return;
         }
         
-        // Create block mesh
-        const geometry = new THREE.BoxGeometry(1, 1, 1);
+        // Get or create cached material for this block type
+        let material = this.materialCache.get(blockType);
         
-        // Try to get textured material from EnhancedGraphics
-        const enhancedGraphics = this.voxelWorld?.enhancedGraphics;
-        let material;
-        
-        if (enhancedGraphics && enhancedGraphics.assetsLoaded) {
-            const color = this.getBlockColor(blockType);
-            const fallbackMaterial = new THREE.MeshLambertMaterial({ 
-                color: color,
-                flatShading: true
-            });
+        if (!material) {
+            // Try to get textured material from EnhancedGraphics
+            const enhancedGraphics = this.voxelWorld?.enhancedGraphics;
             
-            material = enhancedGraphics.getEnhancedBlockMaterial(blockType, fallbackMaterial);
-        } else {
-            const color = this.getBlockColor(blockType);
-            material = new THREE.MeshLambertMaterial({ 
-                color: color,
-                flatShading: true
-            });
+            if (enhancedGraphics && enhancedGraphics.assetsLoaded) {
+                const color = this.getBlockColor(blockType);
+                const fallbackMaterial = new THREE.MeshLambertMaterial({ 
+                    color: color,
+                    flatShading: true
+                });
+                
+                material = enhancedGraphics.getEnhancedBlockMaterial(blockType, fallbackMaterial);
+            } else {
+                const color = this.getBlockColor(blockType);
+                material = new THREE.MeshLambertMaterial({ 
+                    color: color,
+                    flatShading: true
+                });
+            }
+            
+            // Cache the material for reuse
+            this.materialCache.set(blockType, material);
+            console.log(`📦 Material cached for: ${blockType}`);
         }
         
-        const mesh = new THREE.Mesh(geometry, material);
+        // Use SHARED geometry (all blocks use the same geometry instance)
+        const mesh = new THREE.Mesh(this.sharedGeometry, material);
         mesh.position.set(x + 0.5, y + 0.5, z + 0.5);
         mesh.castShadow = true;
         mesh.receiveShadow = true;
@@ -2038,14 +2749,10 @@ export class RandyMStructureDesigner {
             });
             
             this.scene.remove(block.mesh);
-            block.mesh.geometry.dispose();
             
-            // Handle both single materials and material arrays (multi-face textures)
-            if (Array.isArray(block.mesh.material)) {
-                block.mesh.material.forEach(mat => mat.dispose());
-            } else {
-                block.mesh.material.dispose();
-            }
+            // DON'T dispose geometry - it's shared!
+            // DON'T dispose material - it's cached for reuse!
+            // Just remove the mesh from the scene
             
             this.placedBlocks.delete(key);
             this.updateStats();
@@ -2598,19 +3305,32 @@ export class RandyMStructureDesigner {
     cleanupScene() {
         console.log('🧹 Cleaning up RandyM scene...');
         
-        // Dispose all placed blocks
+        // Remove all placed blocks from scene (don't dispose - using object pooling)
         this.placedBlocks.forEach(block => {
             this.scene.remove(block.mesh);
-            block.mesh.geometry.dispose();
-            
-            // Handle both single materials and material arrays (multi-face textures)
-            if (Array.isArray(block.mesh.material)) {
-                block.mesh.material.forEach(mat => mat.dispose());
-            } else {
-                block.mesh.material.dispose();
-            }
+            // DON'T dispose geometry or materials - they're shared/cached!
         });
         this.placedBlocks.clear();
+        
+        // Dispose shared geometry (used by ALL blocks)
+        if (this.sharedGeometry) {
+            this.sharedGeometry.dispose();
+            this.sharedGeometry = null;
+            console.log('🗑️ Disposed shared geometry');
+        }
+        
+        // Dispose cached materials
+        if (this.materialCache) {
+            this.materialCache.forEach((material, blockType) => {
+                if (Array.isArray(material)) {
+                    material.forEach(mat => mat.dispose());
+                } else {
+                    material.dispose();
+                }
+            });
+            this.materialCache.clear();
+            console.log(`🗑️ Disposed ${this.materialCache.size} cached materials`);
+        }
         
         // Dispose preview block
         if (this.previewBlock) {
