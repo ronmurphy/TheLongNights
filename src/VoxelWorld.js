@@ -20,6 +20,7 @@ import { BlockResourcePool } from './BlockResourcePool.js';
 import { ModificationTracker } from './serialization/ModificationTracker.js';
 import { GhostSystem } from './GhostSystem.js';
 import { AngryGhostSystem } from './AngryGhostSystem.js';
+import { BloodMoonSystem } from './BloodMoonSystem.js';
 import { BattleSystem } from './BattleSystem.js';
 import { BattleArena } from './BattleArena.js';
 import { RPGIntegration } from './rpg/RPGIntegration.js';
@@ -354,6 +355,9 @@ class NebulaVoxelApp {
 
         // 💀 Initialize Angry Ghost System (hostile ghosts that trigger battles)
         this.angryGhostSystem = null;
+
+        // 🩸 Initialize Blood Moon System (enemy spawning during blood moons)
+        this.bloodMoonSystem = null;
 
         // ⚔️ Initialize Battle System (Pokemon-style auto-battler)
         this.battleSystem = null;
@@ -8080,6 +8084,9 @@ class NebulaVoxelApp {
         // 💀 Initialize Angry Ghost System now that scene is ready
         this.angryGhostSystem = new AngryGhostSystem(this.scene, this.enhancedGraphics, this.battleSystem);
 
+        // 🩸 Initialize Blood Moon System now that scene is ready
+        this.bloodMoonSystem = new BloodMoonSystem(this);
+
         // 🎄 Initialize Christmas System now that scene is ready
         this.christmasSystem = new ChristmasSystem(this);
 
@@ -9932,14 +9939,22 @@ class NebulaVoxelApp {
                     // Show dramatic notification
                     this.updateStatus('🩸 THE BLOOD MOON RISES! Prepare for battle...', 'danger');
                     
-                    // TODO: Spawn enemies (Phase 1, Step 3)
-                    // this.spawnBloodMoonEnemies();
+                    // 🩸 Spawn enemies!
+                    if (this.bloodMoonSystem && !this.dayNightCycle.enemiesSpawnedThisBloodMoon) {
+                        this.bloodMoonSystem.spawnEnemies(this.dayNightCycle.currentWeek);
+                        this.dayNightCycle.enemiesSpawnedThisBloodMoon = true;
+                    }
                 } else if (!isBloodMoonTime && this.dayNightCycle.bloodMoonActive) {
                     // 🌅 END BLOOD MOON (2am has passed)
                     this.dayNightCycle.bloodMoonActive = false;
                     this.dayNightCycle.totalBloodMoonsSurvived++;
                     console.log(`🌅 Blood moon has ended. You survived Week ${this.dayNightCycle.currentWeek}!`);
                     this.updateStatus(`You survived the blood moon! Week ${this.dayNightCycle.currentWeek} complete. +10 XP`, 'success');
+                    
+                    // 🩸 Clean up remaining enemies
+                    if (this.bloodMoonSystem) {
+                        this.bloodMoonSystem.cleanup();
+                    }
                 }
             }
 
