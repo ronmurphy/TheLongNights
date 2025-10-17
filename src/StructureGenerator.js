@@ -619,10 +619,522 @@ export class StructureGenerator {
     }
 
     /**
+     * 🏰 Generate a defensive stone wall section with battlements
+     * Can be placed in sequence to create long defensive walls
+     *
+     * @param {number} worldX - World X position (center)
+     * @param {number} worldZ - World Z position (center)
+     * @param {number} length - Wall length (blocks)
+     * @param {number} height - Wall height (blocks, min 3 for battlements)
+     * @param {number} thickness - Wall thickness (blocks, default 2)
+     * @param {string} orientation - 'north-south' or 'east-west'
+     * @param {string} material - Wall material (default 'stone')
+     * @param {Function} addBlockFn - Function to place blocks
+     * @param {Function} getHeightFn - Function to get ground height
+     */
+    generateWall(worldX, worldZ, length, height, thickness, orientation, material, addBlockFn, getHeightFn) {
+        console.log(`🏰 Generating wall at (${worldX}, ${worldZ}): ${length}×${height}×${thickness}, ${orientation}`);
+
+        // Get ground height
+        let groundY = getHeightFn(worldX, worldZ);
+        if (groundY === null || groundY === undefined) {
+            groundY = 8; // Safe fallback
+        }
+
+        const baseY = groundY;
+
+        // Battlements on top (every 2 blocks)
+        const battlementSpacing = 2;
+
+        // Build wall based on orientation
+        const isNorthSouth = orientation === 'north-south';
+
+        for (let i = 0; i < length; i++) {
+            for (let t = 0; t < thickness; t++) {
+                for (let h = 0; h < height; h++) {
+                    let blockX, blockZ;
+
+                    if (isNorthSouth) {
+                        blockX = worldX + t - Math.floor(thickness / 2);
+                        blockZ = worldZ + i - Math.floor(length / 2);
+                    } else {
+                        blockX = worldX + i - Math.floor(length / 2);
+                        blockZ = worldZ + t - Math.floor(thickness / 2);
+                    }
+
+                    addBlockFn(blockX, baseY + h, blockZ, material, true);
+                }
+
+                // Add battlements (crenellations) on top
+                if (i % battlementSpacing === 0 && height >= 3) {
+                    let battlementX, battlementZ;
+
+                    if (isNorthSouth) {
+                        battlementX = worldX + t - Math.floor(thickness / 2);
+                        battlementZ = worldZ + i - Math.floor(length / 2);
+                    } else {
+                        battlementX = worldX + i - Math.floor(length / 2);
+                        battlementZ = worldZ + t - Math.floor(thickness / 2);
+                    }
+
+                    addBlockFn(battlementX, baseY + height, battlementZ, material, true);
+                }
+            }
+        }
+
+        console.log(`✅ Wall built: ${length} blocks long, ${height} blocks tall, ${thickness} blocks thick`);
+    }
+
+    /**
+     * 🗼 Generate a defensive tower with multiple levels
+     * Square tower with arrow slits and battlements
+     *
+     * @param {number} worldX - World X position (center)
+     * @param {number} worldZ - World Z position (center)
+     * @param {number} baseSize - Tower base width/depth (blocks, min 3)
+     * @param {number} height - Total tower height (blocks, min 8)
+     * @param {string} material - Tower material (default 'stone')
+     * @param {Function} addBlockFn - Function to place blocks
+     * @param {Function} getHeightFn - Function to get ground height
+     */
+    generateTower(worldX, worldZ, baseSize, height, material, addBlockFn, getHeightFn) {
+        console.log(`🗼 Generating tower at (${worldX}, ${worldZ}): ${baseSize}×${baseSize}×${height}`);
+
+        // Get ground height
+        let groundY = getHeightFn(worldX, worldZ);
+        if (groundY === null || groundY === undefined) {
+            groundY = 8; // Safe fallback
+        }
+
+        const baseY = groundY;
+        const halfSize = Math.floor(baseSize / 2);
+
+        // Build tower structure
+        for (let x = -halfSize; x <= halfSize; x++) {
+            for (let z = -halfSize; z <= halfSize; z++) {
+                for (let y = 0; y < height; y++) {
+                    const isEdge = Math.abs(x) === halfSize || Math.abs(z) === halfSize;
+                    const isCorner = Math.abs(x) === halfSize && Math.abs(z) === halfSize;
+
+                    // Solid floor every 3 levels
+                    const isFloorLevel = y % 3 === 0;
+
+                    // 🚪 Doorway - 2×2 opening on south side (z = halfSize), ground level (y = 1, 2)
+                    const isDoorway = (z === halfSize && y >= 1 && y <= 2) &&
+                                     (x === -1 || x === 0);
+
+                    // Arrow slits (openings) on walls at levels 3, 6, 9, etc. (not on corners or floor levels)
+                    const isArrowSlitLevel = y % 3 === 1;
+                    const isArrowSlit = isArrowSlitLevel && isEdge && !isCorner &&
+                                       ((x === 0 && Math.abs(z) === halfSize) ||
+                                        (z === 0 && Math.abs(x) === halfSize));
+
+                    // Build walls (hollow interior except floors)
+                    if (isEdge || isFloorLevel) {
+                        if (!isArrowSlit && !isDoorway) {
+                            addBlockFn(worldX + x, baseY + y, worldZ + z, material, true);
+                        }
+                    }
+                }
+
+                // Battlements on top (corners + center of each wall)
+                const isBattlement = Math.abs(x) === halfSize || Math.abs(z) === halfSize;
+                const isCenterOfWall = (x === 0 && Math.abs(z) === halfSize) ||
+                                      (z === 0 && Math.abs(x) === halfSize);
+                const isBattlementCorner = Math.abs(x) === halfSize && Math.abs(z) === halfSize;
+
+                if (isBattlement && (isBattlementCorner || isCenterOfWall)) {
+                    addBlockFn(worldX + x, baseY + height, worldZ + z, material, true);
+                    addBlockFn(worldX + x, baseY + height + 1, worldZ + z, material, true);
+                }
+            }
+        }
+
+        console.log(`✅ Tower built: ${baseSize}×${baseSize}×${height + 2} with doorway, arrow slits, and battlements`);
+    }
+
+    /**
+     * 🏰 Generate a castle wall section with integrated towers
+     * Combines walls and corner towers for proper fortifications
+     *
+     * @param {number} worldX - World X position (center)
+     * @param {number} worldZ - World Z position (center)
+     * @param {number} wallLength - Length of wall section (blocks)
+     * @param {number} wallHeight - Height of wall (blocks)
+     * @param {string} orientation - 'north-south' or 'east-west'
+     * @param {string} material - Wall material (default 'stone')
+     * @param {Function} addBlockFn - Function to place blocks
+     * @param {Function} getHeightFn - Function to get ground height
+     */
+    generateCastleWall(worldX, worldZ, wallLength, wallHeight, orientation, material, addBlockFn, getHeightFn) {
+        console.log(`🏰 Generating castle wall at (${worldX}, ${worldZ}): ${wallLength} blocks long`);
+
+        // Main wall section
+        this.generateWall(worldX, worldZ, wallLength, wallHeight, 2, orientation, material, addBlockFn, getHeightFn);
+
+        // Add towers at each end
+        const towerSize = 5;
+        const towerHeight = wallHeight + 3;
+        const halfLength = Math.floor(wallLength / 2);
+
+        if (orientation === 'north-south') {
+            // Towers on north and south ends
+            this.generateTower(worldX, worldZ - halfLength, towerSize, towerHeight, material, addBlockFn, getHeightFn);
+            this.generateTower(worldX, worldZ + halfLength, towerSize, towerHeight, material, addBlockFn, getHeightFn);
+        } else {
+            // Towers on east and west ends
+            this.generateTower(worldX - halfLength, worldZ, towerSize, towerHeight, material, addBlockFn, getHeightFn);
+            this.generateTower(worldX + halfLength, worldZ, towerSize, towerHeight, material, addBlockFn, getHeightFn);
+        }
+
+        console.log(`✅ Castle wall with towers complete`);
+    }
+
+    /**
+     * 🛡️ Generate a wooden barricade - EARLY GAME
+     * Simple criss-cross wood barrier for quick defense
+     *
+     * @param {number} worldX - World X position (center)
+     * @param {number} worldZ - World Z position (center)
+     * @param {number} length - Barricade length (blocks)
+     * @param {number} height - Barricade height (blocks, typically 3-4)
+     * @param {string} orientation - 'north-south' or 'east-west'
+     * @param {string} material - Barricade material (wood)
+     * @param {Function} addBlockFn - Function to place blocks
+     * @param {Function} getHeightFn - Function to get ground height
+     */
+    generateBarricade(worldX, worldZ, length, height, orientation, material, addBlockFn, getHeightFn) {
+        console.log(`🛡️ Generating barricade at (${worldX}, ${worldZ}): ${length}×${height}`);
+
+        let groundY = getHeightFn(worldX, worldZ);
+        if (groundY === null || groundY === undefined) {
+            groundY = 8;
+        }
+
+        const baseY = groundY;
+        const isNorthSouth = orientation === 'north-south';
+
+        // Build criss-cross pattern
+        for (let i = 0; i < length; i++) {
+            for (let h = 0; h < height; h++) {
+                let blockX, blockZ;
+
+                if (isNorthSouth) {
+                    blockX = worldX;
+                    blockZ = worldZ + i - Math.floor(length / 2);
+                } else {
+                    blockX = worldX + i - Math.floor(length / 2);
+                    blockZ = worldZ;
+                }
+
+                // Diagonal criss-cross pattern (every other height level)
+                if ((i + h) % 2 === 0) {
+                    addBlockFn(blockX, baseY + h, blockZ, material, true);
+                }
+            }
+        }
+
+        console.log(`✅ Barricade built: ${length} blocks long, ${height} blocks tall`);
+    }
+
+    /**
+     * 🔱 Generate a spike wall - EARLY GAME
+     * Pointed stakes to damage enemies
+     *
+     * @param {number} worldX - World X position (center)
+     * @param {number} worldZ - World Z position (center)
+     * @param {number} length - Spike wall length (blocks)
+     * @param {number} height - Spike height (blocks, typically 2-3)
+     * @param {string} orientation - 'north-south' or 'east-west'
+     * @param {string} material - Spike material (wood)
+     * @param {Function} addBlockFn - Function to place blocks
+     * @param {Function} getHeightFn - Function to get ground height
+     */
+    generateSpikeWall(worldX, worldZ, length, height, orientation, material, addBlockFn, getHeightFn) {
+        console.log(`🔱 Generating spike wall at (${worldX}, ${worldZ}): ${length}×${height}`);
+
+        let groundY = getHeightFn(worldX, worldZ);
+        if (groundY === null || groundY === undefined) {
+            groundY = 8;
+        }
+
+        const baseY = groundY;
+        const isNorthSouth = orientation === 'north-south';
+
+        // Build spike pattern - pyramids every 2 blocks
+        for (let i = 0; i < length; i++) {
+            // Base spike
+            for (let h = 0; h < height; h++) {
+                let blockX, blockZ;
+
+                if (isNorthSouth) {
+                    blockX = worldX;
+                    blockZ = worldZ + i - Math.floor(length / 2);
+                } else {
+                    blockX = worldX + i - Math.floor(length / 2);
+                    blockZ = worldZ;
+                }
+
+                // Create pointed spike (narrower at top)
+                if (h < height - 1 || i % 2 === 0) {
+                    addBlockFn(blockX, baseY + h, blockZ, material, true);
+                }
+            }
+        }
+
+        console.log(`✅ Spike wall built: ${length} blocks long, ${height} spikes tall`);
+    }
+
+    /**
+     * 🚧 Generate a trench - EARLY/MID GAME
+     * Defensive ditch to slow enemies
+     *
+     * @param {number} worldX - World X position (center)
+     * @param {number} worldZ - World Z position (center)
+     * @param {number} length - Trench length (blocks)
+     * @param {number} depth - Trench depth (blocks, typically 2-3)
+     * @param {number} width - Trench width (blocks, typically 2-3)
+     * @param {string} orientation - 'north-south' or 'east-west'
+     * @param {Function} addBlockFn - Function to place blocks
+     * @param {Function} getHeightFn - Function to get ground height
+     */
+    generateTrench(worldX, worldZ, length, depth, width, orientation, addBlockFn, getHeightFn) {
+        console.log(`🚧 Generating trench at (${worldX}, ${worldZ}): ${length}×${depth}×${width}`);
+
+        let groundY = getHeightFn(worldX, worldZ);
+        if (groundY === null || groundY === undefined) {
+            groundY = 8;
+        }
+
+        const baseY = groundY;
+        const isNorthSouth = orientation === 'north-south';
+
+        // Dig out trench by placing air blocks (removing terrain)
+        for (let i = 0; i < length; i++) {
+            for (let w = 0; w < width; w++) {
+                for (let d = 1; d <= depth; d++) {
+                    let blockX, blockZ;
+
+                    if (isNorthSouth) {
+                        blockX = worldX + w - Math.floor(width / 2);
+                        blockZ = worldZ + i - Math.floor(length / 2);
+                    } else {
+                        blockX = worldX + i - Math.floor(length / 2);
+                        blockZ = worldZ + w - Math.floor(width / 2);
+                    }
+
+                    // Remove blocks to create trench (place air)
+                    addBlockFn(blockX, baseY - d, blockZ, null, false);
+                }
+            }
+        }
+
+        console.log(`✅ Trench dug: ${length}×${depth}×${width}`);
+    }
+
+    /**
+     * 🏹 Generate an archer platform - MID GAME
+     * Raised platform for shooting over walls
+     *
+     * @param {number} worldX - World X position (center)
+     * @param {number} worldZ - World Z position (center)
+     * @param {number} size - Platform size (square, blocks)
+     * @param {number} height - Platform height (blocks)
+     * @param {string} material - Platform material
+     * @param {Function} addBlockFn - Function to place blocks
+     * @param {Function} getHeightFn - Function to get ground height
+     */
+    generateArcherPlatform(worldX, worldZ, size, height, material, addBlockFn, getHeightFn) {
+        console.log(`🏹 Generating archer platform at (${worldX}, ${worldZ}): ${size}×${size}×${height}`);
+
+        let groundY = getHeightFn(worldX, worldZ);
+        if (groundY === null || groundY === undefined) {
+            groundY = 8;
+        }
+
+        const baseY = groundY;
+        const halfSize = Math.floor(size / 2);
+
+        // Build support pillars at corners
+        for (let x = -halfSize; x <= halfSize; x += size) {
+            for (let z = -halfSize; z <= halfSize; z += size) {
+                for (let h = 0; h < height; h++) {
+                    addBlockFn(worldX + x, baseY + h, worldZ + z, material, true);
+                }
+            }
+        }
+
+        // Build platform floor
+        for (let x = -halfSize; x <= halfSize; x++) {
+            for (let z = -halfSize; z <= halfSize; z++) {
+                addBlockFn(worldX + x, baseY + height, worldZ + z, material, true);
+            }
+        }
+
+        // Build protective railings on 3 sides (leave one open for access)
+        for (let x = -halfSize; x <= halfSize; x++) {
+            // Front and back railings
+            if (Math.abs(x) === halfSize || x % 2 === 0) {
+                addBlockFn(worldX + x, baseY + height + 1, worldZ - halfSize, material, true);
+                addBlockFn(worldX + x, baseY + height + 1, worldZ + halfSize, material, true);
+            }
+        }
+        for (let z = -halfSize; z <= halfSize; z++) {
+            // Side railing (one side only)
+            if (Math.abs(z) === halfSize || z % 2 === 0) {
+                addBlockFn(worldX - halfSize, baseY + height + 1, worldZ + z, material, true);
+            }
+        }
+
+        console.log(`✅ Archer platform built: ${size}×${size} at height ${height}`);
+    }
+
+    /**
+     * 🏰 Generate a gatehouse - MID/LATE GAME
+     * Fortified entrance with murder holes
+     *
+     * @param {number} worldX - World X position (center)
+     * @param {number} worldZ - World Z position (center)
+     * @param {number} width - Gatehouse width (blocks)
+     * @param {number} height - Gatehouse height (blocks)
+     * @param {string} orientation - 'north-south' or 'east-west'
+     * @param {string} material - Gatehouse material
+     * @param {Function} addBlockFn - Function to place blocks
+     * @param {Function} getHeightFn - Function to get ground height
+     */
+    generateGatehouse(worldX, worldZ, width, height, orientation, material, addBlockFn, getHeightFn) {
+        console.log(`🏰 Generating gatehouse at (${worldX}, ${worldZ}): ${width}×${height}`);
+
+        let groundY = getHeightFn(worldX, worldZ);
+        if (groundY === null || groundY === undefined) {
+            groundY = 8;
+        }
+
+        const baseY = groundY;
+        const halfWidth = Math.floor(width / 2);
+        const isNorthSouth = orientation === 'north-south';
+        const passageWidth = 3; // 3-block wide passage
+
+        // Build main structure
+        for (let w = -halfWidth; w <= halfWidth; w++) {
+            for (let h = 0; h < height; h++) {
+                for (let d = -2; d <= 2; d++) {
+                    let blockX, blockZ;
+
+                    if (isNorthSouth) {
+                        blockX = worldX + w;
+                        blockZ = worldZ + d;
+                    } else {
+                        blockX = worldX + d;
+                        blockZ = worldZ + w;
+                    }
+
+                    const isEdge = Math.abs(w) === halfWidth || Math.abs(d) === 2;
+                    const isPassage = Math.abs(w) <= Math.floor(passageWidth / 2) && h < 4;
+
+                    // Build walls, leave passage open
+                    if (isEdge && !isPassage) {
+                        addBlockFn(blockX, baseY + h, blockZ, material, true);
+                    }
+
+                    // Murder holes in ceiling above passage
+                    if (h === 4 && Math.abs(w) <= Math.floor(passageWidth / 2) && d === 0) {
+                        // Leave holes for dropping things on enemies
+                        if (w % 2 === 0) {
+                            // Skip block to create hole
+                        } else {
+                            addBlockFn(blockX, baseY + h, blockZ, material, true);
+                        }
+                    } else if (h === 4 && Math.abs(w) <= Math.floor(passageWidth / 2)) {
+                        addBlockFn(blockX, baseY + h, blockZ, material, true);
+                    }
+                }
+            }
+        }
+
+        // Add battlements on top
+        for (let w = -halfWidth; w <= halfWidth; w += 2) {
+            for (let d = -2; d <= 2; d += 2) {
+                let blockX, blockZ;
+
+                if (isNorthSouth) {
+                    blockX = worldX + w;
+                    blockZ = worldZ + d;
+                } else {
+                    blockX = worldX + d;
+                    blockZ = worldZ + w;
+                }
+
+                addBlockFn(blockX, baseY + height, blockZ, material, true);
+            }
+        }
+
+        console.log(`✅ Gatehouse built: ${width}×${height} with murder holes`);
+    }
+
+    /**
+     * ⚔️ Generate a bunker - LATE GAME
+     * Underground fortification with firing positions
+     *
+     * @param {number} worldX - World X position (center)
+     * @param {number} worldZ - World Z position (center)
+     * @param {number} size - Bunker size (square)
+     * @param {number} depth - How deep underground (blocks)
+     * @param {string} material - Bunker material (stone)
+     * @param {Function} addBlockFn - Function to place blocks
+     * @param {Function} getHeightFn - Function to get ground height
+     */
+    generateBunker(worldX, worldZ, size, depth, material, addBlockFn, getHeightFn) {
+        console.log(`⚔️ Generating bunker at (${worldX}, ${worldZ}): ${size}×${size}, depth ${depth}`);
+
+        let groundY = getHeightFn(worldX, worldZ);
+        if (groundY === null || groundY === undefined) {
+            groundY = 8;
+        }
+
+        const baseY = groundY - depth;
+        const halfSize = Math.floor(size / 2);
+
+        // Build underground chamber
+        for (let x = -halfSize; x <= halfSize; x++) {
+            for (let z = -halfSize; z <= halfSize; z++) {
+                const isEdge = Math.abs(x) === halfSize || Math.abs(z) === halfSize;
+
+                // Floor
+                addBlockFn(worldX + x, baseY, worldZ + z, material, true);
+
+                // Walls (hollow interior)
+                if (isEdge) {
+                    for (let h = 1; h <= depth; h++) {
+                        // Add firing slits at eye level
+                        const isFiringSlit = h === depth - 1 &&
+                                           ((x === 0 && Math.abs(z) === halfSize) ||
+                                            (z === 0 && Math.abs(x) === halfSize));
+
+                        if (!isFiringSlit) {
+                            addBlockFn(worldX + x, baseY + h, worldZ + z, material, true);
+                        }
+                    }
+                }
+
+                // Roof
+                addBlockFn(worldX + x, baseY + depth + 1, worldZ + z, material, true);
+            }
+        }
+
+        // Add entrance stairs on one side
+        for (let d = 0; d <= depth; d++) {
+            addBlockFn(worldX, baseY + d, worldZ + halfSize + d, material, true);
+        }
+
+        console.log(`✅ Bunker built: ${size}×${size} at depth ${depth}`);
+    }
+
+    /**
      * 🏠 Generate a simple house with sloped roof
      * Flexible dimensions controlled by workbench sliders (minimum 4×4×4 interior)
      * Walls use selected wood block, floor/roof use stone
-     * 
+     *
      * @param {number} worldX - World X position (center)
      * @param {number} worldZ - World Z position (center)
      * @param {number} interiorLength - Interior walkable length (min 4)
@@ -634,7 +1146,7 @@ export class StructureGenerator {
      * @param {Function} addBlockFn - Function to place blocks
      * @param {Function} getHeightFn - Function to get ground height
      */
-    generateHouse(worldX, worldZ, interiorLength, interiorWidth, interiorHeight, 
+    generateHouse(worldX, worldZ, interiorLength, interiorWidth, interiorHeight,
                   wallMaterial, floorMaterial, doorSide, addBlockFn, getHeightFn) {
         
         console.log(`🏠 Generating house at (${worldX}, ${worldZ}): ${interiorLength}×${interiorWidth}×${interiorHeight} interior, door on ${doorSide}`);

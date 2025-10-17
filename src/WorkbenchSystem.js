@@ -92,11 +92,11 @@ export class WorkbenchSystem {
                 shapes: [{ type: 'stairs', position: { x: 0, y: 0, z: 0 }, size: { x: 1, y: 3, z: 3 } }]
             },
             wall: {
-                name: '🧱 Wall',
-                materials: { stone: 2 },
-                description: 'Basic wall section',
-                isBasicShape: true,
-                shapes: [{ type: 'wall', position: { x: 0, y: 0, z: 0 }, size: { x: 1, y: 2, z: 1 } }]
+                name: '🧱 Defensive Wall',
+                materials: { stone: 8 },
+                description: 'Stone wall with battlements (length × height adjustable)',
+                isStructure: true, // Flag to use StructureGenerator
+                shapes: [{ type: 'defensive_wall', position: { x: 0, y: 0, z: 0 }, size: { x: 8, y: 4, z: 2 } }]
             },
             hollow_cube: {
                 name: '⬜ Hollow Cube',
@@ -128,25 +128,66 @@ export class WorkbenchSystem {
                 ]
             },
 
-            // Complex Structures
+            // EARLY GAME DEFENSES (Days 1-3) - Low cost, quick to build
+            barricade: {
+                name: '🛡️ Wooden Barricade',
+                materials: { wood: 5 },
+                description: 'Quick criss-cross barrier - EARLY GAME (length adjustable)',
+                isStructure: true,
+                shapes: [{ type: 'barricade', position: { x: 0, y: 0, z: 0 }, size: { x: 6, y: 3, z: 1 } }]
+            },
+            spike_wall: {
+                name: '🔱 Spike Wall',
+                materials: { wood: 4 },
+                description: 'Pointed stakes to damage enemies - EARLY GAME (length adjustable)',
+                isStructure: true,
+                shapes: [{ type: 'spike_wall', position: { x: 0, y: 0, z: 0 }, size: { x: 6, y: 3, z: 1 } }]
+            },
+
+            // MID GAME DEFENSES (Days 3-5) - Moderate cost, better protection
+            trench: {
+                name: '🚧 Defensive Trench',
+                materials: { wood: 2, stone: 3 },
+                description: 'Ditch to slow enemies - MID GAME (length/depth adjustable)',
+                isStructure: true,
+                shapes: [{ type: 'trench', position: { x: 0, y: 0, z: 0 }, size: { x: 8, y: 2, z: 3 } }]
+            },
+            archer_platform: {
+                name: '🏹 Archer Platform',
+                materials: { wood: 12 },
+                description: 'Raised platform for shooting - MID GAME (size/height adjustable)',
+                isStructure: true,
+                shapes: [{ type: 'archer_platform', position: { x: 0, y: 0, z: 0 }, size: { x: 4, y: 4, z: 4 } }]
+            },
+            gatehouse: {
+                name: '🏰 Gatehouse',
+                materials: { stone: 25 },
+                description: 'Fortified entrance with murder holes - MID/LATE GAME',
+                isStructure: true,
+                shapes: [{ type: 'gatehouse', position: { x: 0, y: 0, z: 0 }, size: { x: 8, y: 8, z: 5 } }]
+            },
+
+            // LATE GAME DEFENSES (Days 5-7) - High cost, maximum protection
             castle_wall: {
                 name: '🏰 Castle Wall',
-                materials: { stone: 12 },
-                description: 'A fortified wall section',
-                shapes: [
-                    { type: 'wall', position: { x: 0, y: 0, z: 0 }, size: { x: 4, y: 3, z: 1 } },
-                    { type: 'cube', position: { x: 0, y: 3, z: 0 }, size: { x: 1, y: 1, z: 1 } },
-                    { type: 'cube', position: { x: 3, y: 3, z: 0 }, size: { x: 1, y: 1, z: 1 } }
-                ]
+                materials: { stone: 50 },
+                description: 'Fortified wall section with corner towers - LATE GAME (length adjustable)',
+                isStructure: true,
+                shapes: [{ type: 'castle_wall', position: { x: 0, y: 0, z: 0 }, size: { x: 16, y: 8, z: 2 } }]
             },
-            turret: {
-                name: '🗼 Tower Turret',
-                materials: { stone: 20 },
-                description: 'A defensive tower structure',
-                shapes: [
-                    { type: 'cylinder', position: { x: 0, y: 0, z: 0 }, size: { x: 3, y: 4, z: 3 } },
-                    { type: 'cylinder', position: { x: 0, y: 4, z: 0 }, size: { x: 4, y: 1, z: 4 } }
-                ]
+            tower: {
+                name: '🗼 Defensive Tower',
+                materials: { stone: 35 },
+                description: 'Multi-level tower with arrow slits - LATE GAME',
+                isStructure: true,
+                shapes: [{ type: 'defensive_tower', position: { x: 0, y: 0, z: 0 }, size: { x: 5, y: 12, z: 5 } }]
+            },
+            bunker: {
+                name: '⚔️ Underground Bunker',
+                materials: { stone: 30 },
+                description: 'Underground fortification with firing slits - LATE GAME',
+                isStructure: true,
+                shapes: [{ type: 'bunker', position: { x: 0, y: 0, z: 0 }, size: { x: 6, y: 4, z: 6 } }]
             },
             house: {
                 name: '🏠 Simple House',
@@ -1788,9 +1829,22 @@ export class WorkbenchSystem {
         nameInput.type = 'text';
         nameInput.placeholder = 'Enter a name for your creation...';
 
-        // 🔥 Special handling for pyramids - suggest "Campfire" as default name
+        // 🏰 Use plan name as default (e.g., "Castle Wall" instead of "Custom castle_wall")
+        // Special handling for pyramids - suggest "Campfire" as default name
         const isPyramid = itemData.shape === 'pyramid';
-        nameInput.value = isPyramid ? 'Campfire' : `Custom ${itemData.shape.charAt(0).toUpperCase() + itemData.shape.slice(1)}`;
+        let defaultName;
+
+        if (isPyramid) {
+            defaultName = 'Campfire';
+        } else if (this.currentPlan && this.currentPlan.name) {
+            // Use plan's name (remove emoji)
+            defaultName = this.currentPlan.name.replace(/[^\w\s]/g, '').trim();
+        } else {
+            // Fallback to shape name
+            defaultName = `Custom ${itemData.shape.charAt(0).toUpperCase() + itemData.shape.slice(1)}`;
+        }
+
+        nameInput.value = defaultName;
 
         nameInput.style.cssText = `
             width: 100%;

@@ -558,23 +558,6 @@ class NebulaVoxelApp {
             }
         };
 
-        // 🏰 HELPER: Determine player facing orientation for wall placement
-        // Returns: 'north-south' or 'east-west' based on camera direction
-        this.getPlayerOrientation = () => {
-            // Get camera direction vector
-            const direction = new THREE.Vector3();
-            this.camera.getWorldDirection(direction);
-
-            // Determine if player is facing more N/S or E/W
-            // If looking along X axis (east/west), place wall N/S
-            // If looking along Z axis (north/south), place wall E/W
-            if (Math.abs(direction.x) > Math.abs(direction.z)) {
-                return 'north-south'; // Looking E/W, so wall runs N/S
-            } else {
-                return 'east-west'; // Looking N/S, so wall runs E/W
-            }
-        };
-
         // �🎨 PHASE 2: 3D Object Creation Engine - Place crafted objects with real dimensions!
         this.placeCraftedObject = (x, y, z, itemId) => {
             console.log(`🎯 placeCraftedObject called: ${itemId} at (${x},${y},${z})`);
@@ -716,156 +699,6 @@ class NebulaVoxelApp {
                     } else {
                         console.error('❌ StructureGenerator not available');
                         this.updateStatus(`⚠️ Could not build castle wall - system error`, 'error');
-                        return;
-                    }
-                    break;
-
-                case 'barricade':
-                    // 🛡️ WOODEN BARRICADE - EARLY GAME
-                    console.log(`🛡️ Building barricade ${dimensions.length}×${dimensions.height}`);
-
-                    const barricadeOrientation = this.getPlayerOrientation();
-
-                    if (this.biomeWorldGen && this.biomeWorldGen.structureGenerator) {
-                        this.biomeWorldGen.structureGenerator.generateBarricade(
-                            x, z,
-                            dimensions.length,
-                            dimensions.height,
-                            barricadeOrientation,
-                            material,
-                            this.addBlock.bind(this),
-                            (wx, wz) => this.getGroundHeight(wx, wz)
-                        );
-
-                        this.updateStatus(`🛡️ Built wooden barricade!`, 'craft');
-                        return;
-                    } else {
-                        console.error('❌ StructureGenerator not available');
-                        this.updateStatus(`⚠️ Could not build barricade`, 'error');
-                        return;
-                    }
-                    break;
-
-                case 'spike_wall':
-                    // 🔱 SPIKE WALL - EARLY GAME
-                    console.log(`🔱 Building spike wall ${dimensions.length}×${dimensions.height}`);
-
-                    const spikeOrientation = this.getPlayerOrientation();
-
-                    if (this.biomeWorldGen && this.biomeWorldGen.structureGenerator) {
-                        this.biomeWorldGen.structureGenerator.generateSpikeWall(
-                            x, z,
-                            dimensions.length,
-                            dimensions.height,
-                            spikeOrientation,
-                            material,
-                            this.addBlock.bind(this),
-                            (wx, wz) => this.getGroundHeight(wx, wz)
-                        );
-
-                        this.updateStatus(`🔱 Built spike wall!`, 'craft');
-                        return;
-                    } else {
-                        console.error('❌ StructureGenerator not available');
-                        this.updateStatus(`⚠️ Could not build spike wall`, 'error');
-                        return;
-                    }
-                    break;
-
-                case 'trench':
-                    // 🚧 DEFENSIVE TRENCH - MID GAME
-                    console.log(`🚧 Digging trench ${dimensions.length}×${dimensions.height}×${dimensions.width}`);
-
-                    const trenchOrientation = this.getPlayerOrientation();
-
-                    if (this.biomeWorldGen && this.biomeWorldGen.structureGenerator) {
-                        this.biomeWorldGen.structureGenerator.generateTrench(
-                            x, z,
-                            dimensions.length,
-                            dimensions.height,  // Used as depth
-                            dimensions.width,
-                            trenchOrientation,
-                            this.addBlock.bind(this),
-                            (wx, wz) => this.getGroundHeight(wx, wz)
-                        );
-
-                        this.updateStatus(`🚧 Dug defensive trench!`, 'craft');
-                        return;
-                    } else {
-                        console.error('❌ StructureGenerator not available');
-                        this.updateStatus(`⚠️ Could not dig trench`, 'error');
-                        return;
-                    }
-                    break;
-
-                case 'archer_platform':
-                    // 🏹 ARCHER PLATFORM - MID GAME
-                    console.log(`🏹 Building archer platform ${dimensions.length}×${dimensions.height}`);
-
-                    if (this.biomeWorldGen && this.biomeWorldGen.structureGenerator) {
-                        this.biomeWorldGen.structureGenerator.generateArcherPlatform(
-                            x, z,
-                            dimensions.length,  // Platform size (square)
-                            dimensions.height,  // Platform height
-                            material,
-                            this.addBlock.bind(this),
-                            (wx, wz) => this.getGroundHeight(wx, wz)
-                        );
-
-                        this.updateStatus(`🏹 Built archer platform!`, 'craft');
-                        return;
-                    } else {
-                        console.error('❌ StructureGenerator not available');
-                        this.updateStatus(`⚠️ Could not build archer platform`, 'error');
-                        return;
-                    }
-                    break;
-
-                case 'gatehouse':
-                    // 🏰 GATEHOUSE - MID/LATE GAME
-                    console.log(`🏰 Building gatehouse ${dimensions.length}×${dimensions.height}`);
-
-                    const gatehouseOrientation = this.getPlayerOrientation();
-
-                    if (this.biomeWorldGen && this.biomeWorldGen.structureGenerator) {
-                        this.biomeWorldGen.structureGenerator.generateGatehouse(
-                            x, z,
-                            dimensions.length,  // Gatehouse width
-                            dimensions.height,  // Gatehouse height
-                            gatehouseOrientation,
-                            material,
-                            this.addBlock.bind(this),
-                            (wx, wz) => this.getGroundHeight(wx, wz)
-                        );
-
-                        this.updateStatus(`🏰 Built gatehouse with murder holes!`, 'craft');
-                        return;
-                    } else {
-                        console.error('❌ StructureGenerator not available');
-                        this.updateStatus(`⚠️ Could not build gatehouse`, 'error');
-                        return;
-                    }
-                    break;
-
-                case 'bunker':
-                    // ⚔️ UNDERGROUND BUNKER - LATE GAME
-                    console.log(`⚔️ Building bunker ${dimensions.length}×${dimensions.height}`);
-
-                    if (this.biomeWorldGen && this.biomeWorldGen.structureGenerator) {
-                        this.biomeWorldGen.structureGenerator.generateBunker(
-                            x, z,
-                            dimensions.length,  // Bunker size (square)
-                            dimensions.height,  // Bunker depth
-                            material,
-                            this.addBlock.bind(this),
-                            (wx, wz) => this.getGroundHeight(wx, wz)
-                        );
-
-                        this.updateStatus(`⚔️ Built underground bunker!`, 'craft');
-                        return;
-                    } else {
-                        console.error('❌ StructureGenerator not available');
-                        this.updateStatus(`⚠️ Could not build bunker`, 'error');
                         return;
                     }
                     break;
@@ -2828,17 +2661,7 @@ class NebulaVoxelApp {
                 pyramid: 'change_history',     // 🔺 Triangle
                 stairs: 'stairs',              // 🪜 Stairs
                 wall: 'crop_portrait',         // ▮ Vertical rectangle
-                hollow_cube: 'crop_square',    // ⬜ Square (will be styled differently)
-                defensive_wall: 'fence',       // 🏰 Defensive wall icon
-                defensive_tower: 'tower',      // 🗼 Tower icon
-                castle_wall: 'castle',         // 🏰 Castle icon
-                simple_house: 'home',          // 🏠 House icon
-                barricade: 'fence',            // 🛡️ Barricade icon
-                spike_wall: 'fence',           // 🔱 Spike wall icon
-                trench: 'terrain',             // 🚧 Trench icon
-                archer_platform: 'location_on', // 🏹 Platform icon
-                gatehouse: 'castle',           // 🏰 Gatehouse icon
-                bunker: 'layers'               // ⚔️ Bunker icon
+                hollow_cube: 'crop_square'     // ⬜ Square (will be styled differently)
             };
             return shapeIcons[shape] || 'help_outline';
         };
@@ -2936,16 +2759,7 @@ class NebulaVoxelApp {
                 // 🏠 STRUCTURES
                 simple_house: '🏠',            // Simple house structure
                 crafted_simple_house: '🏠',    // Crafted version
-                defensive_wall: '🧱',          // Defensive wall with battlements
-                defensive_tower: '🗼',         // Multi-level tower
-                castle_wall: '🏰',             // Castle wall with towers
-                barricade: '🛡️',               // Wooden barricade
-                spike_wall: '🔱',              // Spike wall
-                trench: '🚧',                  // Defensive trench
-                archer_platform: '🏹',         // Archer platform
-                gatehouse: '🏰',               // Gatehouse
-                bunker: '⚔️',                  // Underground bunker
-
+                
                 // 🥬 HARVESTED INGREDIENTS
                 wheat: '🌾',         // Harvested wheat
                 carrot: '🥕',        // Harvested carrot
