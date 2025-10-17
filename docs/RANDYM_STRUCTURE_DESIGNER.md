@@ -1,8 +1,8 @@
-# RandyM Structure Designer - Phase 1 Complete! 🎨
+# RandyM Structure Designer - Phase 2 Complete! 🎨
 
 **Named after:** Randy (with M initial)  
 **Created:** October 17, 2025  
-**Status:** Phase 1 ✅ Basic Modal & 3D Scene - **INTEGRATED** ✅
+**Status:** Phase 2 ✅ Block Selector with Mini Textures - **INTEGRATED** ✅
 
 ---
 
@@ -15,12 +15,14 @@ In the browser console:
 openStructureDesigner()
 ```
 
-### Controls (Phase 1)
+### Controls (Phase 2)
 
 | Action | Control |
 |--------|---------|
-| **Place Block** | Left Click |
+| **Select Block** | Click block in left palette |
+| **Place Block** | Left Click in 3D view |
 | **Remove Block** | Right Click |
+| **Rotate Camera** | Ctrl + Left Click Drag |
 | **Zoom** | Mouse Wheel |
 | **Close** | Click "✕ Close" button |
 
@@ -40,6 +42,23 @@ openStructureDesigner()
 - ✅ Proper disposal of geometries/materials
 - ✅ Window resize handling
 
+## ✅ Phase 2 Features (COMPLETE)
+
+- ✅ Scrollable block palette sidebar (200px wide)
+- ✅ EnhancedGraphics integration with mini textures
+- ✅ Uses `/art/chunkMinis/` for fast loading (32x32 textures)
+- ✅ 40+ block types available (dirt, stone, woods, ores, etc.)
+- ✅ Thumbnail previews with actual block textures
+- ✅ Click-to-select block type
+- ✅ Selected block highlighting (green border)
+- ✅ Preview ghost changes color by block type
+- ✅ Automatic asset discovery and loading
+- ✅ Fallback colors if texture missing
+- ✅ Custom scrollbar styling
+- ✅ **Camera rotation with Ctrl+Drag**
+- ✅ **Filtered non-image files from palette**
+- ✅ **Fixed underscore/dash handling in block names**
+
 ---
 
 ## 🎨 Current Capabilities
@@ -47,35 +66,40 @@ openStructureDesigner()
 ### What Works Now
 
 1. **Visual Editor**: Clean 3D isometric view with grid
-2. **Block Placement**: Click to add oak_wood blocks
-3. **Height Stacking**: Blocks snap to grid and stack properly
-4. **Block Removal**: Right-click any block to delete it
-5. **Preview System**: Blue ghost block shows placement location
-6. **Statistics**: Real-time block count display
-7. **Zoom**: Mouse wheel adjusts camera zoom (0.5x - 3x)
+2. **Block Palette**: Scrollable sidebar with 40+ block types
+3. **Mini Textures**: Fast-loading 32x32 thumbnails from chunkMinis
+4. **Block Selection**: Click any block in palette to select
+5. **Smart Preview**: Ghost block shows color of selected type
+6. **Block Placement**: Place any selected block type
+7. **Height Stacking**: Blocks snap to grid and stack properly
+8. **Block Removal**: Right-click any block to delete it
+9. **Statistics**: Real-time block count display
+10. **Zoom**: Mouse wheel adjusts camera zoom (0.5x - 3x)
 
-### Limitations (Phase 1)
+### Current Limitations
 
-- ❌ Only oak_wood blocks available (no selector yet)
-- ❌ No rotation controls (camera locked to isometric)
 - ❌ No shape tools (manual placement only)
 - ❌ No save/load functionality
 - ❌ No undo/redo
-- ❌ No EnhancedGraphics integration yet
+- ❌ Placed blocks show as colored cubes (not textured yet)
+- ❌ Camera rotation limited to horizontal orbit
 
 ---
 
 ## 🛠️ Technical Details
 
-### File Location
+### File Locations
 ```
-/src/ui/RandyMStructureDesigner.js
+/src/ui/RandyMStructureDesigner.js  (924 lines)
+/src/EnhancedGraphics.js            (Extended with mini texture support)
 ```
 
 ### Integration Points
 - **VoxelWorld.js**: Import (line 32), initialization (line 320)
 - **Global Function**: `window.openStructureDesigner()` (line ~7185)
 - **Help Output**: Added to debug commands (line ~7448 in showCommands())
+- **EnhancedGraphics**: New methods `loadMiniTexture()` and `getAvailableBlocks()`
+- **ChunkMinis**: Uses pre-generated 32x32 textures from vite plugin
 
 ### Memory Management
 The designer properly cleans up:
@@ -91,16 +115,42 @@ The designer properly cleans up:
 - Modal overlay: `50000`
 - Sub-modals (future): `50002`
 
+### Mini Texture System (Phase 2)
+
+**Why ChunkMinis?**
+- **Performance**: 32x32 textures vs full-size (512x512+)
+- **Fast Loading**: ~2KB per texture vs 100KB+
+- **Less RAM**: Perfect for UI elements
+- **Pre-Generated**: Vite plugin creates them at build time
+- **1:1 Mapping**: Same filenames as `/art/blocks/`
+
+**Implementation:**
+```javascript
+// EnhancedGraphics.js - New Methods
+await enhancedGraphics.loadMiniTexture(blockType, variant);
+const blocks = enhancedGraphics.getAvailableBlocks();
+
+// RandyM loads all available blocks
+async loadBlockPalette() {
+    const blocks = enhancedGraphics.getAvailableBlocks();
+    // Create palette items with mini texture thumbnails
+}
+```
+
+**Asset Path:**
+- Full textures: `/art/blocks/*.png` (512x512+)
+- Mini textures: `/art/chunkMinis/*.png` (32x32)
+
 ---
 
 ## 📋 Next Phases
 
-### Phase 2: Block Selector 🎨
-- [ ] Scrollable block palette
-- [ ] EnhancedGraphics texture integration
-- [ ] Block type selector UI
-- [ ] Preview selected block type
-- [ ] Material categories (wood, stone, metal)
+### ~~Phase 2: Block Selector~~ ✅ COMPLETE
+- ✅ Scrollable block palette
+- ✅ EnhancedGraphics texture integration
+- ✅ Block type selector UI
+- ✅ Preview selected block type
+- ⚠️ Material categories (future enhancement)
 
 ### Phase 3: Advanced Placement 🎯
 - [ ] Camera rotation (X/Y/Z axis buttons)
@@ -140,11 +190,14 @@ None yet! Phase 1 is stable.
 
 ## 💡 Usage Tips
 
-1. **Start Simple**: Place a few blocks to get familiar
-2. **Use Preview**: The blue ghost shows exactly where blocks go
-3. **Right-Click**: Quick way to fix mistakes
-4. **Zoom In**: Mouse wheel closer for detailed work
-5. **Clean Close**: Always use the Close button for proper cleanup
+1. **Browse Blocks**: Scroll through left palette to see all available blocks
+2. **Select Block**: Click any block in palette to select it
+3. **Watch Preview**: Ghost block changes color to match selection
+4. **Start Simple**: Place a few blocks to get familiar
+5. **Right-Click**: Quick way to fix mistakes
+6. **Zoom In**: Mouse wheel closer for detailed work
+7. **Mix Materials**: Combine different block types for variety
+8. **Clean Close**: Always use the Close button for proper cleanup
 
 ---
 

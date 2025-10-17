@@ -52,6 +52,13 @@ export class RandyMStructureDesigner {
         this.previewBlock = null;
         this.previewPosition = null;
         
+        // Camera rotation state
+        this.isRotating = false;
+        this.rotationStart = new THREE.Vector2();
+        this.cameraRotation = 0; // Current rotation angle in radians
+        this.cameraDistance = 20; // Distance from center
+        this.cameraHeight = 15;   // Height above ground
+        
         console.log('🎨 RandyM Structure Designer initialized');
     }
     
@@ -188,6 +195,103 @@ export class RandyMStructureDesigner {
         header.appendChild(title);
         header.appendChild(closeButton);
         
+        // Main content area (side-by-side layout)
+        const mainContent = document.createElement('div');
+        mainContent.style.cssText = `
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        `;
+        
+        // Block palette sidebar
+        const paletteContainer = document.createElement('div');
+        paletteContainer.id = 'randym-block-palette';
+        paletteContainer.style.cssText = `
+            width: 200px;
+            background: #1e2832;
+            border-right: 2px solid #4a9eff;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        `;
+        
+        const paletteHeader = document.createElement('div');
+        paletteHeader.style.cssText = `
+            padding: 10px;
+            background: #2c3e50;
+            color: #4a9eff;
+            font-weight: bold;
+            font-size: 14px;
+            border-bottom: 1px solid #4a9eff;
+            text-align: center;
+        `;
+        paletteHeader.textContent = '🎨 Block Palette';
+        
+        const paletteScroll = document.createElement('div');
+        paletteScroll.id = 'randym-palette-scroll';
+        paletteScroll.style.cssText = `
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 10px;
+        `;
+        
+        // Custom scrollbar styling
+        const style = document.createElement('style');
+        style.textContent = `
+            #randym-palette-scroll::-webkit-scrollbar {
+                width: 8px;
+            }
+            #randym-palette-scroll::-webkit-scrollbar-track {
+                background: #0a0a0a;
+            }
+            #randym-palette-scroll::-webkit-scrollbar-thumb {
+                background: #4a9eff;
+                border-radius: 4px;
+            }
+            #randym-palette-scroll::-webkit-scrollbar-thumb:hover {
+                background: #6bb8ff;
+            }
+            .randym-block-item {
+                display: flex;
+                align-items: center;
+                padding: 8px;
+                margin-bottom: 5px;
+                background: #2c3e50;
+                border: 2px solid transparent;
+                border-radius: 5px;
+                cursor: pointer;
+                transition: all 0.2s;
+            }
+            .randym-block-item:hover {
+                background: #34495e;
+                border-color: #4a9eff;
+            }
+            .randym-block-item.selected {
+                background: #34495e;
+                border-color: #2ecc71;
+                box-shadow: 0 0 10px rgba(46, 204, 113, 0.3);
+            }
+            .randym-block-thumbnail {
+                width: 32px;
+                height: 32px;
+                margin-right: 10px;
+                background: #0a0a0a;
+                border: 1px solid #4a9eff;
+                border-radius: 3px;
+                flex-shrink: 0;
+            }
+            .randym-block-name {
+                color: #ecf0f1;
+                font-size: 12px;
+                word-break: break-word;
+            }
+        `;
+        document.head.appendChild(style);
+        
+        paletteContainer.appendChild(paletteHeader);
+        paletteContainer.appendChild(paletteScroll);
+        
         // Canvas container for THREE.js
         const canvasContainer = document.createElement('div');
         canvasContainer.id = 'randym-canvas-container';
@@ -196,6 +300,9 @@ export class RandyMStructureDesigner {
             position: relative;
             background: #0a0a0a;
         `;
+        
+        mainContent.appendChild(paletteContainer);
+        mainContent.appendChild(canvasContainer);
         
         // Info panel
         const infoPanel = document.createElement('div');
@@ -214,9 +321,11 @@ export class RandyMStructureDesigner {
         const instructions = document.createElement('div');
         instructions.innerHTML = `
             <strong>Controls:</strong> 
-            <span style="color: #4a9eff;">Left Click:</span> Place Block | 
-            <span style="color: #4a9eff;">Right Click:</span> Remove Block | 
-            <span style="color: #4a9eff;">Mouse Wheel:</span> Zoom
+            <span style="color: #2ecc71;">Click Palette:</span> Select Block | 
+            <span style="color: #4a9eff;">Left Click:</span> Place | 
+            <span style="color: #4a9eff;">Right Click:</span> Remove | 
+            <span style="color: #f39c12;">Ctrl+Drag:</span> Rotate | 
+            <span style="color: #4a9eff;">Wheel:</span> Zoom
         `;
         
         const stats = document.createElement('div');
@@ -228,10 +337,179 @@ export class RandyMStructureDesigner {
         
         // Assemble the UI
         this.container.appendChild(header);
-        this.container.appendChild(canvasContainer);
+        this.container.appendChild(mainContent);
         this.container.appendChild(infoPanel);
         this.modalOverlay.appendChild(this.container);
         document.body.appendChild(this.modalOverlay);
+        
+        // Load block palette asynchronously
+        this.loadBlockPalette();
+    }
+    
+    /**
+     * Load and populate the block palette with mini textures
+     */
+    async loadBlockPalette() {
+        const paletteScroll = document.getElementById('randym-palette-scroll');
+        if (!paletteScroll) {
+            console.error('❌ Palette scroll container not found');
+            return;
+        }
+        
+        // Get enhanced graphics system from VoxelWorld
+        const enhancedGraphics = this.voxelWorld?.enhancedGraphics;
+        if (!enhancedGraphics) {
+            console.error('❌ EnhancedGraphics not available');
+            paletteScroll.innerHTML = '<div style="color: #e74c3c; padding: 10px;">Graphics system not available</div>';
+            return;
+        }
+        
+        // Wait for assets to load if needed
+        if (!enhancedGraphics.assetsLoaded) {
+            console.log('⏳ Waiting for assets to load...');
+            paletteScroll.innerHTML = '<div style="color: #4a9eff; padding: 10px;">Loading blocks...</div>';
+            
+            // Wait for assets with timeout
+            const timeout = new Promise((resolve) => setTimeout(() => resolve(false), 5000));
+            const loaded = await Promise.race([enhancedGraphics.loadingPromise, timeout]);
+            
+            if (!loaded) {
+                console.error('❌ Asset loading timeout');
+                paletteScroll.innerHTML = '<div style="color: #e74c3c; padding: 10px;">Failed to load blocks</div>';
+                return;
+            }
+        }
+        
+        // Get available blocks
+        const blocks = enhancedGraphics.getAvailableBlocks();
+        console.log(`🎨 Loading ${blocks.length} blocks into palette`);
+        
+        // Clear loading message
+        paletteScroll.innerHTML = '';
+        
+        // Create block items
+        for (const blockType of blocks) {
+            const item = document.createElement('div');
+            item.className = 'randym-block-item';
+            item.dataset.blockType = blockType;
+            
+            // Add selected class if this is the current block
+            if (blockType === this.selectedBlockType) {
+                item.classList.add('selected');
+            }
+            
+            // Thumbnail canvas for mini texture
+            const thumbnail = document.createElement('canvas');
+            thumbnail.className = 'randym-block-thumbnail';
+            thumbnail.width = 32;
+            thumbnail.height = 32;
+            
+            // Block name
+            const name = document.createElement('div');
+            name.className = 'randym-block-name';
+            name.textContent = blockType.replace(/_/g, ' ');
+            
+            item.appendChild(thumbnail);
+            item.appendChild(name);
+            
+            // Click handler
+            item.onclick = () => this.selectBlock(blockType);
+            
+            paletteScroll.appendChild(item);
+            
+            // Load mini texture asynchronously
+            this.loadBlockThumbnail(blockType, thumbnail);
+        }
+        
+        console.log('✅ Block palette loaded');
+    }
+    
+    /**
+     * Load mini texture for a block thumbnail
+     */
+    async loadBlockThumbnail(blockType, canvas) {
+        const enhancedGraphics = this.voxelWorld?.enhancedGraphics;
+        if (!enhancedGraphics) return;
+        
+        // Try to load mini texture
+        const texture = await enhancedGraphics.loadMiniTexture(blockType);
+        
+        if (texture && texture.image) {
+            // Draw texture to canvas
+            const ctx = canvas.getContext('2d');
+            ctx.imageSmoothingEnabled = false; // Pixel art style
+            
+            // Wait for image to load
+            if (texture.image.complete) {
+                ctx.drawImage(texture.image, 0, 0, 32, 32);
+            } else {
+                texture.image.onload = () => {
+                    ctx.drawImage(texture.image, 0, 0, 32, 32);
+                };
+            }
+            
+            // Cleanup texture (we only needed it for the canvas)
+            texture.dispose();
+        } else {
+            // Fallback: draw colored square based on block type
+            const ctx = canvas.getContext('2d');
+            const color = this.getBlockColor(blockType);
+            ctx.fillStyle = color;
+            ctx.fillRect(0, 0, 32, 32);
+            
+            // Add border
+            ctx.strokeStyle = '#4a9eff';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(0, 0, 32, 32);
+        }
+    }
+    
+    /**
+     * Select a block type
+     */
+    selectBlock(blockType) {
+        this.selectedBlockType = blockType;
+        
+        // Update UI - remove 'selected' class from all items
+        document.querySelectorAll('.randym-block-item').forEach(item => {
+            item.classList.remove('selected');
+        });
+        
+        // Add 'selected' class to clicked item
+        const selectedItem = document.querySelector(`[data-block-type="${blockType}"]`);
+        if (selectedItem) {
+            selectedItem.classList.add('selected');
+        }
+        
+        // Update preview block if it exists
+        if (this.previewBlock) {
+            this.updatePreviewBlockAppearance();
+        }
+        
+        console.log(`🎨 Selected block: ${blockType}`);
+    }
+    
+    /**
+     * Get fallback color for a block type
+     */
+    getBlockColor(blockType) {
+        const colorMap = {
+            dirt: '#8B4513',
+            grass: '#228B22',
+            stone: '#808080',
+            sand: '#F4A460',
+            snow: '#FFFFFF',
+            bedrock: '#1a1a1a',
+            oak_wood: '#8B4513',
+            pine_wood: '#654321',
+            birch_wood: '#D2B48C',
+            palm_wood: '#CD853F',
+            iron: '#B0C4DE',
+            gold: '#FFD700',
+            pumpkin: '#FF8C00'
+        };
+        
+        return colorMap[blockType] || '#4a9eff';
     }
     
     /**
@@ -260,8 +538,11 @@ export class RandyMStructureDesigner {
         );
         
         // Position camera for isometric view
-        this.camera.position.set(20, 20, 20);
-        this.camera.lookAt(0, 0, 0);
+        // Set initial rotation angle (45 degrees for nice isometric view)
+        this.cameraRotation = Math.PI / 4;
+        
+        // Position camera using rotation system
+        this.updateCameraPosition();
         
         // Create renderer
         this.renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -410,6 +691,19 @@ export class RandyMStructureDesigner {
     }
     
     /**
+     * Update preview block appearance based on selected block type
+     */
+    updatePreviewBlockAppearance() {
+        if (!this.previewBlock) return;
+        
+        // Get color for the block type
+        const color = this.getBlockColor(this.selectedBlockType);
+        
+        // Update material color
+        this.previewBlock.material.color.set(color);
+    }
+    
+    /**
      * Place a block at current preview position
      */
     placeBlock() {
@@ -427,14 +721,12 @@ export class RandyMStructureDesigner {
         // Create block mesh
         const geometry = new THREE.BoxGeometry(1, 1, 1);
         
-        // Get material from VoxelWorld if available
-        let material;
-        if (this.voxelWorld.materials[this.selectedBlockType]) {
-            material = this.voxelWorld.materials[this.selectedBlockType].clone();
-        } else {
-            // Fallback material
-            material = new THREE.MeshLambertMaterial({ color: 0x8B4513 });
-        }
+        // Create material with color based on block type
+        const color = this.getBlockColor(this.selectedBlockType);
+        const material = new THREE.MeshLambertMaterial({ 
+            color: color,
+            flatShading: true
+        });
         
         const mesh = new THREE.Mesh(geometry, material);
         mesh.position.set(x + 0.5, y + 0.5, z + 0.5);
@@ -481,12 +773,16 @@ export class RandyMStructureDesigner {
      */
     addEventListeners() {
         this.onMouseMove = (event) => this.handleMouseMove(event);
+        this.onMouseDown = (event) => this.handleMouseDown(event);
+        this.onMouseUp = (event) => this.handleMouseUp(event);
         this.onClick = (event) => this.handleClick(event);
         this.onContextMenu = (event) => this.handleRightClick(event);
         this.onWheel = (event) => this.handleWheel(event);
         this.onResize = () => this.handleResize();
         
         this.canvas.addEventListener('mousemove', this.onMouseMove);
+        this.canvas.addEventListener('mousedown', this.onMouseDown);
+        this.canvas.addEventListener('mouseup', this.onMouseUp);
         this.canvas.addEventListener('click', this.onClick);
         this.canvas.addEventListener('contextmenu', this.onContextMenu);
         this.canvas.addEventListener('wheel', this.onWheel);
@@ -499,6 +795,8 @@ export class RandyMStructureDesigner {
     removeEventListeners() {
         if (this.canvas) {
             this.canvas.removeEventListener('mousemove', this.onMouseMove);
+            this.canvas.removeEventListener('mousedown', this.onMouseDown);
+            this.canvas.removeEventListener('mouseup', this.onMouseUp);
             this.canvas.removeEventListener('click', this.onClick);
             this.canvas.removeEventListener('contextmenu', this.onContextMenu);
             this.canvas.removeEventListener('wheel', this.onWheel);
@@ -513,12 +811,64 @@ export class RandyMStructureDesigner {
         const rect = this.canvas.getBoundingClientRect();
         this.mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
         this.mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+        
+        // Handle camera rotation if Ctrl is held and dragging
+        if (this.isRotating && event.ctrlKey) {
+            const deltaX = event.clientX - this.rotationStart.x;
+            
+            // Update rotation (1 pixel = 0.01 radians)
+            this.cameraRotation += deltaX * 0.01;
+            
+            // Update camera position based on rotation
+            this.updateCameraPosition();
+            
+            // Update rotation start for next frame
+            this.rotationStart.set(event.clientX, event.clientY);
+        }
+    }
+    
+    /**
+     * Handle mouse down
+     */
+    handleMouseDown(event) {
+        if (event.ctrlKey) {
+            // Start rotation mode
+            this.isRotating = true;
+            this.rotationStart.set(event.clientX, event.clientY);
+            this.canvas.style.cursor = 'grabbing';
+            event.preventDefault();
+        }
+    }
+    
+    /**
+     * Handle mouse up
+     */
+    handleMouseUp(event) {
+        this.isRotating = false;
+        this.canvas.style.cursor = 'default';
+    }
+    
+    /**
+     * Update camera position based on rotation angle
+     */
+    updateCameraPosition() {
+        // Calculate new camera position orbiting around center (0, 0, 0)
+        const x = Math.cos(this.cameraRotation) * this.cameraDistance;
+        const z = Math.sin(this.cameraRotation) * this.cameraDistance;
+        
+        this.camera.position.set(x, this.cameraHeight, z);
+        this.camera.lookAt(0, 0, 0);
     }
     
     /**
      * Handle left click (place block)
      */
     handleClick(event) {
+        // Don't place blocks if we were rotating
+        if (event.ctrlKey) {
+            return;
+        }
+        
         event.preventDefault();
         this.placeBlock();
     }

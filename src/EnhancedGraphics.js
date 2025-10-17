@@ -1193,4 +1193,65 @@ export class EnhancedGraphics {
             return null;
         }
     }
+
+    /**
+     * Load mini texture from chunkMinis folder (32x32 pre-generated)
+     * Perfect for UI elements like block selectors where smaller textures are better
+     * @param {string} blockType - Block type name (e.g., 'oak_wood', 'stone')
+     * @param {string} variant - Optional variant suffix (e.g., 'sides', 'top-bottom')
+     * @returns {Promise<THREE.Texture|null>} Loaded mini texture or null if not found
+     */
+    async loadMiniTexture(blockType, variant = null) {
+        const baseName = variant ? `${blockType}-${variant}` : blockType;
+        const path = `art/chunkMinis/${baseName}.png`;
+        
+        return new Promise((resolve) => {
+            const loader = new THREE.TextureLoader();
+            loader.load(
+                path,
+                (texture) => {
+                    // Configure for pixel art
+                    texture.magFilter = THREE.NearestFilter;
+                    texture.minFilter = THREE.NearestMipMapLinearFilter;
+                    texture.generateMipmaps = true;
+                    resolve(texture);
+                },
+                undefined,
+                (error) => {
+                    // Silent fail - mini texture doesn't exist
+                    resolve(null);
+                }
+            );
+        });
+    }
+
+    /**
+     * Get list of all available blocks (base names, no variants)
+     * Useful for populating block selectors
+     * @returns {string[]} Array of block type names
+     */
+    getAvailableBlocks() {
+        // Filter out texture aliases and duplicates
+        const blocks = this.availableAssets.blocks || [];
+        const uniqueBlocks = new Set();
+        
+        blocks.forEach(block => {
+            // Skip if this is an alias pointing to another texture
+            const isAlias = Object.keys(this.textureAliases).includes(block);
+            
+            // Skip files that don't look like valid block types
+            const isValidBlockName = /^[a-z_]+$/.test(block);
+            
+            // Skip obvious non-block files
+            const isNonBlock = block === 'fileList' || block === 'filelist' || 
+                             block.includes('Picsart') || 
+                             block.match(/^\d{8,}/); // Skip UUID-like filenames
+            
+            if (!isAlias && isValidBlockName && !isNonBlock) {
+                uniqueBlocks.add(block);
+            }
+        });
+        
+        return Array.from(uniqueBlocks).sort();
+    }
 }
