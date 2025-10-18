@@ -49,6 +49,7 @@ export class RandyMStructureDesigner {
         this.isAdjustingVertical = false; // True when Shift is held after first click
         this.verticalAdjustmentStart = 0; // Mouse Y position when Shift was first pressed
         this.verticalOffset = 0; // Current Y offset from shapeStart
+        this.frozenShapeEnd = null; // X/Z position frozen when Shift is first pressed
         this.savedAxisLocks = null; // Backup of axis locks before Shift pressed
         
         // DOM elements
@@ -1079,6 +1080,7 @@ export class RandyMStructureDesigner {
         
         this.isAdjustingVertical = false;
         this.verticalOffset = 0;
+        this.frozenShapeEnd = null;
         this.hideVerticalIndicator();
     }
     
@@ -1780,7 +1782,8 @@ export class RandyMStructureDesigner {
             font-size: 11px;
             line-height: 1.4;
         `;
-        info.textContent = 'Lock axes to constrain camera rotation. Useful for viewing from specific angles.';
+        info.textContent = 'Lock axes to constrain camera movement:\n• X: A/D keys\n• Y: Ctrl+Drag rotation\n• Z: W/S keys\n(Ctrl+Drag tilt always works)';
+        info.style.whiteSpace = 'pre-line';
         container.appendChild(info);
     }
     
@@ -2594,9 +2597,15 @@ export class RandyMStructureDesigner {
             let z = Math.floor(point.z) + 0.5;
             let y = 0.5;
             
-            // If intersecting with a block, place on top
-            if (intersect.object !== this.groundPlane) {
-                y = Math.floor(point.y) + 1.5;
+            // If intersecting with a block, place adjacent to it based on face normal
+            if (intersect.object !== this.groundPlane && intersect.face) {
+                const normal = intersect.face.normal;
+                const blockPos = intersect.object.position;
+                
+                // Calculate position adjacent to the hit face
+                x = Math.floor(blockPos.x) + normal.x + 0.5;
+                y = Math.floor(blockPos.y) + normal.y + 0.5;
+                z = Math.floor(blockPos.z) + normal.z + 0.5;
             }
             
             this.previewPosition = { x: Math.floor(x), y: Math.floor(y), z: Math.floor(z) };
@@ -2894,12 +2903,11 @@ export class RandyMStructureDesigner {
                 this.cameraRotation += deltaX * 0.01;
             }
             
-            // Vertical tilt (unless X-axis is locked)
-            if (!this.axisLocks.x) {
-                this.cameraTilt -= deltaY * 0.01;
-                // Clamp tilt to prevent camera flipping (10 degrees to 80 degrees)
-                this.cameraTilt = Math.max(Math.PI / 18, Math.min(Math.PI * 4 / 9, this.cameraTilt));
-            }
+            // Vertical tilt - not affected by axis locks
+            // (Axis locks are for camera pan with WASD, not for rotation)
+            this.cameraTilt -= deltaY * 0.01;
+            // Clamp tilt to prevent camera flipping (10 degrees to 80 degrees)
+            this.cameraTilt = Math.max(Math.PI / 18, Math.min(Math.PI * 4 / 9, this.cameraTilt));
             
             // Update camera position based on rotation and tilt
             this.updateCameraPosition();
@@ -2916,6 +2924,18 @@ export class RandyMStructureDesigner {
                 if (!this.isAdjustingVertical) {
                     this.isAdjustingVertical = true;
                     this.verticalAdjustmentStart = event.clientY;
+                    
+                    // CRITICAL: Snapshot the current mouse position's X/Z
+                    // This "freezes" the horizontal dimensions you've defined by dragging
+                    const currentPos = this.getPlacementPosition();
+                    if (currentPos) {
+                        this.frozenShapeEnd = new THREE.Vector3(
+                            currentPos.x,
+                            this.shapeStart.y, // Start at same Y as shapeStart
+                            currentPos.z
+                        );
+                        console.log(`📸 Frozen shape dimensions: X=${this.frozenShapeEnd.x}, Z=${this.frozenShapeEnd.z}`);
+                    }
                     
                     // Save current axis lock state
                     this.savedAxisLocks = {
@@ -2935,15 +2955,12 @@ export class RandyMStructureDesigner {
                 const deltaY = this.verticalAdjustmentStart - event.clientY;
                 this.verticalOffset = Math.round(deltaY / 20); // 20 pixels per block
                 
-                // Get current mouse position for the end point
-                const currentPos = this.getPlacementPosition();
-                if (currentPos) {
-                    // Lock X and Z to shapeStart, only use currentPos for visual reference
-                    // But keep Y offset for vertical adjustment
+                // Use the FROZEN X/Z position, only adjust Y based on mouse movement
+                if (this.frozenShapeEnd) {
                     const adjustedEnd = new THREE.Vector3(
-                        this.shapeStart.x,
-                        currentPos.y + this.verticalOffset,
-                        this.shapeStart.z
+                        this.frozenShapeEnd.x,  // Use frozen X
+                        this.shapeStart.y + this.verticalOffset,  // Only Y changes
+                        this.frozenShapeEnd.z   // Use frozen Z
                     );
                     
                     this.updateShapePreview(adjustedEnd);
@@ -2955,6 +2972,7 @@ export class RandyMStructureDesigner {
                 // Exit vertical adjustment mode when Shift is released
                 if (this.isAdjustingVertical) {
                     this.isAdjustingVertical = false;
+                    this.frozenShapeEnd = null; // Clear frozen position
                     
                     // Restore previous axis lock state
                     if (this.savedAxisLocks) {
@@ -3060,22 +3078,32 @@ export class RandyMStructureDesigner {
                 }
             } else {
                 // Second click - set end point and execute shape
-                const pos = this.getPlacementPosition();
-                if (pos) {
-                    // Apply vertical offset if in vertical adjustment mode
-                    if (event.shiftKey && this.verticalOffset !== 0) {
-                        pos.y += this.verticalOffset;
-                        console.log(`📍 Shape end (with vertical offset): ${pos.x}, ${pos.y}, ${pos.z} (${this.verticalOffset > 0 ? '+' : ''}${this.verticalOffset})`);
-                    } else {
+                // If Shift is held and we have a frozen position, use that for X/Z
+                if (event.shiftKey && this.frozenShapeEnd) {
+                    // Use frozen X/Z, but with the vertical offset
+                    const finalPos = new THREE.Vector3(
+                        this.frozenShapeEnd.x,
+                        this.shapeStart.y + this.verticalOffset,
+                        this.frozenShapeEnd.z
+                    );
+                    console.log(`📍 Shape end (frozen X/Z with vertical offset): ${finalPos.x}, ${finalPos.y}, ${finalPos.z} (${this.verticalOffset > 0 ? '+' : ''}${this.verticalOffset})`);
+                    this.shapeEnd = finalPos;
+                } else {
+                    // Normal click without Shift - use current mouse position
+                    const pos = this.getPlacementPosition();
+                    if (pos) {
                         console.log(`📍 Shape end: ${pos.x}, ${pos.y}, ${pos.z}`);
+                        this.shapeEnd = pos.clone();
                     }
-                    
-                    this.shapeEnd = pos.clone();
+                }
+                
+                if (this.shapeEnd) {
                     this.executeShape();
                     
                     // Reset vertical adjustment state
                     this.isAdjustingVertical = false;
                     this.verticalOffset = 0;
+                    this.frozenShapeEnd = null;
                     this.hideVerticalIndicator();
                 }
             }
@@ -3088,33 +3116,47 @@ export class RandyMStructureDesigner {
     getPlacementPosition() {
         this.raycaster.setFromCamera(this.mouse, this.camera);
         
-        // Check for intersections with existing blocks
+        // Check for intersections with existing blocks AND ground plane
         const blocks = Array.from(this.placedBlocks.values()).map(b => b.mesh);
-        const intersects = this.raycaster.intersectObjects(blocks);
+        const allObjects = [this.groundPlane, ...blocks];
+        const intersects = this.raycaster.intersectObjects(allObjects);
         
         if (intersects.length > 0) {
-            // Place adjacent to existing block
             const intersect = intersects[0];
-            const normal = intersect.face.normal;
-            const pos = intersect.object.position.clone();
             
-            pos.x = Math.floor(pos.x) + normal.x;
-            pos.y = Math.floor(pos.y) + normal.y;
-            pos.z = Math.floor(pos.z) + normal.z;
-            
-            return pos;
-        } else {
-            // Place on ground plane
-            const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
-            const planeIntersect = new THREE.Vector3();
-            this.raycaster.ray.intersectPlane(groundPlane, planeIntersect);
-            
-            if (planeIntersect) {
-                planeIntersect.x = Math.floor(planeIntersect.x);
-                planeIntersect.y = 0;
-                planeIntersect.z = Math.floor(planeIntersect.z);
-                return planeIntersect;
+            // If hit ground plane, place on ground
+            if (intersect.object === this.groundPlane) {
+                const point = intersect.point;
+                return new THREE.Vector3(
+                    Math.floor(point.x),
+                    0,
+                    Math.floor(point.z)
+                );
             }
+            
+            // If hit a block, place adjacent to it based on face normal
+            if (intersect.face) {
+                const normal = intersect.face.normal;
+                const pos = intersect.object.position.clone();
+                
+                pos.x = Math.floor(pos.x) + normal.x;
+                pos.y = Math.floor(pos.y) + normal.y;
+                pos.z = Math.floor(pos.z) + normal.z;
+                
+                return pos;
+            }
+        }
+        
+        // Fallback: intersect with ground plane at Y=0
+        const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+        const planeIntersect = new THREE.Vector3();
+        this.raycaster.ray.intersectPlane(groundPlane, planeIntersect);
+        
+        if (planeIntersect) {
+            planeIntersect.x = Math.floor(planeIntersect.x);
+            planeIntersect.y = 0;
+            planeIntersect.z = Math.floor(planeIntersect.z);
+            return planeIntersect;
         }
         
         return null;

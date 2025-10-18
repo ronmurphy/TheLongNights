@@ -38,9 +38,9 @@ openStructureDesigner()
 | **Pan Camera** | WASD or Arrow Keys |
 | **Reset Camera** | R key |
 | **Zoom** | Mouse Wheel |
-| **Lock X-Axis** | Click X-Axis toggle (prevents horizontal pan) |
-| **Lock Y-Axis** | Click Y-Axis toggle (prevents rotation) |
-| **Lock Z-Axis** | Click Z-Axis toggle (prevents vertical pan) |
+| **Lock X-Axis** | Click X-Axis toggle (prevents A/D pan movement) |
+| **Lock Y-Axis** | Click Y-Axis toggle (prevents Ctrl+Drag rotation) |
+| **Lock Z-Axis** | Click Z-Axis toggle (prevents W/S pan movement) |
 | **Save Structure** | Click "💾 Save" button |
 | **Load Structure** | Click "📂 Load" button |
 | **Close** | Click "✕ Close" button |
@@ -397,10 +397,11 @@ class MasterBuilderNPC extends NPC {
 - ✅ **Horizontal Rotation** - Ctrl+Drag left/right (existing feature)
 - ✅ **Camera Pan** - WASD or Arrow Keys to slide view
 - ✅ **Reset Camera** - R key resets to default position
-- ✅ **Working Axis Locks** - X/Y/Z toggles now actually prevent camera movement
-  - X-Lock: Prevents horizontal panning (A/D keys)
-  - Y-Lock: Prevents rotation (Ctrl+Drag horizontal)
-  - Z-Lock: Prevents vertical panning (W/S keys)
+- ✅ **Working Axis Locks** - X/Y/Z toggles prevent specific camera movements
+  - X-Lock: Prevents horizontal panning with A/D keys
+  - Y-Lock: Prevents horizontal rotation with Ctrl+Drag left/right
+  - Z-Lock: Prevents forward/back panning with W/S keys
+  - Note: Ctrl+Drag vertical tilt is always available (not locked by X-axis)
 - ✅ **Spherical Camera Math** - Proper 3D orbit with tilt
 - ✅ **Clamped Tilt** - Prevents camera from flipping upside-down
 
@@ -410,6 +411,8 @@ class MasterBuilderNPC extends NPC {
 - ✅ **Pure Y-Axis Movement** - Mouse movement only affects height (no horizontal drift!)
 - ✅ **Auto-Restore Locks** - Releasing Shift restores previous axis lock states
 - ✅ **Precise Height Control** - Much easier to adjust vertical dimensions accurately
+- ✅ **Frozen Dimensions** - X/Z coordinates snapshot when Shift is first pressed (Oct 18 fix)
+- ✅ **No Distortion** - Shape dimensions stay locked while adjusting height
 
 ### Phase 7: Polish ✨
 - [ ] Camera pan controls
@@ -464,10 +467,11 @@ class MasterBuilderNPC extends NPC {
 1. **Select Tool**: Click tool mode in right palette (green highlight = active)
 2. **Choose Block**: Select block type from left palette
 3. **First Click**: Click to set start point (console shows coordinates)
-4. **Move Mouse (XZ)**: See semi-transparent preview, move for horizontal dimensions
-5. **Hold Shift (Y)**: Adjust vertical height by moving mouse up/down
+4. **Move Mouse (XZ)**: See semi-transparent preview, move to define horizontal dimensions (e.g., 5x3 rectangle)
+5. **Hold Shift (Y)**: System "freezes" the X/Z dimensions you defined, adjust vertical height by moving mouse up/down
    - Blue indicator shows current height offset (+5 blocks, etc.)
    - Preview updates in real-time showing full 3D shape
+   - X/Z dimensions stay locked at the moment you pressed Shift (no distortion!)
    - 20 pixels of mouse movement = 1 block height
 6. **Second Click**: Click to place entire shape (Shift+Click if adjusting height)
 7. **Undo**: Press Ctrl+Z to undo entire shape at once
