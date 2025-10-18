@@ -1,7 +1,7 @@
 {
   "name": "the-long-nights",
   "private": true,
-  "version": "0.5.9",
+  "version": "0.6.3",
   "type": "module",
   "main": "electron.cjs",
   "homepage": "./",
@@ -47,8 +47,8 @@
     "three-mesh-bvh": "^0.9.1"
   },
   "build": {
-    "appId": "com.voxelworld.app",
-    "productName": "VoxelWorld",
+    "appId": "com.thelongnights.app",
+    "productName": "TheLongNights",
     "artifactName": "${productName}-${version}.${ext}",
     "directories": {
       "output": "dist-electron"

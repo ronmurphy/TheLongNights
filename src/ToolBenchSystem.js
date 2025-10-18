@@ -945,6 +945,7 @@ export class ToolBenchSystem {
             utility: [],      // Added for torch and other utility items
             defense: [],      // Added for shields and defensive items
             farming: [],      // Added for hoe and farming tools
+            demolition: [],   // Added for TNT and explosive items
             special: []
         };
 
