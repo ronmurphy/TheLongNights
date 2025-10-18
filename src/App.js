@@ -70,63 +70,121 @@ window.addEventListener('DOMContentLoaded', () => {
     window['testChristmas'] = () => app.testChristmas();
     console.log('🎄 testDouglas() and testChristmas() available globally');
 
-    // If first-time player, show intro overlay AFTER world loads
+    // If first-time player, show personality quiz THEN intro overlay AFTER world loads
     if (!hasPlayerData) {
-      console.log('👋 First-time player detected! Showing intro overlay...');
-      const introOverlay = new GameIntroOverlay();
+      console.log('👋 First-time player detected! Starting personality quiz...');
 
-      introOverlay.setCompletionCallback(async (selectedCompanion) => {
-        console.log(`🎮 Player selected starter companion: ${selectedCompanion}`);
+      // Load personality quiz data
+      fetch('data/personalityQuiz.json')
+        .then(r => r.json())
+        .then(quizData => {
+          console.log('🎭 Loaded personality quiz, starting quest...');
 
-        // Save player data with starter companion
-        const playerData = {
-          starterMonster: selectedCompanion,
-          monsterCollection: [selectedCompanion],
-          firstPlayTime: Date.now()
-        };
-        localStorage.setItem('NebulaWorld_playerData', JSON.stringify(playerData));
-        console.log('✅ Player data saved!');
+          // Run personality quiz with completion callback
+          app.questRunner.startQuest(quizData, (choices) => {
+            console.log('🎭 Personality quiz complete! Choices:', choices);
 
-        // Load companion data for chat
-        const companionData = await ChatOverlay.loadCompanionData(selectedCompanion);
-        const companionName = companionData ? companionData.name : selectedCompanion;
+            // Convert choices to quiz answer format
+            const answers = {
+              survival: choices['q1_survival'],   // 0-3
+              gear: choices['q2_gear'],           // 0-3
+              ancestry: choices['q3_ancestry'],   // 0-3
+              companion: choices['q4_companion']  // 0-3
+            };
 
-        // Show tutorial chat sequence
-        const chat = new ChatOverlay();
-        chat.showSequence([
-          {
-            character: selectedCompanion,
-            name: companionName,
-            text: `Hey there! I'm your new companion. Let's get you set up for exploring!`
-          },
-          {
-            character: selectedCompanion,
-            name: companionName,
-            text: `See that red dot on your minimap in the top-right? That's your Explorer's Pack with all your tools!`
-          },
-          {
-            character: selectedCompanion,
-            name: companionName,
-            text: `Use WASD to move and your mouse to look around. If you spawn in a tree, just punch the leaves to break free!`
-          },
-          {
-            character: selectedCompanion,
-            name: companionName,
-            text: `Walk up to the backpack (🎒) and hold left-click to pick it up. That'll unlock your inventory and tools. Good luck, explorer!`
-          }
-        ], () => {
-          // After chat sequence completes, spawn backpack in front of player
-          console.log('💬 Tutorial chat complete, spawning starter backpack...');
-          if (window.voxelApp && window.voxelApp.spawnStarterBackpack) {
-            window.voxelApp.spawnStarterBackpack();
-          }
+            // Process quiz answers and create player character
+            app.playerCharacter.processQuizAnswers(answers);
+
+            // Give starting items to inventory
+            const startingItems = app.playerCharacter.startingItems;
+            if (startingItems && startingItems.length > 0) {
+              console.log(`🎁 Giving ${startingItems.length} starting items to inventory...`);
+              startingItems.forEach(itemId => {
+                if (app.inventory && app.inventory.addItem) {
+                  app.inventory.addItem(itemId);
+                  console.log(`  ✅ Added ${itemId} to inventory`);
+                } else {
+                  console.warn(`  ⚠️ Inventory not ready, skipping ${itemId}`);
+                }
+              });
+            }
+
+            // Log character summary to console
+            console.log('═══════════════════════════════════════');
+            console.log('🎭 PERSONALITY QUIZ RESULTS');
+            console.log('═══════════════════════════════════════');
+            const summary = app.playerCharacter.getSummary();
+            console.log(`Race: ${summary.race.toUpperCase()}`);
+            console.log(`Level: ${summary.level}`);
+            console.log(`Stats: STR ${summary.stats.STR}, DEX ${summary.stats.DEX}, VIT ${summary.stats.VIT}, LCK ${summary.stats.LCK}`);
+            console.log(`HP: ${summary.hp}`);
+            console.log(`Stamina: ${summary.stamina}`);
+            console.log(`Starting Items: ${summary.startingItems.join(', ')}`);
+            console.log(`Preferred Companion: ${summary.preferredCompanion}`);
+            console.log('═══════════════════════════════════════');
+
+            // Now show companion selection with preferred companion
+            console.log('👋 Showing companion selection overlay...');
+            const introOverlay = new GameIntroOverlay();
+
+            introOverlay.setCompletionCallback(async (selectedCompanion) => {
+              console.log(`🎮 Player selected starter companion: ${selectedCompanion}`);
+
+              // Save player data with starter companion AND character data
+              const playerData = {
+                starterMonster: selectedCompanion,
+                monsterCollection: [selectedCompanion],
+                firstPlayTime: Date.now(),
+                character: app.playerCharacter.save()  // Save character stats
+              };
+              localStorage.setItem('NebulaWorld_playerData', JSON.stringify(playerData));
+              console.log('✅ Player data saved!');
+
+              // Load companion data for chat
+              const companionData = await ChatOverlay.loadCompanionData(selectedCompanion);
+              const companionName = companionData ? companionData.name : selectedCompanion;
+
+              // Show tutorial chat sequence
+              const chat = new ChatOverlay();
+              chat.showSequence([
+                {
+                  character: selectedCompanion,
+                  name: companionName,
+                  text: `Hey there! I'm your new companion. Let's get you set up for exploring!`
+                },
+                {
+                  character: selectedCompanion,
+                  name: companionName,
+                  text: `See that red dot on your minimap in the top-right? That's your Explorer's Pack with all your tools!`
+                },
+                {
+                  character: selectedCompanion,
+                  name: companionName,
+                  text: `Use WASD to move and your mouse to look around. If you spawn in a tree, just punch the leaves to break free!`
+                },
+                {
+                  character: selectedCompanion,
+                  name: companionName,
+                  text: `Walk up to the backpack (🎒) and hold left-click to pick it up. That'll unlock your inventory and tools. Good luck, explorer!`
+                }
+              ], () => {
+                // After chat sequence completes, spawn backpack in front of player
+                console.log('💬 Tutorial chat complete, spawning starter backpack...');
+                if (window.voxelApp && window.voxelApp.spawnStarterBackpack) {
+                  window.voxelApp.spawnStarterBackpack();
+                }
+              });
+            });
+
+            // Show overlay after a short delay (let world finish loading)
+            setTimeout(() => {
+              introOverlay.show();
+            }, 500);
+          });
+        })
+        .catch(error => {
+          console.error('❌ Failed to load personality quiz:', error);
         });
-      });
-
-      // Show overlay after a short delay (let world finish loading)
-      setTimeout(() => {
-        introOverlay.show();
-      }, 500);
     }
   }).catch(error => {
     console.error('❌ Failed to initialize The Long Nights:', error);

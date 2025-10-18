@@ -10,26 +10,31 @@ export class QuestRunner {
     constructor(voxelWorld) {
         this.voxelWorld = voxelWorld;
         this.chatOverlay = new ChatOverlay();
-        
+
         // Current quest state
         this.currentQuest = null;
         this.currentNodeId = null;
         this.questNPCs = [];
         this.isRunning = false;
-        
+
         // Quest data (nodes + connections from Sargem)
         this.nodes = [];
         this.connections = [];
-        
+
         // Node counters for debug labels
         this.nodeCounters = {};
+
+        // Choice tracking (for personality quiz)
+        this.choiceTracking = {};  // { nodeId: chosenIndex }
+        this.onQuestComplete = null;  // Callback when quest ends
     }
 
     /**
      * Load and start a quest
      * @param {Object} questData - Quest data from Sargem editor { nodes: [], connections: [] }
+     * @param {Function} onComplete - Optional callback when quest completes (receives choiceTracking)
      */
-    startQuest(questData) {
+    startQuest(questData, onComplete = null) {
         if (this.isRunning) {
             console.warn('⚠️ Quest already running!');
             return;
@@ -38,9 +43,23 @@ export class QuestRunner {
         this.nodes = questData.nodes || [];
         this.connections = questData.connections || [];
         this.isRunning = true;
-        
-        // Reset node counters for debug labels
+        this.onQuestComplete = onComplete;
+
+        // Reset node counters and choice tracking
         this.nodeCounters = {};
+        this.choiceTracking = {};
+
+        // Disable player controls during quest (for button clicks)
+        if (this.voxelWorld && this.voxelWorld.controlsEnabled !== undefined) {
+            this.voxelWorld.controlsEnabled = false;
+            console.log('🎮 Player controls disabled for quest');
+        }
+
+        // Exit pointer lock so mouse cursor is visible for clicking buttons
+        if (document.pointerLockElement) {
+            document.exitPointerLock();
+            console.log('🖱️ Pointer lock released for quest UI');
+        }
 
         console.log('🎮 Starting quest with', this.nodes.length, 'nodes');
 
@@ -179,11 +198,15 @@ export class QuestRunner {
 
         // Create choice overlay with callback
         this.showChoiceDialog(question, options, (chosenIndex) => {
+            // Track this choice (for personality quiz or quest tracking)
+            this.choiceTracking[node.id] = chosenIndex;
+            console.log(`📝 Choice tracked: ${node.id} = ${chosenIndex} (${options[chosenIndex]})`);
+
             // Find connection for this choice - Sargem uses fromId/toId
-            const outgoing = this.connections.filter(c => 
+            const outgoing = this.connections.filter(c =>
                 (c.fromId || c.sourceId) === node.id
             );
-            
+
             // Sort by handle index (output_0, output_1, etc.)
             outgoing.sort((a, b) => {
                 const aIndex = parseInt(a.sourceHandle?.split('_')[1] || 0);
@@ -242,12 +265,24 @@ export class QuestRunner {
         `;
         overlay.appendChild(questionEl);
 
-        // Choice buttons
+        // Choice buttons - supports up to 4 options with 2x2 grid layout
         const buttonsContainer = document.createElement('div');
-        buttonsContainer.style.cssText = `
-            display: flex;
-            gap: 20px;
-        `;
+        const numOptions = options.length;
+
+        // Use grid layout for 3+ options, flex for 2 or less
+        if (numOptions >= 3) {
+            buttonsContainer.style.cssText = `
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 20px;
+                max-width: 700px;
+            `;
+        } else {
+            buttonsContainer.style.cssText = `
+                display: flex;
+                gap: 20px;
+            `;
+        }
 
         options.forEach((option, index) => {
             const button = document.createElement('button');
@@ -261,19 +296,20 @@ export class QuestRunner {
                 border-radius: 5px;
                 cursor: pointer;
                 transition: background 0.2s;
+                min-width: 250px;
             `;
             button.onmouseover = () => button.style.background = '#6ed9c0';
             button.onmouseout = () => button.style.background = '#4ec9b0';
             button.onclick = () => {
                 document.body.removeChild(overlay);
-                
+
                 // Re-request pointer lock after choice
                 setTimeout(() => {
                     if (this.voxelWorld.controlsEnabled && this.voxelWorld.renderer?.domElement) {
                         this.voxelWorld.renderer.domElement.requestPointerLock();
                     }
                 }, 100);
-                
+
                 onChoose(index);
             };
             buttonsContainer.appendChild(button);
@@ -483,13 +519,26 @@ export class QuestRunner {
      */
     stopQuest() {
         console.log('🛑 Stopping quest');
-        
+
+        // Call completion callback if it exists (pass choice tracking)
+        if (this.onQuestComplete) {
+            console.log('📊 Quest complete, calling callback with choices:', this.choiceTracking);
+            this.onQuestComplete(this.choiceTracking);
+        }
+
+        // Re-enable player controls after quest
+        if (this.voxelWorld && this.voxelWorld.controlsEnabled !== undefined) {
+            this.voxelWorld.controlsEnabled = true;
+            console.log('🎮 Player controls re-enabled after quest');
+        }
+
         this.isRunning = false;
         this.currentQuest = null;
         this.currentNodeId = null;
         this.nodes = [];
         this.connections = [];
-        
+        this.onQuestComplete = null;
+
         // Cleanup quest NPCs
         this.cleanupNPCs();
     }

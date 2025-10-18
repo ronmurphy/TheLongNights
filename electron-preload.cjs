@@ -201,6 +201,28 @@ contextBridge.exposeInMainWorld('electronAPI', {
       const { ipcRenderer } = require('electron');
       return await ipcRenderer.invoke('sargem:copy-image', { sourcePath, fileName });
     }
+  },
+
+  // 🔄 AUTO-UPDATE SYSTEM
+  startUpdateDownload: () => {
+    const { ipcRenderer } = require('electron');
+    ipcRenderer.send('update:start-download');
+  },
+  onDownloadProgress: (callback) => {
+    const { ipcRenderer } = require('electron');
+    ipcRenderer.on('update:download-progress', (event, progress) => {
+      callback(progress);
+    });
+  },
+  onUpdateDownloaded: (callback) => {
+    const { ipcRenderer } = require('electron');
+    ipcRenderer.on('update:downloaded', (event, info) => {
+      callback(info);
+    });
+  },
+  restartAndInstall: () => {
+    const { ipcRenderer } = require('electron');
+    ipcRenderer.send('update:restart-and-install');
   }
 });
 

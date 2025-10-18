@@ -4,6 +4,144 @@ Continuation of CHANGELOG.md for new development sessions.
 
 ---
 
+## 2025-10-18 - 🔧 Critical Bug Fixes & Auto-Update System
+
+**Status: COMPLETE ✅**
+
+### 🐛 Major Bug Fixes (Thanks to Condor!)
+
+**Tester Condor discovered three critical bugs that were breaking the game:**
+
+1. **Crafted Objects Not Saving/Loading** ✅
+   - **Issue:** All ShapeForge items (campfires, pyramids, cubes, etc.) disappeared when loading save files
+   - **Cause:** `SaveSystem.js` logged crafted objects but never called `placeCraftedObject()` to restore them
+   - **Fix:** Added proper restoration in `applySaveData()` (SaveSystem.js:346-390)
+     - Clears existing crafted objects with proper cleanup
+     - Restores metadata for each item
+     - Calls `placeCraftedObject()` to recreate each object
+     - Error handling for failed restorations
+   - **Impact:** All ShapeForge items now persist across save/load! 🎉
+
+2. **Campfire Placement 0.5 Blocks Too High** ✅
+   - **Issue:** Crafted pyramids/campfires floated half a block above ground
+   - **Cause:** `placePos.y` is the CENTER of air block, not floor surface
+   - **Fix:** Changed floor calculation: `const floorY = y - 0.5` (VoxelWorld.js:1033)
+   - **Impact:** All crafted objects now sit flush on ground
+
+3. **Jumping on Campfires = Fall to Void** ✅
+   - **Issue:** Player Y coordinate became NaN when landing on crafted objects, teleporting to void
+   - **Cause:** Crafted object collision returned `{collision: true}` but no `blockY` value
+   - **Fix:** Added `blockY: craftedHitbox.maxY - 0.5` to collision return (VoxelWorld.js:1285)
+   - **Impact:** Players can now stand on campfires and all crafted objects safely
+
+4. **Inventory Metadata Compatibility** ✅
+   - **Issue:** Adding new items to game could break old save files
+   - **Cause:** `inventoryMetadata` was overwritten instead of merged
+   - **Fix:** Changed to merge: `{ ...existing, ...saved }` (SaveSystem.js:348)
+   - **Impact:** Save files remain compatible when new items are added
+
+**Files Modified:**
+- `src/SaveSystem.js` (lines 346-390, 345-350)
+- `src/VoxelWorld.js` (lines 1033, 1285)
+
+---
+
+### 🔄 Auto-Update System Implementation
+
+**Complete auto-updater with custom in-game modals! No more huge system dialogs!**
+
+**Features:**
+- ✅ Menu item: **Help → Check for Updates...**
+- ✅ Custom in-game modals (no system dialogs covering entire screen!)
+- ✅ Real-time download progress bar with percentage + MB downloaded
+- ✅ Beautiful UI matching game's existing modal style
+- ✅ Manual update checking (player-controlled)
+- ✅ Works with GitHub Releases (FREE hosting)
+- ✅ Supports both Windows (.exe) and Linux (.AppImage)
+- ✅ Works in ALL build types (dev and production)
+- ✅ No file size issues (GitHub Releases support up to 2GB per file)
+
+**User Experience:**
+1. Player clicks "Help → Check for Updates"
+2. If update available: **Custom modal** shows:
+   - Version number and release date
+   - Scrollable release notes (what's new)
+   - "Download Update" or "Later" buttons
+3. Player clicks "Download" → Modal switches to **downloading state**:
+   - Live progress bar (0-100%)
+   - File size display: "243.5 MB / 465.2 MB"
+   - Smooth animations
+4. When complete: Modal shows **success state**:
+   - "Update Downloaded!" message
+   - "Restart Now" or "Later" buttons
+5. Update installs automatically on restart
+
+**Design Inspiration:**
+- Brad's VB6/Pastebin update system (early 2000s)
+- Motivation: System dialogs "completly covered my entire screen"
+- Solution: Custom modals using game's existing UI framework
+
+**Technical Implementation:**
+- Uses `electron-updater` package (v6.1.7)
+- Works in both packaged and dev builds
+- IPC communication for download control + progress updates
+- Custom modal injected via `webContents.executeJavaScript()`
+- Three modal states: Available → Downloading → Downloaded
+- Progress updates sent via IPC: `update:download-progress`
+- Error handling: Modal closes, system dialog shows details
+- Configured for GitHub Releases provider
+- Delta updates supported (only downloads changes)
+- Auto-install on app quit enabled
+
+**Files Modified:**
+- `electron.cjs` - Custom modal logic, IPC handlers, progress tracking
+  - Lines 234-264: IPC handlers for download control + restart
+  - Lines 277-365: Custom modal implementation with 3 states
+  - Lines 420-454: Progress updates and error handling
+- `electron-preload.cjs` - IPC bridge API
+  - Lines 206-226: Update system IPC methods
+- `package.json` - electron-updater moved to dependencies (not devDependencies)
+
+**Documentation:**
+- Created `UPDATE_WORKFLOW.md` - Complete release workflow
+- Created `GITHUB_RELEASE_v0.6.7.md` - First release description
+- Created `UPDATE_SYSTEM.md` - Complete system documentation with diagrams
+
+---
+
+### 🧹 Climbing Claws Disabled
+
+**Status: DISABLED (Needs Redesign)**
+
+The climbing claws feature had persistent issues with key detection and physics integration. Temporarily disabled until a better implementation approach is designed.
+
+**Changes:**
+- Disabled update call in game loop (VoxelWorld.js:11112-11115)
+- Function still exists but returns early (CraftedTools.js:21-112)
+- Code preserved in comments for future reference
+
+---
+
+### 📦 Build System Updates
+
+**Version:** v0.6.7
+- Build date: October 18, 2025
+- Platforms: Windows (portable .exe), Linux (AppImage)
+- File size: ~465MB (includes Three.js, physics, music, art assets)
+
+**Build Command:**
+```bash
+./desktopBuild.sh
+```
+
+This now:
+- ✅ Bumps version automatically
+- ✅ Builds web assets
+- ✅ Creates Windows + Linux executables
+- ✅ Generates update metadata (`latest.yml`, `latest-linux.yml`)
+
+---
+
 ## 2025-10-16 - 🩸 Blood Moon System - Progressive Spawning & Combat
 
 **Status: PHASE 1 COMPLETE ✅**

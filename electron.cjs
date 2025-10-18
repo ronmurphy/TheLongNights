@@ -3,6 +3,27 @@ const path = require('path');
 const fs = require('fs').promises;
 const isDev = process.env.NODE_ENV === 'development';
 
+// 🔄 Auto-updater (always enabled for testing)
+let autoUpdater = null;
+const isPackaged = app.isPackaged;
+
+try {
+  const { autoUpdater: updater } = require('electron-updater');
+  autoUpdater = updater;
+
+  // Configure updater
+  autoUpdater.autoDownload = false; // Don't auto-download, let user choose
+  autoUpdater.autoInstallOnAppQuit = true; // Install when app closes
+
+  if (isPackaged) {
+    console.log('🔄 Auto-updater initialized (packaged app)');
+  } else {
+    console.log('🔄 Auto-updater initialized (dev mode - for testing)');
+  }
+} catch (error) {
+  console.warn('⚠️ electron-updater not installed - run: npm install');
+}
+
 // 🎮 Force high-performance GPU (dGPU) for better performance
 // This helps on laptops with both integrated and dedicated GPUs
 app.commandLine.appendSwitch('force_high_performance_gpu');
@@ -211,6 +232,262 @@ ipcMain.handle('sargem:pick-image', async (event) => {
 });
 
 // ========================================
+// 🔄 AUTO-UPDATE IPC HANDLERS
+// ========================================
+
+let mainWindowRef = null; // Store reference for IPC handlers
+
+/**
+ * Start downloading the update
+ */
+ipcMain.on('update:start-download', (event) => {
+  if (!autoUpdater) {
+    console.error('❌ Auto-updater not available');
+    return;
+  }
+
+  console.log('🔄 Starting update download...');
+  autoUpdater.downloadUpdate();
+});
+
+/**
+ * Restart and install the update
+ */
+ipcMain.on('update:restart-and-install', (event) => {
+  if (!autoUpdater) {
+    console.error('❌ Auto-updater not available');
+    return;
+  }
+
+  console.log('🔄 Restarting and installing update...');
+  autoUpdater.quitAndInstall();
+});
+
+// ========================================
+// 🔄 AUTO-UPDATER FUNCTIONS
+// ========================================
+
+/**
+ * Check for updates manually (triggered by menu item)
+ */
+function checkForUpdates(mainWindow) {
+  if (!autoUpdater) {
+    dialog.showMessageBox(mainWindow, {
+      type: 'error',
+      title: 'Auto-Updater Not Available',
+      message: 'electron-updater package is not installed.',
+      detail: 'Run: npm install',
+      buttons: ['OK']
+    });
+    return;
+  }
+
+  console.log('🔄 Checking for updates...');
+
+  autoUpdater.checkForUpdates().catch(error => {
+    console.error('❌ Update check failed:', error);
+    dialog.showMessageBox(mainWindow, {
+      type: 'error',
+      title: 'Update Check Failed',
+      message: `Failed to check for updates:\n${error.message}`,
+      detail: 'This may be normal if:\n- No internet connection\n- No releases published yet\n- Running from dev mode (updates work but won\'t install)',
+      buttons: ['OK']
+    });
+  });
+}
+
+/**
+ * Setup updater event listeners
+ */
+function setupUpdateListeners(mainWindow) {
+  if (!autoUpdater) return;
+
+  // Update available
+  autoUpdater.on('update-available', (info) => {
+    console.log('✅ Update available:', info.version);
+
+    // Use custom in-game modal instead of system dialog
+    mainWindow.webContents.executeJavaScript(`
+      (function() {
+        const modal = document.createElement('div');
+        modal.className = 'voxel-modal-overlay';
+        modal.style.zIndex = '20000';
+        modal.id = 'update-modal';
+
+        const releaseNotes = ${JSON.stringify(info.releaseNotes || 'Bug fixes and improvements')};
+        const version = ${JSON.stringify(info.version)};
+        const releaseDate = ${JSON.stringify(info.releaseDate ? new Date(info.releaseDate).toLocaleDateString() : 'Today')};
+
+        modal.innerHTML = \`
+          <div class="voxel-modal character-creation-modal" style="max-width: 600px;">
+            <div class="modal-header">
+              <h2>🔄 Update Available</h2>
+              <p class="subtitle">Version \${version} is ready to download</p>
+            </div>
+
+            <div class="modal-body">
+              <div class="info-box" style="background: #e7f3ff; border-color: #0066cc; margin-bottom: 20px;">
+                <p style="text-align: center; margin: 10px 0;">
+                  <strong>New Version:</strong> \${version}<br>
+                  <span style="font-size: 12px; opacity: 0.8;">Released: \${releaseDate}</span>
+                </p>
+              </div>
+
+              <div style="max-height: 200px; overflow-y: auto; padding: 10px; background: #f9f9f9; border-radius: 4px; margin-bottom: 15px;">
+                <h4 style="margin-top: 0;">📝 What's New:</h4>
+                <p style="white-space: pre-wrap; font-size: 13px;">\${releaseNotes}</p>
+              </div>
+
+              <p style="text-align: center; opacity: 0.8; font-size: 13px;">
+                The update will be installed when you close the game.
+              </p>
+            </div>
+
+            <div class="modal-footer" style="justify-content: center; gap: 10px;">
+              <button class="btn btn-primary" id="update-download">Download Update</button>
+              <button class="btn btn-secondary" id="update-later">Later</button>
+            </div>
+          </div>
+        \`;
+
+        document.body.appendChild(modal);
+
+        // Handle download button - send IPC message to start download
+        modal.querySelector('#update-download').addEventListener('click', () => {
+          // Change to downloading state
+          const modalBody = modal.querySelector('.modal-body');
+          modalBody.innerHTML = \`
+            <div style="text-align: center; padding: 40px 20px;">
+              <h3>📥 Downloading Update...</h3>
+              <p style="margin: 20px 0;">Please wait while the update downloads.</p>
+              <div style="background: #f0f0f0; border-radius: 10px; height: 20px; overflow: hidden; margin: 20px 0;">
+                <div id="download-progress-bar" style="background: #4CAF50; height: 100%; width: 0%; transition: width 0.3s;"></div>
+              </div>
+              <p id="download-progress-text" style="font-size: 13px; opacity: 0.8;">Starting download...</p>
+            </div>
+          \`;
+          modal.querySelector('.modal-footer').style.display = 'none';
+
+          // Notify main process to start download
+          window.electronAPI?.startUpdateDownload();
+        });
+
+        // Handle later button
+        modal.querySelector('#update-later').addEventListener('click', () => {
+          modal.remove();
+        });
+
+        // Close on overlay click
+        modal.addEventListener('click', (e) => {
+          if (e.target === modal) {
+            modal.remove();
+          }
+        });
+
+        // Listen for download progress updates
+        window.electronAPI?.onDownloadProgress((progress) => {
+          const progressBar = document.getElementById('download-progress-bar');
+          const progressText = document.getElementById('download-progress-text');
+          if (progressBar && progressText) {
+            progressBar.style.width = progress.percent + '%';
+            progressText.textContent = \`Downloaded \${progress.percent.toFixed(1)}% (\${(progress.transferred / 1024 / 1024).toFixed(1)} MB / \${(progress.total / 1024 / 1024).toFixed(1)} MB)\`;
+          }
+        });
+      })();
+    `);
+  });
+
+  // No update available
+  autoUpdater.on('update-not-available', (info) => {
+    console.log('ℹ️ No updates available');
+
+    dialog.showMessageBox(mainWindow, {
+      type: 'info',
+      title: 'No Updates Available',
+      message: 'You are already running the latest version!',
+      detail: `Current version: ${app.getVersion()}`,
+      buttons: ['OK']
+    });
+  });
+
+  // Update downloaded
+  autoUpdater.on('update-downloaded', (info) => {
+    console.log('✅ Update downloaded:', info.version);
+
+    // Show custom completion modal
+    mainWindow.webContents.executeJavaScript(`
+      (function() {
+        const modal = document.getElementById('update-modal');
+        if (modal) {
+          const modalBody = modal.querySelector('.modal-body');
+          const modalFooter = modal.querySelector('.modal-footer');
+
+          modalBody.innerHTML = \`
+            <div style="text-align: center; padding: 40px 20px;">
+              <h3 style="color: #4CAF50;">✅ Update Downloaded!</h3>
+              <p style="margin: 20px 0;">Version ${JSON.stringify(info.version)} has been downloaded successfully.</p>
+              <p style="opacity: 0.8; font-size: 13px;">The update will be installed when you restart the game.</p>
+            </div>
+          \`;
+
+          modalFooter.style.display = 'flex';
+          modalFooter.innerHTML = \`
+            <button class="btn btn-primary" id="restart-now">Restart Now</button>
+            <button class="btn btn-secondary" id="restart-later">Later</button>
+          \`;
+
+          // Handle restart now
+          modalFooter.querySelector('#restart-now').addEventListener('click', () => {
+            window.electronAPI?.restartAndInstall?.();
+          });
+
+          // Handle restart later
+          modalFooter.querySelector('#restart-later').addEventListener('click', () => {
+            modal.remove();
+          });
+        }
+      })();
+    `);
+  });
+
+  // Download progress
+  autoUpdater.on('download-progress', (progressObj) => {
+    const log = `Downloaded ${progressObj.percent.toFixed(2)}% (${progressObj.transferred}/${progressObj.total})`;
+    console.log('📥', log);
+
+    // Send progress to renderer
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('update:download-progress', {
+        percent: progressObj.percent,
+        transferred: progressObj.transferred,
+        total: progressObj.total
+      });
+    }
+  });
+
+  // Error
+  autoUpdater.on('error', (error) => {
+    console.error('❌ Update error:', error);
+
+    // Close the downloading modal and show error
+    mainWindow.webContents.executeJavaScript(`
+      (function() {
+        const modal = document.getElementById('update-modal');
+        if (modal) modal.remove();
+      })();
+    `);
+
+    dialog.showMessageBox(mainWindow, {
+      type: 'error',
+      title: 'Update Error',
+      message: 'An error occurred while updating:',
+      detail: error.message,
+      buttons: ['OK']
+    });
+  });
+}
+
+// ========================================
 
 function createWindow() {
   // Use app.getAppPath() to work with asar packaging
@@ -305,6 +582,13 @@ function createWindow() {
     {
       label: 'Help',
       submenu: [
+        {
+          label: 'Check for Updates...',
+          click: () => {
+            checkForUpdates(mainWindow);
+          }
+        },
+        { type: 'separator' },
         {
           label: 'About The Long Nights',
           click: () => {
@@ -414,6 +698,9 @@ function createWindow() {
   // Show window when ready to prevent visual flash
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();
+
+    // 🔄 Setup auto-updater listeners (production only)
+    setupUpdateListeners(mainWindow);
   });
 
   // Handle window closed

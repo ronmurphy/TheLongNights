@@ -39,6 +39,8 @@ import { MusicSystem } from './MusicSystem.js';
 import { marked } from 'marked';
 import { SaveSystem } from './SaveSystem.js';
 import { AnimalSystem } from './AnimalSystem.js';
+import { QuestRunner } from './quests/QuestRunner.js';
+import { PlayerCharacter } from './PlayerCharacter.js';
 
 // 🚀 Enable BVH acceleration for all BufferGeometry raycasting
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
@@ -310,6 +312,14 @@ class NebulaVoxelApp {
         // 🎓 Initialize Tutorial Script System
         this.tutorialSystem = new TutorialScriptSystem(this);
         console.log('🎓 TutorialScriptSystem initialized');
+
+        // 🎮 Initialize Quest Runner (for personality quiz + quests)
+        this.questRunner = new QuestRunner(this);
+        console.log('🎮 QuestRunner initialized');
+
+        // 🧙 Initialize Player Character (stats, race, equipment)
+        this.playerCharacter = new PlayerCharacter();
+        console.log('🧙 PlayerCharacter initialized');
 
         // 🐈‍⬛ Initialize Sargem Quest Editor (dev tool, StarNode-based)
         this.sargemEditor = new SargemQuestEditor(this);
