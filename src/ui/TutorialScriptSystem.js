@@ -14,19 +14,59 @@ export class TutorialScriptSystem {
         this.chat = new ChatOverlay();
         this.scripts = null;
         this.loading = true;
+        this.entityData = null; // Cache for entity data
         
         // Load tutorial state from localStorage
         const playerData = JSON.parse(localStorage.getItem('NebulaWorld_playerData') || '{}');
         this.tutorialsSeen = playerData.tutorialsSeen || {};
         
-        // Load companion info
-        this.companionId = playerData.selectedCompanion || playerData.starterMonster || 'rat';
-        this.companionName = this.getCompanionName(this.companionId);
+        // Load companion info (check activeCompanion first, then starterMonster)
+        this.companionId = playerData.activeCompanion || playerData.starterMonster || 'rat';
+        
+        // Initialize companion name (will be loaded from entities.json)
+        this.companionName = 'Companion'; // Temporary until entities.json loads
+        this.loadCompanionName(); // Load asynchronously
+        
+        console.log(`🎓 TutorialScriptSystem using companion: ${this.companionId}`);
         
         // Load scripts asynchronously
         this.loadScripts();
         
         console.log('🎓 TutorialScriptSystem initialized');
+    }
+
+    /**
+     * Load entity data from entities.json
+     */
+    async loadEntityData() {
+        if (this.entityData) return this.entityData;
+
+        try {
+            const response = await fetch('art/entities/entities.json');
+            this.entityData = await response.json();
+            return this.entityData;
+        } catch (error) {
+            console.error('❌ Failed to load entity data:', error);
+            return null;
+        }
+    }
+
+    /**
+     * Load companion name from entities.json
+     */
+    async loadCompanionName() {
+        const data = await this.loadEntityData();
+        if (data && data.monsters && data.monsters[this.companionId]) {
+            this.companionName = data.monsters[this.companionId].name;
+            console.log(`🎓 Companion name loaded: ${this.companionName}`);
+        } else {
+            // Fallback to capitalized ID if not found
+            this.companionName = this.companionId
+                .split('_')
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(' ');
+            console.warn(`⚠️ Companion data not found for ${this.companionId}, using: ${this.companionName}`);
+        }
     }
 
     /**
@@ -55,21 +95,6 @@ export class TutorialScriptSystem {
             this.scripts = { tutorials: {} };
             this.loading = false;
         }
-    }
-
-    /**
-     * Get companion display name from ID
-     */
-    getCompanionName(companionId) {
-        const names = {
-            'rat': 'Scrappy',
-            'goblin_grunt': 'Grunk',
-            'troglodyte': 'Troggle',
-            'skeleton': 'Bones',
-            'ghost': 'Whisper',
-            'vampire': 'Vlad'
-        };
-        return names[companionId] || 'Companion';
     }
 
     /**
@@ -139,10 +164,40 @@ export class TutorialScriptSystem {
     }
 
     /**
+     * Refresh companion info from localStorage (in case it changed)
+     */
+    async refreshCompanion() {
+        const playerData = JSON.parse(localStorage.getItem('NebulaWorld_playerData') || '{}');
+        const newCompanionId = playerData.activeCompanion || playerData.starterMonster || 'rat';
+        
+        // Only update if changed
+        if (newCompanionId !== this.companionId) {
+            this.companionId = newCompanionId;
+            
+            // Load name from entities.json
+            const data = await this.loadEntityData();
+            if (data && data.monsters && data.monsters[this.companionId]) {
+                this.companionName = data.monsters[this.companionId].name;
+            } else {
+                // Fallback to capitalized ID
+                this.companionName = this.companionId
+                    .split('_')
+                    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                    .join(' ');
+            }
+            
+            console.log(`🎓 TutorialScriptSystem companion updated: ${this.companionName} (${this.companionId})`);
+        }
+    }
+
+    /**
      * Show a sequence of messages with delays
      * @param {array} messages - Array of {text, delay} objects
      */
     async showMessageSequence(messages) {
+        // Refresh companion info before showing messages (in case player switched companions)
+        this.refreshCompanion();
+        
         for (let i = 0; i < messages.length; i++) {
             const msg = messages[i];
             

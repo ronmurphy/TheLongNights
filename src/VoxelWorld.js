@@ -2639,6 +2639,10 @@ class NebulaVoxelApp {
             // Show the hotbar
             this.hotbarElement.style.display = 'flex';
 
+            // ⚠️ OLD HARDCODED TUTORIAL MESSAGES - COMMENTED OUT (Oct 18, 2025)
+            // These conflict with TutorialScriptSystem (Sargem-based)
+            // If new system works well, delete these commented lines
+            /*
             // Show tutorial message for a few seconds
             setTimeout(() => {
                 this.updateStatus('Backpack found! Check your hotbar - you got random starting supplies!');
@@ -2647,6 +2651,10 @@ class NebulaVoxelApp {
             setTimeout(() => {
                 this.updateStatus('Use 1-5 for items, B for backpack, E for workbench!');
             }, 4000);
+            */
+            
+            // ✅ NEW: Let TutorialScriptSystem handle all tutorial messages
+            // The JSON-based system (tutorialScripts.json) will show appropriate messages
         };
 
         // Refresh all existing billboards to use enhanced graphics
