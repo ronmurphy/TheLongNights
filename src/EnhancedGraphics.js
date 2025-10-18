@@ -70,7 +70,32 @@ export class EnhancedGraphics {
             watering_can: 'watering_can',          // Will use emoji fallback until watering_can.png is created
             // Consumable tools
             crafted_healing_potion: 'healing_potion',  // Will use emoji fallback until healing_potion.png is created
-            crafted_light_orb: 'light_orb'             // Will use emoji fallback until light_orb.png is created
+            crafted_light_orb: 'light_orb',            // Will use emoji fallback until light_orb.png is created
+            // New ToolBench arsenal
+            crafted_demolition_charge: 'demolition_charge',
+            demolition_charge: 'demolition_charge',
+            crafted_tree_feller: 'tree_feller',
+            tree_feller: 'tree_feller',
+            crafted_war_hammer: 'war_hammer',
+            war_hammer: 'war_hammer',
+            crafted_battle_axe: 'battle_axe',
+            battle_axe: 'battle_axe',
+            crafted_crossbow: 'crossbow',
+            crossbow: 'crossbow',
+            crafted_fire_staff: 'fire_staff',
+            fire_staff: 'fire_staff',
+            crafted_ice_bow: 'ice_bow',
+            ice_bow: 'ice_bow',
+            crafted_throwing_knives: 'throwing_knives',
+            throwing_knives: 'throwing_knives',
+            crafted_wooden_shield: 'wood_shield',  // Code uses wooden_shield, file is wood_shield.png
+            wooden_shield: 'wood_shield',
+            crafted_treasure_detector: 'treasure_detector',
+            treasure_detector: 'treasure_detector',
+            crafted_recall_stone: 'recall_stone',
+            recall_stone: 'recall_stone',
+            crafted_climbing_claws: 'climbing_claws',
+            climbing_claws: 'climbing_claws'
         };
 
         // UI element size configurations

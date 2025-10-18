@@ -11100,7 +11100,12 @@ class NebulaVoxelApp {
             
             // Update stamina (this handles drain, regen, and performance cleanup!)
             this.staminaSystem.update(deltaTime, isMoving, isRunning, terrain);
-            
+
+            // 🪂 Update fall damage tracking
+            if (this.playerHP) {
+                this.playerHP.updateFallDamage();
+            }
+
             // Update companion hunt system (movement, discoveries, return logic)
             if (this.companionHuntSystem && this.gameTime !== undefined) {
                 this.companionHuntSystem.update(this.gameTime);
@@ -11127,7 +11132,14 @@ class NebulaVoxelApp {
                 const blockY = Math.floor(y);
                 const blockZ = Math.floor(z);
                 const key = `${blockX},${blockY},${blockZ}`;
-                return this.world[key] && this.world[key] !== 'air';
+
+                // 🔍 BUG FIX: Check block.type, not the whole object!
+                // Blocks are stored as { type: 'oak_wood', mesh: ..., billboard: ... }
+                // Water should NOT block collision (you can walk through water)
+                const block = this.world[key];
+                if (!block) return false;
+
+                return block.type !== 'air' && block.type !== 'water';
             };
 
             // Main raycast collision detection function
@@ -11162,10 +11174,11 @@ class NebulaVoxelApp {
             // ========== END RAYCAST UTILITIES ==========
 
             // ========== HITBOX COLLISION SYSTEM ==========
-            // Player hitbox dimensions (reduced width/depth for 1-block passage)
-            const PLAYER_WIDTH = 0.3;  // Was 0.6 - now fits through 1-block gaps
+            // Player hitbox dimensions (Minecraft-standard for reliable collision)
+            const PLAYER_WIDTH = 0.6;  // Standard voxel game width (60% of block)
             const PLAYER_HEIGHT = 1.8;
-            const PLAYER_DEPTH = 0.3;  // Was 0.6 - now fits through 1-block gaps
+            const PLAYER_DEPTH = 0.6;  // Standard voxel game depth (60% of block)
+            // ⚠️ DO NOT reduce below 0.6! Thin hitboxes cause tunneling through blocks
 
             // Create player hitbox at given position
             const createPlayerHitbox = (x, y, z) => {
@@ -11184,37 +11197,40 @@ class NebulaVoxelApp {
             };
 
             // Create block hitbox at given block coordinates
+            // 🔧 FIX: Blocks are positioned with their CENTER at integer coords (THREE.js default)
+            // So a block at (5,3,5) actually spans from (4.5,2.5,4.5) to (5.5,3.5,5.5)
             const createBlockHitbox = (blockX, blockY, blockZ) => {
                 return {
-                    minX: blockX,
-                    maxX: blockX + 1,
-                    minY: blockY,
-                    maxY: blockY + 1,
-                    minZ: blockZ,
-                    maxZ: blockZ + 1
+                    minX: blockX - 0.5,
+                    maxX: blockX + 0.5,
+                    minY: blockY - 0.5,
+                    maxY: blockY + 0.5,
+                    minZ: blockZ - 0.5,
+                    maxZ: blockZ + 0.5
                 };
             };
 
             // AABB collision detection between two hitboxes
-            // Added small epsilon (0.001) to prevent exact edge-touching from registering as collision
-            const COLLISION_EPSILON = 0.001;
+            // Standard AABB test with no epsilon (for symmetric collision on all sides)
             const hitboxesCollide = (hitbox1, hitbox2) => {
                 return (
-                    hitbox1.minX < hitbox2.maxX - COLLISION_EPSILON && hitbox1.maxX > hitbox2.minX + COLLISION_EPSILON &&
-                    hitbox1.minY < hitbox2.maxY - COLLISION_EPSILON && hitbox1.maxY > hitbox2.minY + COLLISION_EPSILON &&
-                    hitbox1.minZ < hitbox2.maxZ - COLLISION_EPSILON && hitbox1.maxZ > hitbox2.minZ + COLLISION_EPSILON
+                    hitbox1.minX < hitbox2.maxX && hitbox1.maxX > hitbox2.minX &&
+                    hitbox1.minY < hitbox2.maxY && hitbox1.maxY > hitbox2.minY &&
+                    hitbox1.minZ < hitbox2.maxZ && hitbox1.maxZ > hitbox2.minZ
                 );
             };
 
             // Check if player hitbox collides with any blocks in the world
             const checkHitboxCollision = (playerHitbox) => {
                 // Get the range of blocks to check based on player hitbox bounds
-                const minBlockX = Math.floor(playerHitbox.minX);
-                const maxBlockX = Math.floor(playerHitbox.maxX);
-                const minBlockY = Math.floor(playerHitbox.minY);
-                const maxBlockY = Math.floor(playerHitbox.maxY);
-                const minBlockZ = Math.floor(playerHitbox.minZ);
-                const maxBlockZ = Math.floor(playerHitbox.maxZ);
+                // 🔧 FIX: Expand range by 1 block in all directions to catch edge cases
+                // This ensures we never miss blocks the player might be touching
+                const minBlockX = Math.floor(playerHitbox.minX) - 1;
+                const maxBlockX = Math.floor(playerHitbox.maxX) + 1;
+                const minBlockY = Math.floor(playerHitbox.minY) - 1;
+                const maxBlockY = Math.floor(playerHitbox.maxY) + 1;
+                const minBlockZ = Math.floor(playerHitbox.minZ) - 1;
+                const maxBlockZ = Math.floor(playerHitbox.maxZ) + 1;
 
                 // Check all blocks in the range
                 for (let x = minBlockX; x <= maxBlockX; x++) {
@@ -11351,7 +11367,8 @@ class NebulaVoxelApp {
 
                 if (collision.collision) {
                     // Found collision - place player on top of the colliding block
-                    const groundLevel = collision.blockY + 1;
+                    // 🔧 FIX: Block center is at blockY, so top is at blockY + 0.5
+                    const groundLevel = collision.blockY + 0.5;
                     this.player.position.y = groundLevel + PLAYER_HEIGHT / 2;
                     this.player.velocity = 0;
                     this.isOnGround = true;

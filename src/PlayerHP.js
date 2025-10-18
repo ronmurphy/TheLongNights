@@ -17,6 +17,11 @@ export class PlayerHP {
         this.invulnerable = false;
         this.invulnerabilityDuration = 1000; // 1 second
 
+        // Fall damage tracking
+        this.lastYPosition = 0;
+        this.highestYPosition = 0;
+        this.isFalling = false;
+
         // HUD elements
         this.heartContainer = null;
         this.hearts = [];
@@ -88,6 +93,20 @@ export class PlayerHP {
     takeDamage(amount = 1) {
         if (this.invulnerable || this.currentHP <= 0) {
             return false;
+        }
+
+        // 🛡️ WOODEN SHIELD: 30% chance to block damage
+        const hasShield = this.voxelWorld.inventory && this.checkForShield();
+        if (hasShield && Math.random() < 0.3) {
+            console.log(`🛡️ BLOCKED! Wooden shield deflected ${amount} damage!`);
+            this.voxelWorld.updateStatus(`🛡️ BLOCKED! Shield deflected attack!`, 'discovery');
+            this.voxelWorld.createExplosionEffect(
+                this.voxelWorld.player.position.x,
+                this.voxelWorld.player.position.y + 1,
+                this.voxelWorld.player.position.z,
+                'shield_block'
+            );
+            return false; // Damage blocked!
         }
 
         // Apply damage
@@ -247,6 +266,82 @@ export class PlayerHP {
             console.log('💥 Player collided with enemy!');
             this.takeDamage(1);
         }
+    }
+
+    /**
+     * 🛡️ Check if player has wooden shield in inventory or equipped
+     */
+    checkForShield() {
+        if (!this.voxelWorld.inventory) return false;
+
+        // Check hotbar slots
+        const hotbarSlots = this.voxelWorld.inventory.hotbarSlots || [];
+        for (const slot of hotbarSlots) {
+            if (slot.itemType === 'wooden_shield' ||
+                slot.itemType === 'crafted_wooden_shield' ||
+                slot.itemType === 'wood_shield') {
+                return true;
+            }
+        }
+
+        // Check backpack slots
+        const backpackSlots = this.voxelWorld.inventory.backpackSlots || [];
+        for (const slot of backpackSlots) {
+            if (slot.itemType === 'wooden_shield' ||
+                slot.itemType === 'crafted_wooden_shield' ||
+                slot.itemType === 'wood_shield') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * 🪂 Update fall damage tracking (call every frame)
+     */
+    updateFallDamage() {
+        if (!this.voxelWorld.player) return;
+
+        const currentY = this.voxelWorld.player.position.y;
+
+        // Track highest position
+        if (currentY > this.highestYPosition) {
+            this.highestYPosition = currentY;
+            this.isFalling = false;
+        }
+
+        // Check if falling (moving downward)
+        if (currentY < this.lastYPosition) {
+            this.isFalling = true;
+        }
+
+        // Check if just landed (was falling, now stopped or moving up)
+        if (this.isFalling && currentY >= this.lastYPosition) {
+            const fallDistance = this.highestYPosition - currentY;
+
+            // 💔 0.5 hearts per 5 blocks fallen
+            if (fallDistance >= 5) {
+                const damage = Math.floor(fallDistance / 5) * 0.5; // 0.5 hearts per 5 blocks
+
+                console.log(`🪂 Fall damage! Fell ${fallDistance.toFixed(1)} blocks, taking ${damage} hearts damage`);
+
+                this.takeDamage(damage);
+
+                // Show broken heart for half-heart damage
+                if (damage === 0.5) {
+                    this.voxelWorld.updateStatus(`💔 Ouch! Fell ${fallDistance.toFixed(0)} blocks`, 'warning');
+                } else {
+                    this.voxelWorld.updateStatus(`💔💔 Heavy fall! Fell ${fallDistance.toFixed(0)} blocks`, 'warning');
+                }
+            }
+
+            // Reset tracking
+            this.highestYPosition = currentY;
+            this.isFalling = false;
+        }
+
+        this.lastYPosition = currentY;
     }
 
     /**
