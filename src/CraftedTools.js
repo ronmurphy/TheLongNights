@@ -15,60 +15,86 @@ export class CraftedTools {
     }
 
     /**
-     * 🧗 Update climbing claws system (call every frame)
+     * 🧗 DISABLED: Climbing claws system - too many issues with key detection and physics
+     * Kept for future reference if we want to revisit this feature
      */
     updateClimbingClaws() {
-        // Must be ACTIVELY SELECTED in hotbar
-        const selectedSlot = this.voxelWorld.inventory?.hotbarSlots?.[this.voxelWorld.selectedSlot];
-        const hasClawsSelected = selectedSlot && (
-            selectedSlot.itemType === 'climbing_claws' ||
-            selectedSlot.itemType === 'crafted_climbing_claws'
-        );
+        // DISABLED - feature not working reliably
+        return;
+
+        /* ORIGINAL CODE - DISABLED
+        // Must be ACTIVELY SELECTED in hotbar (uses HotbarSystem's getSelectedSlot for proper detection)
+        const selectedSlot = this.voxelWorld.hotbarSystem?.getSelectedSlot();
+        const selectedBlock = selectedSlot?.itemType;
+
+        const hasClawsSelected = selectedBlock === 'climbing_claws' ||
+                                selectedBlock === 'crafted_climbing_claws';
 
         if (!hasClawsSelected) {
             this.isClimbing = false;
             return;
         }
 
-        // Check if player is pressing space (jump key) and near a wall
+        // Check if player is pressing W (forward movement) for climbing
         const keys = this.voxelWorld.keys || {};
-        if (keys[' ']) {
+        const wPressed = keys["w"];
+
+        if (wPressed) {
             const playerPos = this.voxelWorld.player.position;
+            const playerRotation = this.voxelWorld.player.rotation.y;
 
-            // Check for walls in all 4 directions (closer range)
-            const checkPositions = [
-                { x: playerPos.x + 0.8, z: playerPos.z },     // East
-                { x: playerPos.x - 0.8, z: playerPos.z },     // West
-                { x: playerPos.x, z: playerPos.z + 0.8 },     // North
-                { x: playerPos.x, z: playerPos.z - 0.8 }      // South
-            ];
+            // Calculate forward direction based on player rotation
+            const forwardX = Math.sin(playerRotation);
+            const forwardZ = Math.cos(playerRotation);
 
-            let nearWall = false;
-            for (const pos of checkPositions) {
-                const block = this.voxelWorld.getBlock(
-                    Math.floor(pos.x),
-                    Math.floor(playerPos.y),
-                    Math.floor(pos.z)
-                );
-                if (block && block !== 'air') {
-                    nearWall = true;
-                    console.log(`🧗 Wall detected at (${Math.floor(pos.x)}, ${Math.floor(playerPos.y)}, ${Math.floor(pos.z)}): ${block}`);
-                    break;
-                }
-            }
+            // Check for wall directly in front of player (1 block ahead)
+            const checkDistance = 0.6; // Detection distance
+            const checkX = playerPos.x + (forwardX * checkDistance);
+            const checkZ = playerPos.z + (forwardZ * checkDistance);
 
-            if (nearWall) {
-                // Wall climbing - set upward velocity
-                if (this.voxelWorld.player.velocity) {
-                    this.voxelWorld.player.velocity.y = 0.2; // Climb speed
-                }
+            const checkXFloor = Math.floor(checkX);
+            const checkYFloor = Math.floor(playerPos.y);
+            const checkZFloor = Math.floor(checkZ);
+
+            // Check current height and 1 block above for wall
+            const blockAtEyeLevel = this.voxelWorld.getBlock(
+                checkXFloor,
+                checkYFloor,
+                checkZFloor
+            );
+
+            const blockAbove = this.voxelWorld.getBlock(
+                checkXFloor,
+                checkYFloor + 1,
+                checkZFloor
+            );
+
+            // Non-climbable blocks
+            const nonClimbable = ['air', 'water', undefined, null];
+
+            // Check if there's a wall in front and no overhang blocking from above
+            const wallInFront = blockAtEyeLevel && !nonClimbable.includes(blockAtEyeLevel);
+            const noOverhang = !blockAbove || nonClimbable.includes(blockAbove);
+
+            if (wallInFront && noOverhang) {
+                // Climb up the wall - override gravity with upward velocity
+                this.voxelWorld.player.velocity = 5.0; // Climb speed (same as jump speed)
                 this.isClimbing = true;
 
+                // Optional: Show climbing message
                 if (!this.lastClimbMessage || Date.now() - this.lastClimbMessage > 3000) {
                     this.voxelWorld.updateStatus('🧗 Climbing with claws!', 'discovery');
                     this.lastClimbMessage = Date.now();
                 }
+            } else if (wallInFront && !noOverhang) {
+                // Wall with overhang - can't climb
+                this.isClimbing = false;
+                if (!this.lastOverhangWarning || Date.now() - this.lastOverhangWarning > 2000) {
+                    this.voxelWorld.updateStatus('⚠️ Overhang blocking climb!', 'error');
+                    this.lastOverhangWarning = Date.now();
+                }
             } else {
+                // No wall to climb
                 this.isClimbing = false;
             }
         } else {
@@ -77,11 +103,12 @@ export class CraftedTools {
 
         // 🛡️ NO FALL DAMAGE: Works even if not selected, just in inventory
         const hasClawsAnywhere = this.checkForClimbingClaws();
-        if (hasClawsAnywhere && this.voxelWorld.player.velocity && this.voxelWorld.player.velocity.y < -0.5) {
+        if (hasClawsAnywhere && this.voxelWorld.player.velocity && this.voxelWorld.player.velocity < -0.5) {
             // Player is falling fast - prepare to negate fall damage
             this.voxelWorld.player.userData = this.voxelWorld.player.userData || {};
             this.voxelWorld.player.userData.hasClimbingClaws = true;
         }
+        */
     }
 
     /**

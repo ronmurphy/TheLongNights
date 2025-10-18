@@ -11109,6 +11109,11 @@ class NebulaVoxelApp {
             // Update stamina (this handles drain, regen, and performance cleanup!)
             this.staminaSystem.update(deltaTime, isMoving, isRunning, terrain);
 
+            // 🧗 DISABLED: Climbing claws system (too many issues, disabled for now)
+            // if (this.craftedTools) {
+            //     this.craftedTools.updateClimbingClaws();
+            // }
+
             // 🪂 Update fall damage tracking
             if (this.playerHP) {
                 this.playerHP.updateFallDamage();
