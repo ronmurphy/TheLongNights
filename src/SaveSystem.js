@@ -341,15 +341,58 @@ export class SaveSystem {
         vw.hotbarSlots = data.inventory.hotbarSlots;
         vw.backpackSlots = data.inventory.backpackSlots;
         vw.selectedSlot = data.inventory.selectedSlot;
-        vw.inventoryMetadata = data.inventory.metadata;
 
-        // Restore crafted objects
+        // 🔧 FIX: Merge saved metadata with existing metadata (don't overwrite new items)
+        if (data.inventory.metadata) {
+            if (!vw.inventoryMetadata) vw.inventoryMetadata = {};
+            vw.inventoryMetadata = { ...vw.inventoryMetadata, ...data.inventory.metadata };
+            console.log(`✅ Restored inventory metadata for ${Object.keys(data.inventory.metadata).length} items`);
+        }
+
+        // 🔥 Clear existing crafted objects before restoring
+        if (vw.craftedObjects) {
+            for (const [key, objectData] of Object.entries(vw.craftedObjects)) {
+                // Remove mesh from scene
+                if (objectData.mesh) {
+                    vw.scene.remove(objectData.mesh);
+
+                    // Clean up geometry and materials
+                    if (objectData.mesh.geometry) objectData.mesh.geometry.dispose();
+                    if (objectData.mesh.material) {
+                        if (Array.isArray(objectData.mesh.material)) {
+                            objectData.mesh.material.forEach(mat => mat.dispose());
+                        } else {
+                            objectData.mesh.material.dispose();
+                        }
+                    }
+                }
+            }
+            vw.craftedObjects = {}; // Clear the tracking object
+            console.log('🧹 Cleared existing crafted objects');
+        }
+
+        // Restore crafted objects from save data
         if (data.craftedObjects && data.craftedObjects.length > 0) {
+            console.log(`🔥 Restoring ${data.craftedObjects.length} crafted objects...`);
+
             data.craftedObjects.forEach(objData => {
-                // Re-spawn crafted objects
-                // This will need integration with your crafting system
-                console.log(`🔥 Restoring crafted object: ${objData.itemId}`);
+                try {
+                    // Restore inventory metadata for this item (critical!)
+                    if (objData.metadata && objData.itemId) {
+                        vw.inventoryMetadata[objData.itemId] = objData.metadata;
+                    }
+
+                    // Re-create the crafted object using placeCraftedObject
+                    const pos = objData.position;
+                    vw.placeCraftedObject(pos.x, pos.y, pos.z, objData.itemId);
+
+                    console.log(`✅ Restored: ${objData.itemId} at (${pos.x}, ${pos.y}, ${pos.z})`);
+                } catch (error) {
+                    console.error(`❌ Failed to restore ${objData.itemId}:`, error);
+                }
             });
+
+            console.log(`✅ Restored ${data.craftedObjects.length} crafted objects`);
         }
 
         // Restore navigation

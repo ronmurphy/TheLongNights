@@ -1029,7 +1029,8 @@ class NebulaVoxelApp {
             craftedObject.updateMatrix();
 
             // PHASE 3: Smart Floor Positioning - treat target as floor surface
-            const floorY = y; // Target position becomes the floor
+            // 🔧 FIX: placePos.y is the CENTER of the air block, so floor surface is 0.5 below
+            const floorY = y - 0.5; // Actual floor surface (top of clicked block)
             const objectY = floorY + dimensions.height / 2; // Object bottom sits on floor, center vertically
 
             // Handle objects larger than 1x1 footprint by centering them on target
@@ -11280,7 +11281,8 @@ class NebulaVoxelApp {
                                 collision: true,
                                 craftedObject: true,
                                 objectName: objectData.metadata.name,
-                                objectId: objectData.itemId
+                                objectId: objectData.itemId,
+                                blockY: craftedHitbox.maxY - 0.5  // 🔧 FIX: Report top of object as block coordinate
                             };
                         }
                     }

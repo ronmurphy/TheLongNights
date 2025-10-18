@@ -9,6 +9,7 @@ import { ElectronFileSystem } from '../utils/ElectronFileSystem.js';
 import { QuestRunner } from '../quests/QuestRunner.js';
 import { itemPicker } from './ItemPicker.js';
 import { entityPicker } from './EntityPicker.js';
+import { TutorialToSargemParser } from '../utils/TutorialToSargemParser.js';
 
 export class SargemQuestEditor {
     constructor(voxelWorld) {
@@ -155,8 +156,8 @@ export class SargemQuestEditor {
         canvas.id = 'sargem-canvas';
         canvas.style.cssText = `
             position: absolute;
-            width: 3000px;
-            height: 3000px;
+            width: 10000px;
+            height: 10000px;
             transform-origin: 0 0;
             background-image:
                 linear-gradient(to right, rgba(52, 152, 219, 0.1) 1px, transparent 1px),
@@ -209,6 +210,7 @@ export class SargemQuestEditor {
 
         buttons.appendChild(this.createButton('📂 Open', () => this.openFile()));
         buttons.appendChild(this.createButton('📄 New', () => this.newFile()));
+        buttons.appendChild(this.createButton('📚 Load Tutorial', () => this.loadTutorialJSON(), '#9b59b6'));
         buttons.appendChild(this.createButton('▶️ Test Quest', () => this.testQuest(), '#0e8c0e'));
         buttons.appendChild(this.createButton('💾 Quick Save', () => this.quickSave(), '#0e639c'));
         buttons.appendChild(this.createButton('💾 Save As...', () => this.saveAs(), '#0e639c'));
@@ -1717,6 +1719,76 @@ export class SargemQuestEditor {
             }
         } catch (error) {
             console.error('Temp file check error:', error);
+        }
+    }
+
+    /**
+     * 📚 Load Tutorial JSON - Convert tutorialScripts.json to Sargem nodes
+     */
+    async loadTutorialJSON() {
+        console.log('📚 Loading tutorialScripts.json...');
+
+        try {
+            // Use ElectronFileSystem to load (handles both Electron and web paths)
+            const tutorialData = await ElectronFileSystem.autoLoadTutorials();
+
+            if (!tutorialData) {
+                throw new Error('tutorialScripts.json not found or failed to load');
+            }
+
+            console.log('✅ Loaded tutorial data:', tutorialData);
+
+            // Create backup FIRST
+            const backupKey = TutorialToSargemParser.createBackup(tutorialData);
+            if (backupKey) {
+                alert(`✅ Backup created: ${backupKey}\n\nYou can restore from backups using the browser console:\nTutorialToSargemParser.listBackups()`);
+            }
+
+            // Convert to Sargem format
+            const { nodes, connections } = TutorialToSargemParser.convertToNodes(tutorialData);
+            console.log(`🐈‍⬛ Converted ${nodes.length} nodes, ${connections.length} connections`);
+
+            // Clear existing nodes
+            this.nodes = [];
+            this.connections = [];
+            this.clearCanvas();
+
+            // Load converted nodes
+            this.nodes = nodes;
+            this.connections = connections;
+
+            // Update lastNodeId and lastConnectionId
+            this.lastNodeId = Math.max(...nodes.map(n => n.id), 0) + 1;
+            this.lastConnectionId = Math.max(...connections.map(c => c.id), 0) + 1;
+
+            // Render all nodes
+            this.nodes.forEach(node => this.renderNode(node));
+            this.redrawConnections();
+
+            // Mark as having changes
+            this.hasUnsavedChanges = true;
+
+            alert(`✅ Loaded ${Object.keys(tutorialData.tutorials).length} tutorials as ${nodes.length} dialogue nodes!\n\nYou can now edit them visually and save back to Sargem format.`);
+
+        } catch (error) {
+            console.error('Failed to load tutorial JSON:', error);
+            alert(`❌ Failed to load tutorialScripts.json:\n${error.message}\n\nMake sure the file exists at:\n- Electron: data/tutorialScripts.json\n- Web: assets/data/tutorialScripts.json`);
+        }
+    }
+
+    /**
+     * Clear the canvas of all nodes
+     */
+    clearCanvas() {
+        const canvas = document.getElementById('sargem-canvas');
+        if (canvas) {
+            // Remove all node elements
+            const nodeElements = canvas.querySelectorAll('.sargem-node');
+            nodeElements.forEach(el => el.remove());
+
+            // Clear SVG connections
+            const svg = canvas.querySelector('svg');
+            if (svg) svg.remove();
         }
     }
 }
