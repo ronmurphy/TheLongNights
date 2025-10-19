@@ -557,6 +557,30 @@ function createWindow() {
             `);
           }
         },
+        { type: 'separator' },
+        {
+          label: 'Sargem Quest Editor',
+          accelerator: 'CmdOrCtrl+S',
+          click: () => {
+            mainWindow.webContents.executeJavaScript(`
+              if (window.voxelWorld && window.voxelWorld.sargemQuestEditor) {
+                window.voxelWorld.sargemQuestEditor.open();
+              }
+            `);
+          }
+        },
+        {
+          label: 'RandyM Structure Designer',
+          accelerator: 'CmdOrCtrl+M',
+          click: () => {
+            mainWindow.webContents.executeJavaScript(`
+              if (window.voxelWorld && window.voxelWorld.randyMStructureDesigner) {
+                window.voxelWorld.randyMStructureDesigner.open();
+              }
+            `);
+          }
+        },
+        { type: 'separator' },
         {
           label: 'FPS Counter',
           type: 'checkbox',

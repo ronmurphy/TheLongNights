@@ -32,6 +32,9 @@ export class MusicSystem {
 
         // Autoplay setting
         this.autoplayEnabled = this.loadAutoplay();
+        
+        // Manual stop flag (prevents auto-restart from time updates)
+        this.manuallyStopped = false;
 
         // Day/Night cycle tracking
         this.lastTimeOfDay = null;
@@ -184,6 +187,11 @@ export class MusicSystem {
             // Tracks not initialized yet - silently ignore (they'll start when ready)
             return;
         }
+        
+        // If music was manually stopped, don't auto-restart
+        if (this.manuallyStopped) {
+            return;
+        }
 
         // Determine if it's day or night
         // Day: 8am-5pm (8-17), Night: 5pm-8am (17-24, 0-8)
@@ -220,6 +228,9 @@ export class MusicSystem {
         if (!track) return;
 
         console.log(`${emoji} Starting ${mode} music...`);
+        
+        // Clear manual stop flag - user wants music now
+        this.manuallyStopped = false;
 
         // Ensure track is loaded before playing
         if (track.state() === 'unloaded') {
@@ -322,7 +333,8 @@ export class MusicSystem {
         }
         this.currentMode = null;
         this.isPlaying = false;
-        console.log('🎵 Day/Night music stopped');
+        this.manuallyStopped = true; // Prevent auto-restart from time updates
+        console.log('🎵 Day/Night music stopped (manual)');
     }
 
     /**

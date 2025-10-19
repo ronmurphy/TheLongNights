@@ -64,6 +64,16 @@ window.addEventListener('DOMContentLoaded', () => {
     window['testChristmas'] = () => app.testChristmas();
     console.log('🎄 testDouglas() and testChristmas() available globally');
 
+    // Add global convenience functions for testing sound effects
+    window['sfxSystem'] = app.sfxSystem;
+    window['playSFX'] = (soundId, variation = false) => {
+      if (variation) {
+        return app.sfxSystem.playWithVariation(soundId);
+      }
+      return app.sfxSystem.play(soundId);
+    };
+    console.log('🔊 sfxSystem and playSFX() available globally');
+
     // === MAIN MENU SYSTEM ===
     // Show main menu with New Game / Load Game / Dev Mode options
     const mainMenu = new MainMenu(

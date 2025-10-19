@@ -461,10 +461,15 @@ export class SargemQuestEditor {
                 // Allow Escape to work even when typing
                 if (e.key === 'Escape') {
                     activeElement.blur(); // Unfocus the input
+                    e.stopPropagation(); // Prevent game from getting Escape
                     return;
                 }
-                return; // Don't intercept other keys while typing
+                // Let input/textarea handle all other keys normally
+                return;
             }
+            
+            // NOT typing - prevent ALL keys from reaching the game
+            e.stopPropagation();
             
             if (e.key === 'Escape') this.close();
             if (e.ctrlKey && e.key === 's') {
@@ -1905,9 +1910,9 @@ export class SargemQuestEditor {
                 npcId: 'goblin',
                 emoji: '👹',
                 name: 'Grik',
-                x: 10,
-                y: 5,
-                z: 0,
+                x: 'PX+5',
+                y: 'PY',
+                z: 'PZ+3',
                 scale: 1
             },
             'removeNPC': {
@@ -1918,9 +1923,9 @@ export class SargemQuestEditor {
                 type: 'info'
             },
             'teleport': {
-                x: 100,
-                y: 10,
-                z: -50
+                x: 'PX+50',
+                y: 'PY+10',
+                z: 'PZ'
             },
             'setTime': {
                 hour: 12.0
@@ -1942,10 +1947,10 @@ export class SargemQuestEditor {
             'stopMusic': 'Stop the currently playing music. No parameters needed.',
             'playSound': 'Play a one-shot sound effect. soundId: zombie, cat, ghost. Use variation:true for random pitch.',
             'setFlag': 'Set a persistent quest flag. Use for tracking quest progress.',
-            'spawnNPC': 'Spawn an NPC at coordinates. Set emoji, position, and scale.',
+            'spawnNPC': 'Spawn an NPC. Coords can be absolute (100) or player-relative (PX+5, PY, PZ-3). Spawns in same chunk as player.',
             'removeNPC': 'Remove an NPC by its ID. Use the ID from spawnNPC.',
             'showStatus': 'Display a status message. Types: info, error, discovery, warning',
-            'teleport': 'Teleport player to coordinates. Requires x, y, z.',
+            'teleport': 'Teleport player. Coords can be absolute (100) or player-relative (PX+50, PY+10, PZ).',
             'setTime': 'Change time of day. Hour is 0-24 (e.g. 12.5 = 12:30 PM)',
             'setWeather': 'Set weather type: clear, rain, storm, snow, fog (coming soon)'
         };

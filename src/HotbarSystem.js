@@ -208,6 +208,9 @@ export class HotbarSystem {
             // Only handle when hotbar is visible and game is active
             if (!this.hotbarElement || this.hotbarElement.style.display === 'none') return;
             if (this.voxelWorld.isPaused) return;
+            
+            // ⛔ Check if controls are disabled (Sargem/editors open)
+            if (!this.voxelWorld.controlsEnabled) return;
 
             // Keys 1-8 select slots
             const num = parseInt(e.key);

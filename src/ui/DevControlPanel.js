@@ -54,17 +54,22 @@ export class DevControlPanel {
         this.modal = null;
         this.isOpen = false;
 
-        // Re-enable game controls
-        if (this.voxelWorld.controlsEnabled !== undefined) {
+        // Only re-enable game controls if no other editors are open
+        const sargemOpen = this.voxelWorld.sargemQuestEditor?.isOpen;
+        const randyOpen = this.voxelWorld.randyMStructureDesigner?.isOpen;
+        
+        if (!sargemOpen && !randyOpen) {
             this.voxelWorld.controlsEnabled = true;
+            
+            // Re-engage pointer lock
+            setTimeout(() => {
+                if (this.voxelWorld.renderer && this.voxelWorld.renderer.domElement) {
+                    this.voxelWorld.renderer.domElement.requestPointerLock();
+                }
+            }, 100);
+        } else {
+            console.log('🛠️ Dev Control Panel closed (controls still disabled - editor is open)');
         }
-
-        // Re-engage pointer lock
-        setTimeout(() => {
-            if (this.voxelWorld.renderer && this.voxelWorld.renderer.domElement) {
-                this.voxelWorld.renderer.domElement.requestPointerLock();
-            }
-        }, 100);
 
         console.log('🛠️ Dev Control Panel closed');
     }

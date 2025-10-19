@@ -662,7 +662,9 @@ export class QuestRunner {
     triggerStopMusic() {
         console.log('🎵 Stopping music');
         if (this.voxelWorld?.musicSystem) {
+            // Stop both legacy single track and day/night tracks
             this.voxelWorld.musicSystem.stop();
+            this.voxelWorld.musicSystem.stopDayNightMusic();
             this.voxelWorld.updateStatus('🎵 Music stopped', 'info');
         }
     }
@@ -722,14 +724,57 @@ export class QuestRunner {
     }
 
     /**
+     * Parse coordinate that can be absolute or player-relative
+     * Examples: 100, "PX", "PX+5", "PY-10"
+     * @param {string|number} coord - Coordinate value
+     * @param {string} axis - 'x', 'y', or 'z'
+     * @returns {number} Parsed coordinate
+     */
+    parseCoordinate(coord, axis) {
+        if (coord === null || coord === undefined) return 0;
+        
+        // If it's already a number, return it
+        if (typeof coord === 'number') return coord;
+        
+        // Convert to string and trim
+        const str = String(coord).trim().toUpperCase();
+        
+        // Check if it's player-relative
+        const axisKey = 'P' + axis.toUpperCase();
+        if (str.startsWith(axisKey)) {
+            const playerPos = this.voxelWorld?.player?.position;
+            if (!playerPos) {
+                console.warn(`⚠️ Player position not available for ${str}`);
+                return 0;
+            }
+            
+            const basePos = playerPos[axis];
+            
+            // Check for offset (e.g., "PX+5" or "PY-10")
+            const offsetMatch = str.match(/[+-]\d+/);
+            if (offsetMatch) {
+                const offset = parseFloat(offsetMatch[0]);
+                return basePos + offset;
+            }
+            
+            // No offset, just return player position
+            return basePos;
+        }
+        
+        // Try to parse as number
+        const parsed = parseFloat(str);
+        return isNaN(parsed) ? 0 : parsed;
+    }
+
+    /**
      * Spawn an NPC
-     * params: { npcId: 'goblin', x: 10, y: 5, z: -3, scale: 1 }
+     * params: { npcId: 'goblin', x: 10 or "PX+5", y: 5 or "PY", z: -3 or "PZ-2", scale: 1 }
      */
     triggerSpawnNPC(params) {
         const npcId = params.npcId || params.id || '';
-        const x = params.x ?? 0;
-        const y = params.y ?? 5;
-        const z = params.z ?? 0;
+        const x = this.parseCoordinate(params.x ?? 0, 'x');
+        const y = this.parseCoordinate(params.y ?? 5, 'y');
+        const z = this.parseCoordinate(params.z ?? 0, 'z');
         const scale = params.scale ?? 1;
         const name = params.name || npcId;
 
@@ -738,7 +783,13 @@ export class QuestRunner {
             return;
         }
 
-        console.log(`👤 Spawning NPC: ${npcId} at (${x}, ${y}, ${z})`);
+        const playerPos = this.voxelWorld?.player?.position;
+        console.log(`👤 Spawning NPC: ${npcId} "${name}" at (${x.toFixed(1)}, ${y.toFixed(1)}, ${z.toFixed(1)})`);
+        if (playerPos) {
+            console.log(`   Player is at (${playerPos.x.toFixed(1)}, ${playerPos.y.toFixed(1)}, ${playerPos.z.toFixed(1)})`);
+            const dist = Math.sqrt(Math.pow(x - playerPos.x, 2) + Math.pow(z - playerPos.z, 2));
+            console.log(`   Distance from player: ${dist.toFixed(1)} blocks`);
+        }
         
         if (this.voxelWorld?.npcManager) {
             const npc = this.voxelWorld.npcManager.spawn({
@@ -753,6 +804,7 @@ export class QuestRunner {
             // Track quest NPCs for cleanup
             this.questNPCs.push(npc);
             
+            console.log(`   ✅ NPC spawned with ID: ${npc.id}`);
             this.voxelWorld.updateStatus(`👤 ${name} appeared!`, 'discovery');
         } else {
             console.warn('⚠️ NPCManager not available');
@@ -801,23 +853,22 @@ export class QuestRunner {
 
     /**
      * Teleport player to coordinates
-     * params: { x: 100, y: 10, z: -50 }
+     * params: { x: 100 or "PX+10", y: 10 or "PY", z: -50 or "PZ-5" }
      */
     triggerTeleport(params) {
-        const x = params.x ?? null;
-        const y = params.y ?? null;
-        const z = params.z ?? null;
-
-        if (x === null || y === null || z === null) {
-            console.warn('⚠️ teleport trigger missing x/y/z parameters');
-            return;
-        }
+        const x = this.parseCoordinate(params.x, 'x');
+        const y = this.parseCoordinate(params.y, 'y');
+        const z = this.parseCoordinate(params.z, 'z');
 
         console.log(`🌀 Teleporting player to (${x}, ${y}, ${z})`);
         
-        if (this.voxelWorld?.camera) {
+        if (this.voxelWorld) {
+            // Set both player position (physics) and camera position (view)
+            this.voxelWorld.player.position.x = x;
+            this.voxelWorld.player.position.y = y;
+            this.voxelWorld.player.position.z = z;
             this.voxelWorld.camera.position.set(x, y, z);
-            this.voxelWorld.updateStatus(`🌀 Teleported to (${x}, ${y}, ${z})`, 'info');
+            this.voxelWorld.updateStatus(`🌀 Teleported to (${x.toFixed(1)}, ${y.toFixed(1)}, ${z.toFixed(1)})`, 'info');
         }
     }
 

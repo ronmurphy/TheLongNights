@@ -37,6 +37,7 @@ import { LODDebugOverlay } from './rendering/LODDebugOverlay.js';
 import ChristmasSystem from './ChristmasSystem.js';
 import { FarmingSystem } from './FarmingSystem.js';
 import { MusicSystem } from './MusicSystem.js';
+import { SoundEffectsSystem } from './SoundEffectsSystem.js';
 import { marked } from 'marked';
 import { SaveSystem } from './SaveSystem.js';
 import { AnimalSystem } from './AnimalSystem.js';
@@ -229,7 +230,11 @@ class NebulaVoxelApp {
         this.musicSystem = new MusicSystem();
         console.log('🎵 MusicSystem initialized');
 
-        // 💾 Initialize SaveSystem (with Electron API support)
+        // � Initialize SoundEffectsSystem
+        this.sfxSystem = new SoundEffectsSystem();
+        console.log('🔊 SoundEffectsSystem initialized');
+
+        // �💾 Initialize SaveSystem (with Electron API support)
         this.saveSystem = new SaveSystem(this, window.electronAPI || null);
         this.gameTime = 0; // Track total playtime in seconds
         this.gameTimeInterval = setInterval(() => {
@@ -266,7 +271,15 @@ class NebulaVoxelApp {
             console.log('🎵 Autoplay disabled - music not started');
         }
 
-        // 🔧 Initialize CraftedTools handler
+        // � Preload sound effects
+        this.sfxSystem.preloadBatch({
+            'zombie': 'sfx/Zombie.ogg',
+            'cat': 'sfx/CatMeow.ogg',
+            'ghost': 'sfx/Ghost.ogg'
+        });
+        console.log('🔊 Sound effects preloaded: zombie, cat, ghost');
+
+        // �🔧 Initialize CraftedTools handler
         this.craftedTools = new CraftedTools(this);
         console.log('🔧 CraftedTools handler initialized');
 
@@ -11553,6 +11566,14 @@ class NebulaVoxelApp {
         // Keyboard controls
         const keydownHandler = (e) => {
             const key = e.key.toLowerCase();
+            
+            // ⛔ FIRST CHECK: Is Sargem or another editor open? Block ALL keys except special cases
+            if (!this.controlsEnabled) {
+                // Allow ESC to close modals/UI elements
+                if (key !== 'escape') {
+                    return; // Block everything else when controls disabled
+                }
+            }
 
             // ESC or M key: Close journal if open (handle before controlsEnabled check)
             if ((key === 'escape' || key === 'm') && this.worldMapModal && this.worldMapModal.style.display !== 'none') {
@@ -11610,7 +11631,22 @@ class NebulaVoxelApp {
                 }
             }
 
-            if (!this.controlsEnabled) return;
+            // Check if user is typing in an input field (Sargem, Randy, etc.)
+            const activeElement = document.activeElement;
+            const isTyping = activeElement && (
+                activeElement.tagName === 'INPUT' ||
+                activeElement.tagName === 'TEXTAREA' ||
+                activeElement.isContentEditable
+            );
+
+            // If typing OR controls disabled, don't process game shortcuts
+            if (isTyping || !this.controlsEnabled) {
+                // Also prevent default and stop propagation for number keys while typing
+                if (isTyping && key >= '0' && key <= '9') {
+                    e.stopPropagation();
+                }
+                return;
+            }
 
             // Movement keys (including Shift for sprinting)
             if (['w', 'a', 's', 'd', ' ', 'shift'].includes(key)) {
