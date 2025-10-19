@@ -170,6 +170,8 @@ export class TutorialScriptSystem {
         const playerData = JSON.parse(localStorage.getItem('NebulaWorld_playerData') || '{}');
         const newCompanionId = playerData.activeCompanion || playerData.starterMonster || 'rat';
         
+        console.log(`🔄 TutorialSystem refreshing companion: ${newCompanionId} (was: ${this.companionId})`);
+        
         // Only update if changed
         if (newCompanionId !== this.companionId) {
             this.companionId = newCompanionId;
@@ -178,15 +180,15 @@ export class TutorialScriptSystem {
             const data = await this.loadEntityData();
             if (data && data.monsters && data.monsters[this.companionId]) {
                 this.companionName = data.monsters[this.companionId].name;
+                console.log(`🔄 Companion updated: ${this.companionId} → ${this.companionName}`);
             } else {
                 // Fallback to capitalized ID
                 this.companionName = this.companionId
                     .split('_')
                     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
                     .join(' ');
+                console.warn(`⚠️ No entity data for ${this.companionId}, using name: ${this.companionName}`);
             }
-            
-            console.log(`🎓 TutorialScriptSystem companion updated: ${this.companionName} (${this.companionId})`);
         }
     }
 

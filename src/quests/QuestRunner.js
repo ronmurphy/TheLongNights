@@ -103,7 +103,7 @@ export class QuestRunner {
     /**
      * Execute a node based on its type
      */
-    executeNode(node) {
+    async executeNode(node) {
         if (!node) {
             console.log('✅ Quest complete - no more nodes');
             this.stopQuest();
@@ -149,6 +149,10 @@ export class QuestRunner {
             
             case 'trigger':
                 this.executeTrigger(node);
+                break;
+            
+            case 'link_script':
+                await this.executeLinkScript(node);
                 break;
             
             default:
@@ -553,5 +557,151 @@ export class QuestRunner {
             }
         });
         this.questNPCs = [];
+    }
+
+    /**
+     * 🔗 Execute link_script node - Load and run another quest script
+     */
+    async executeLinkScript(node) {
+        const data = node.data;
+        const scriptPath = data.scriptPath || data.nextScript;
+        
+        if (!scriptPath) {
+            console.error('❌ link_script node missing scriptPath!');
+            this.stopQuest();
+            return;
+        }
+
+        console.log(`🔗 Linking to script: ${scriptPath}`);
+        
+        // IMPORTANT: Call the completion callback BEFORE linking
+        // This ensures playerData is saved before the linked script needs template variables
+        if (this.onQuestComplete) {
+            console.log('📊 Link_script calling completion callback with choices:', this.choiceTracking);
+            const callback = this.onQuestComplete;
+            this.onQuestComplete = null; // Clear so stopQuest doesn't call it again
+            callback(this.choiceTracking);
+            
+            // Wait a brief moment for the callback to finish saving data
+            await new Promise(resolve => setTimeout(resolve, 50));
+        }
+        
+        try {
+            // Load the linked script
+            const linkedQuestData = await this.loadQuestFile(scriptPath);
+            
+            // Apply template variable replacement if enabled
+            if (data.useTemplates) {
+                this.applyTemplateVariables(linkedQuestData);
+            }
+            
+            // DON'T stop the quest or call callbacks - just transition to new script
+            // The callback will only fire when the FINAL script in the chain ends
+            console.log('🔄 Transitioning to linked script (callback already fired)');
+            
+            // Clean up current quest state
+            this.cleanupNPCs();
+            
+            // Replace quest data with linked script
+            this.nodes = linkedQuestData.nodes || [];
+            this.connections = linkedQuestData.connections || [];
+            this.currentQuest = linkedQuestData;
+            this.currentNodeId = null;
+            
+            // Find and execute start node of linked script
+            const startNode = this.findStartNode();
+            if (startNode) {
+                this.executeNode(startNode);
+            } else {
+                console.error('❌ No start node in linked script!');
+                this.stopQuest();
+            }
+            
+        } catch (error) {
+            console.error(`❌ Failed to load linked script: ${scriptPath}`, error);
+            this.stopQuest();
+        }
+    }
+
+    /**
+     * Load a quest file from assets/data/
+     */
+    async loadQuestFile(filename) {
+        // Ensure .json extension
+        const path = filename.endsWith('.json') ? filename : `${filename}.json`;
+        const fullPath = `assets/data/${path}`;
+        
+        console.log(`📖 Loading quest file: ${fullPath}`);
+        
+        const response = await fetch(fullPath);
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const questData = await response.json();
+        console.log(`✅ Loaded quest: ${questData.nodes?.length || 0} nodes`);
+        
+        return questData;
+    }
+
+    /**
+     * Apply template variable replacement to all dialogue nodes
+     * {{companion_id}} → "elf_male"
+     * {{companion_name}} → "Elf"
+     * {{player_race}} → "Human"
+     */
+    applyTemplateVariables(questData) {
+        const playerData = JSON.parse(localStorage.getItem('NebulaWorld_playerData') || '{}');
+        const companionId = playerData.activeCompanion || playerData.starterMonster || 'rat';
+        
+        // Get companion name from entities.json (synchronous for now, could be cached)
+        let companionName = companionId;
+        const parts = companionId.split('_');
+        if (parts.length > 0) {
+            companionName = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
+        }
+        
+        const playerRace = playerData.character?.race || 'unknown';
+        const playerRaceName = playerRace.charAt(0).toUpperCase() + playerRace.slice(1);
+        
+        console.log(`🔄 Applying template variables:`, {
+            '{{companion_id}}': companionId,
+            '{{companion_name}}': companionName,
+            '{{player_race}}': playerRaceName
+        });
+        
+        // Replace variables in all dialogue and choice nodes
+        if (questData.nodes) {
+            questData.nodes.forEach(node => {
+                if (node.data) {
+                    // Replace in text fields
+                    if (node.data.text) {
+                        node.data.text = node.data.text
+                            .replace(/\{\{companion_id\}\}/g, companionId)
+                            .replace(/\{\{companion_name\}\}/g, companionName)
+                            .replace(/\{\{player_race\}\}/g, playerRaceName);
+                    }
+                    
+                    // Replace in question fields
+                    if (node.data.question) {
+                        node.data.question = node.data.question
+                            .replace(/\{\{companion_id\}\}/g, companionId)
+                            .replace(/\{\{companion_name\}\}/g, companionName)
+                            .replace(/\{\{player_race\}\}/g, playerRaceName);
+                    }
+                    
+                    // Replace in speaker/character fields
+                    if (node.data.speaker) {
+                        node.data.speaker = node.data.speaker
+                            .replace(/\{\{companion_id\}\}/g, companionId);
+                    }
+                    
+                    if (node.data.character) {
+                        node.data.character = node.data.character
+                            .replace(/\{\{companion_id\}\}/g, companionId);
+                    }
+                }
+            });
+        }
     }
 }

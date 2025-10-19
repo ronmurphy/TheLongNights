@@ -7196,9 +7196,22 @@ class NebulaVoxelApp {
                 this.tutorialSystem.onBackpackOpened();
             }
 
-            // 🖼️ Create companion portrait after backpack found
-            if (this.companionPortrait) {
-                this.companionPortrait.create();
+            // 🖼️ OLD: Companion portrait (DISABLED - replaced by PlayerCompanionUI)
+            // if (this.companionPortrait) {
+            //     this.companionPortrait.create();
+            // }
+
+            // 🖼️ NEW: Set up PlayerCompanionUI with default test companion (goblin_male)
+            if (this.playerCompanionUI) {
+                // Create test playerData if it doesn't exist
+                let playerData = JSON.parse(localStorage.getItem('NebulaWorld_playerData') || '{}');
+                if (!playerData.starterMonster) {
+                    playerData.starterMonster = 'goblin_male'; // Test companion
+                    playerData.monsterCollection = ['goblin_male'];
+                    localStorage.setItem('NebulaWorld_playerData', JSON.stringify(playerData));
+                    console.log('🧪 Test companion set: goblin_male');
+                }
+                this.playerCompanionUI.show();
             }
 
             console.log('✅ UI unlocked! Hotbar, backpack, companion, and workbench are now available.');

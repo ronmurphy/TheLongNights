@@ -79,12 +79,10 @@
     },
     {
       "id": "end",
-      "type": "dialogue",
+      "type": "link_script",
       "data": {
-        "speaker": "narrator",
-        "name": "The Long Nights",
-        "text": "Your journey begins...",
-        "emoji": "🌙"
+        "scriptPath": "companion_introduction.json",
+        "useTemplates": true
       }
     }
   ],

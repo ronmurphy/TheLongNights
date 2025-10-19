@@ -117,7 +117,11 @@ export class PlayerCharacter {
         const allRaces = ['human', 'elf', 'dwarf', 'goblin'];
         const availableCompanions = allRaces.filter(r => r !== this.race);
         this.preferredCompanion = availableCompanions[answers.companion % availableCompanions.length];
-        console.log(`  Q4: Preferred companion → ${this.preferredCompanion} (from ${availableCompanions.join(', ')})`);
+        
+        // Randomly assign companion gender (Daggerfall-style)
+        this.companionGender = Math.random() < 0.5 ? 'male' : 'female';
+        
+        console.log(`  Q4: Preferred companion → ${this.preferredCompanion} (${this.companionGender})`);
 
         // Question 5: Gender Selection
         const genders = ['male', 'female', 'nonbinary', 'random'];
@@ -248,7 +252,8 @@ export class PlayerCharacter {
             hp: `${this.currentHP}/${this.maxHP}`,
             stamina: `${Math.floor(this.currentStamina)}/${this.maxStamina}`,
             startingItems: this.startingItems,
-            preferredCompanion: this.preferredCompanion
+            preferredCompanion: this.preferredCompanion,
+            companionGender: this.companionGender  // Include companion gender!
         };
     }
 
@@ -267,6 +272,7 @@ export class PlayerCharacter {
             currentStamina: this.currentStamina,
             startingItems: this.startingItems,
             preferredCompanion: this.preferredCompanion,
+            companionGender: this.companionGender,  // Save companion gender!
             quizAnswers: this.quizAnswers,
             equipment: this.equipment
         };
@@ -289,6 +295,7 @@ export class PlayerCharacter {
         this.currentStamina = data.currentStamina || 100;
         this.startingItems = data.startingItems || [];
         this.preferredCompanion = data.preferredCompanion || 'goblin_grunt';
+        this.companionGender = data.companionGender || 'male';  // Load companion gender!
         this.quizAnswers = data.quizAnswers || this.quizAnswers;
         this.equipment = data.equipment || this.equipment;
 

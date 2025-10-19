@@ -91,7 +91,11 @@ export class CompanionPortrait {
         // Portrait image
         const portrait = document.createElement('img');
         portrait.id = 'companion-portrait-img';
-        portrait.src = `art/entities/${companionStats.sprite_portrait || companionId + '.jpeg'}`;
+        // Check if it's a companion (use player_avatars) or monster (use entities)
+        const isCompanion = companionStats.type === 'companion';
+        const folder = isCompanion ? 'player_avatars' : 'entities';
+        portrait.src = `art/${folder}/${companionStats.sprite_portrait || companionId + '.jpeg'}`;
+        console.log(`🖼️ Loading portrait from ${folder}: ${companionStats.sprite_portrait}`);
         portrait.style.cssText = `
             width: 100%;
             height: 100px;

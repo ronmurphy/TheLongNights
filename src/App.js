@@ -126,56 +126,29 @@ window.addEventListener('DOMContentLoaded', () => {
               console.log('🖼️ Player avatar UI displayed');
             }
 
-            // Use companion from quiz Q4 (no UI chooser needed)
-            const selectedCompanion = summary.preferredCompanion;
-            console.log(`🤝 Companion assigned from quiz: ${selectedCompanion}`);
+            // Use companion from quiz Q4 with randomly assigned gender (Daggerfall-style)
+            // Fallback to 'male' if gender somehow undefined
+            const companionGender = summary.companionGender || 'male';
+            const companionId = `${summary.preferredCompanion}_${companionGender}`;
+            console.log(`🤝 Companion assigned from quiz: ${companionId}`);
+            console.log(`   Race: ${summary.preferredCompanion}, Gender: ${companionGender}`);
+            console.log(`   Summary object:`, summary);
 
             // Save player data with starter companion AND character data
             const playerData = {
-              starterMonster: selectedCompanion,
-              monsterCollection: [selectedCompanion],
+              starterMonster: companionId,  // Full ID with gender: "elf_male", "dwarf_female", etc.
+              monsterCollection: [companionId],
               firstPlayTime: Date.now(),
               character: app.playerCharacter.save()  // Save character stats
             };
             localStorage.setItem('NebulaWorld_playerData', JSON.stringify(playerData));
-            console.log('✅ Player data saved!');
+            console.log('✅ Player data saved:', playerData);
 
-            // Load companion data and show tutorial (async wrapper)
-            (async () => {
-              const companionData = await ChatOverlay.loadCompanionData(selectedCompanion);
-              const companionName = companionData ? companionData.name : selectedCompanion;
-
-              // Show tutorial chat sequence
-              const chat = new ChatOverlay();
-              chat.showSequence([
-                {
-                  character: selectedCompanion,
-                  name: companionName,
-                  text: `Hey there! I'm your new companion. Let's get you set up for exploring!`
-                },
-                {
-                  character: selectedCompanion,
-                  name: companionName,
-                  text: `See that red dot on your minimap in the top-right? That's your Explorer's Pack with all your tools!`
-                },
-                {
-                  character: selectedCompanion,
-                  name: companionName,
-                  text: `Use WASD to move and your mouse to look around. If you spawn in a tree, just punch the leaves to break free!`
-                },
-                {
-                  character: selectedCompanion,
-                  name: companionName,
-                  text: `Walk up to the backpack (🎒) and hold left-click to pick it up. That'll unlock your inventory and tools. Good luck, explorer!`
-                }
-              ], () => {
-                // After chat sequence completes, spawn backpack in front of player
-                console.log('💬 Tutorial chat complete, spawning starter backpack...');
-                if (window.voxelApp && window.voxelApp.spawnStarterBackpack) {
-                  window.voxelApp.spawnStarterBackpack();
-                }
-              });
-            })();
+            // 🔗 Linked script handles companion introduction
+            // The personality quiz now links to companion_introduction.json
+            // which shows tutorial chat with template variables ({{companion_id}}, etc.)
+            // and spawns the starter backpack
+            console.log('� Quiz will link to companion_introduction.json...');
           });
         })
         .catch(error => {

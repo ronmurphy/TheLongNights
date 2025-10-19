@@ -286,15 +286,58 @@ export class PlayerCompanionUI {
     /**
      * Update loop (call from game loop)
      */
-    update() {
+    async update() {
         if (!this.voxelWorld || !this.voxelWorld.playerCharacter) return;
+
+        // Only show if player has created their character (has playerData saved)
+        const playerData = JSON.parse(localStorage.getItem('NebulaWorld_playerData') || '{}');
+        
+        // Don't show panels if no character data exists yet (before questions answered)
+        if (!playerData.character || !playerData.starterMonster) {
+            this.hide();
+            return;
+        }
 
         // Update player
         this.updatePlayer(this.voxelWorld.playerCharacter);
 
-        // Update companion (TODO: get companion data from game)
-        // For now, just hide it
-        // this.updateCompanion(null);
+        // Update companion - load from playerData
+        const companionId = playerData.activeCompanion || playerData.starterMonster;
+        
+        if (companionId) {
+            // Parse companion ID (e.g., "elf_male" → race: "elf", gender: "male")
+            const parts = companionId.split('_');
+            const race = parts[0] || 'human';
+            const gender = parts[1] || 'male';
+            
+            // Load companion data from entities.json
+            const entityData = await this.loadCompanionData(companionId);
+            const companionData = {
+                race: race,
+                gender: gender,
+                name: entityData ? entityData.name : race.charAt(0).toUpperCase() + race.slice(1),
+                currentHP: playerData.companionHP?.[companionId] || (entityData?.hp || 10),
+                maxHP: entityData?.hp || 10
+            };
+            
+            this.updateCompanion(companionData);
+        } else {
+            this.updateCompanion(null);
+        }
+    }
+    
+    /**
+     * Load companion data from entities.json
+     */
+    async loadCompanionData(companionId) {
+        try {
+            const response = await fetch('art/entities/entities.json');
+            const data = await response.json();
+            return data.monsters[companionId];
+        } catch (error) {
+            console.error('Failed to load companion data:', error);
+            return null;
+        }
     }
 
     /**

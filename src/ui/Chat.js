@@ -22,8 +22,8 @@ export class ChatOverlay {
      * @param {string} message.text - Dialogue text
      * @param {Function} onComplete - Callback when message is dismissed
      */
-    showMessage(message, onComplete = null) {
-        this.showSequence([message], onComplete);
+    async showMessage(message, onComplete = null) {
+        await this.showSequence([message], onComplete);
     }
 
     /**
@@ -31,7 +31,7 @@ export class ChatOverlay {
      * @param {Array} messages - Array of message objects
      * @param {Function} onComplete - Callback when all messages are shown
      */
-    showSequence(messages, onComplete = null) {
+    async showSequence(messages, onComplete = null) {
         this.messageQueue = messages;
         this.currentMessageIndex = 0;
         this.onSequenceComplete = onComplete;
@@ -42,7 +42,7 @@ export class ChatOverlay {
         }
 
         // Show first message
-        this.showNextMessage();
+        await this.showNextMessage();
     }
 
     createOverlay() {
@@ -184,7 +184,7 @@ export class ChatOverlay {
         }, 10);
     }
 
-    showNextMessage() {
+    async showNextMessage() {
         if (this.currentMessageIndex >= this.messageQueue.length) {
             // Sequence complete
             this.hide();
@@ -214,8 +214,19 @@ export class ChatOverlay {
             portrait.style.textAlign = 'center';
             portrait.textContent = message.emoji;
         } else if (message.character) {
-            // Auto-generate portrait path from character ID
-            portrait.src = `art/entities/${message.character}.jpeg`;
+            // Load portrait from entities.json using sprite_portrait field
+            const entityData = await ChatOverlay.loadCompanionData(message.character);
+            if (entityData && entityData.sprite_portrait) {
+                // Check if it's a companion (use player_avatars) or monster (use entities)
+                const isCompanion = entityData.type === 'companion';
+                const folder = isCompanion ? 'player_avatars' : 'entities';
+                portrait.src = `art/${folder}/${entityData.sprite_portrait}`;
+                console.log(`📸 Loaded companion portrait from ${folder}: ${entityData.sprite_portrait}`);
+            } else {
+                // Fallback to old naming convention if entities.json fails
+                portrait.src = `art/entities/${message.character}.jpeg`;
+                console.warn(`⚠️ No sprite_portrait found for ${message.character}, using fallback`);
+            }
             portrait.style.fontSize = ''; // Clear emoji styling
             portrait.style.lineHeight = '';
             portrait.style.textAlign = '';
