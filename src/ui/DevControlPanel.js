@@ -77,6 +77,57 @@ export class DevControlPanel {
                         <p class="help-text">Visual node editor for creating quests, tutorials, and storylines</p>
                     </div>
 
+                    <!-- Time & Blood Moon Section -->
+                    <div class="dev-section" style="border-left-color: #ff4444;">
+                        <h3>⏰ Time & Blood Moon Testing</h3>
+                        <div class="button-grid">
+                            <button class="btn btn-primary" id="dev-day7-evening">
+                                📅 Day 7 @ 7pm
+                            </button>
+                            <button class="btn btn-danger" id="dev-day7-bloodmoon">
+                                🩸 Day 7 @ 10pm (Blood Moon)
+                            </button>
+                            <button class="btn btn-secondary" id="dev-reset-day1">
+                                ☀️ Reset to Day 1
+                            </button>
+                        </div>
+                        <div class="input-group">
+                            <label for="dev-time-week">Week:</label>
+                            <input type="number" id="dev-time-week" min="1" max="99" value="1" class="input-field">
+                            <label for="dev-time-day">Day:</label>
+                            <input type="number" id="dev-time-day" min="1" max="7" value="7" class="input-field">
+                            <label for="dev-time-hour">Hour:</label>
+                            <input type="number" id="dev-time-hour" min="0" max="23" value="19" class="input-field">
+                            <button class="btn btn-secondary" id="dev-set-time">Set Time</button>
+                        </div>
+                        <div class="button-grid" style="margin-top: 10px;">
+                            <button class="btn btn-secondary" id="dev-time-fast">
+                                ⏩ Fast Time (10x)
+                            </button>
+                            <button class="btn btn-secondary" id="dev-time-normal">
+                                ▶️ Normal Time (1x)
+                            </button>
+                            <button class="btn btn-secondary" id="dev-time-pause">
+                                ⏸️ Pause Time
+                            </button>
+                        </div>
+                        <div class="button-grid" style="margin-top: 10px;">
+                            <button class="btn btn-danger" id="dev-force-bloodmoon-on">
+                                🩸 Force Blood Moon ON
+                            </button>
+                            <button class="btn btn-secondary" id="dev-force-bloodmoon-off">
+                                🌅 Force Blood Moon OFF
+                            </button>
+                            <button class="btn btn-warning" id="dev-spawn-wave">
+                                💀 Spawn Enemy Wave
+                            </button>
+                            <button class="btn btn-secondary" id="dev-cleanup-enemies">
+                                🧹 Cleanup Enemies
+                            </button>
+                        </div>
+                        <p class="help-text">Quick jump to blood moon test scenarios and manual time controls</p>
+                    </div>
+
                     <!-- LOD System Section -->
                     <div class="dev-section">
                         <h3>🎨 LOD System (Level of Detail)</h3>
@@ -306,6 +357,173 @@ export class DevControlPanel {
         this.modal.querySelector('#dev-new-game').addEventListener('click', () => {
             if (confirm('⚠️ This will reset all game progress. Are you sure?')) {
                 this.executeCommand('playerNewGameClean', 'Starting new game...', null, true);
+            }
+        });
+
+        // === TIME & BLOOD MOON BUTTONS ===
+
+        // Day 7 @ 7pm
+        this.modal.querySelector('#dev-day7-evening').addEventListener('click', () => {
+            this.logOutput('Setting time to Week 1, Day 7 @ 7pm (19:00)...', 'info');
+            try {
+                this.voxelWorld.dayNightCycle.currentWeek = 1;
+                this.voxelWorld.dayNightCycle.currentDay = 7;
+                this.voxelWorld.dayNightCycle.timeOfDay = 19.0;
+                this.logOutput('✅ Time set successfully. Blood moon starts at 10pm.', 'success');
+            } catch (error) {
+                this.logOutput(`❌ Error: ${error.message}`, 'error');
+            }
+        });
+
+        // Day 7 @ 10pm (Blood Moon)
+        this.modal.querySelector('#dev-day7-bloodmoon').addEventListener('click', () => {
+            this.logOutput('Setting time to Week 1, Day 7 @ 10pm (22:00) - BLOOD MOON...', 'info');
+            try {
+                this.voxelWorld.dayNightCycle.currentWeek = 1;
+                this.voxelWorld.dayNightCycle.currentDay = 7;
+                this.voxelWorld.dayNightCycle.timeOfDay = 22.0;
+                this.logOutput('✅ Blood moon time set. Expect enemies!', 'warning');
+            } catch (error) {
+                this.logOutput(`❌ Error: ${error.message}`, 'error');
+            }
+        });
+
+        // Reset to Day 1
+        this.modal.querySelector('#dev-reset-day1').addEventListener('click', () => {
+            this.logOutput('Resetting to Week 1, Day 1 @ 8am...', 'info');
+            try {
+                this.voxelWorld.dayNightCycle.currentWeek = 1;
+                this.voxelWorld.dayNightCycle.currentDay = 1;
+                this.voxelWorld.dayNightCycle.timeOfDay = 8.0;
+                this.logOutput('✅ Time reset to Day 1 morning.', 'success');
+            } catch (error) {
+                this.logOutput(`❌ Error: ${error.message}`, 'error');
+            }
+        });
+
+        // Set custom time
+        this.modal.querySelector('#dev-set-time').addEventListener('click', () => {
+            const week = parseInt(this.modal.querySelector('#dev-time-week').value);
+            const day = parseInt(this.modal.querySelector('#dev-time-day').value);
+            const hour = parseFloat(this.modal.querySelector('#dev-time-hour').value);
+
+            if (isNaN(week) || week < 1 || week > 99) {
+                this.logOutput('❌ Invalid week (1-99)', 'error');
+                return;
+            }
+            if (isNaN(day) || day < 1 || day > 7) {
+                this.logOutput('❌ Invalid day (1-7)', 'error');
+                return;
+            }
+            if (isNaN(hour) || hour < 0 || hour > 23) {
+                this.logOutput('❌ Invalid hour (0-23)', 'error');
+                return;
+            }
+
+            this.logOutput(`Setting time to Week ${week}, Day ${day} @ ${hour}:00...`, 'info');
+            try {
+                this.voxelWorld.dayNightCycle.currentWeek = week;
+                this.voxelWorld.dayNightCycle.currentDay = day;
+                this.voxelWorld.dayNightCycle.timeOfDay = hour;
+                this.logOutput('✅ Custom time set successfully.', 'success');
+            } catch (error) {
+                this.logOutput(`❌ Error: ${error.message}`, 'error');
+            }
+        });
+
+        // Fast time
+        this.modal.querySelector('#dev-time-fast').addEventListener('click', () => {
+            this.logOutput('Setting time speed to 10x...', 'info');
+            try {
+                this.voxelWorld.dayNightCycle.timeScale = 10;
+                this.logOutput('✅ Time speed: 10x (fast forward)', 'success');
+            } catch (error) {
+                this.logOutput(`❌ Error: ${error.message}`, 'error');
+            }
+        });
+
+        // Normal time
+        this.modal.querySelector('#dev-time-normal').addEventListener('click', () => {
+            this.logOutput('Setting time speed to 1x (normal)...', 'info');
+            try {
+                this.voxelWorld.dayNightCycle.timeScale = 1;
+                this.logOutput('✅ Time speed: 1x (normal)', 'success');
+            } catch (error) {
+                this.logOutput(`❌ Error: ${error.message}`, 'error');
+            }
+        });
+
+        // Pause time
+        this.modal.querySelector('#dev-time-pause').addEventListener('click', () => {
+            this.logOutput('Pausing time...', 'info');
+            try {
+                this.voxelWorld.dayNightCycle.timeScale = 0;
+                this.logOutput('⏸️ Time paused (timeScale = 0)', 'warning');
+            } catch (error) {
+                this.logOutput(`❌ Error: ${error.message}`, 'error');
+            }
+        });
+
+        // Force blood moon ON
+        this.modal.querySelector('#dev-force-bloodmoon-on').addEventListener('click', () => {
+            this.logOutput('Forcing blood moon ON...', 'info');
+            try {
+                if (this.voxelWorld.bloodMoonSystem) {
+                    this.voxelWorld.bloodMoonSystem.forceBloodMoon = true;
+                    this.voxelWorld.bloodMoonSystem.isBloodMoon = true;
+                    this.logOutput('🩸 Blood moon FORCED ON (ignores time check)', 'warning');
+                } else {
+                    this.logOutput('❌ Blood moon system not initialized', 'error');
+                }
+            } catch (error) {
+                this.logOutput(`❌ Error: ${error.message}`, 'error');
+            }
+        });
+
+        // Force blood moon OFF
+        this.modal.querySelector('#dev-force-bloodmoon-off').addEventListener('click', () => {
+            this.logOutput('Forcing blood moon OFF...', 'info');
+            try {
+                if (this.voxelWorld.bloodMoonSystem) {
+                    this.voxelWorld.bloodMoonSystem.forceBloodMoon = false;
+                    this.voxelWorld.bloodMoonSystem.isBloodMoon = false;
+                    this.voxelWorld.bloodMoonSystem.cleanup();
+                    this.logOutput('✅ Blood moon disabled and enemies cleaned up', 'success');
+                } else {
+                    this.logOutput('❌ Blood moon system not initialized', 'error');
+                }
+            } catch (error) {
+                this.logOutput(`❌ Error: ${error.message}`, 'error');
+            }
+        });
+
+        // Spawn enemy wave
+        this.modal.querySelector('#dev-spawn-wave').addEventListener('click', () => {
+            this.logOutput('Spawning enemy wave...', 'info');
+            try {
+                if (this.voxelWorld.bloodMoonSystem) {
+                    const count = this.voxelWorld.bloodMoonSystem.spawnWave();
+                    this.logOutput(`💀 Spawned ${count} enemies`, 'warning');
+                } else {
+                    this.logOutput('❌ Blood moon system not initialized', 'error');
+                }
+            } catch (error) {
+                this.logOutput(`❌ Error: ${error.message}`, 'error');
+            }
+        });
+
+        // Cleanup enemies
+        this.modal.querySelector('#dev-cleanup-enemies').addEventListener('click', () => {
+            this.logOutput('Cleaning up blood moon enemies...', 'info');
+            try {
+                if (this.voxelWorld.bloodMoonSystem) {
+                    this.voxelWorld.bloodMoonSystem.cleanup();
+                    this.logOutput('🧹 All blood moon enemies removed', 'success');
+                } else {
+                    this.logOutput('❌ Blood moon system not initialized', 'error');
+                }
+            } catch (error) {
+                this.logOutput(`❌ Error: ${error.message}`, 'error');
             }
         });
     }
