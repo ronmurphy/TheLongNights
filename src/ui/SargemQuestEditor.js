@@ -968,8 +968,40 @@ export class SargemQuestEditor {
             }
         }
         else if (node.type === 'trigger') {
-            this.addTextField(content, 'Event Name', node.data.event || '', 
-                (val) => { node.data.event = val; this.updateNodePreview(node); });
+            // Trigger event type dropdown
+            const triggerEvents = [
+                'playMusic',
+                'stopMusic',
+                'playSound',
+                'setFlag',
+                'spawnNPC',
+                'removeNPC',
+                'showStatus',
+                'teleport',
+                'setTime',
+                'setWeather'
+            ];
+            
+            this.addSelectField(content, 'Event Type', node.data.event || 'playMusic', 
+                triggerEvents, 
+                (val) => { 
+                    node.data.event = val;
+                    
+                    // Auto-fill parameter template based on event type
+                    node.data.params = this.getTriggerParamTemplate(val);
+                    
+                    this.updateNodePreview(node);
+                    this.showProperties(node); // Refresh to show new params
+                });
+            
+            // Help text for selected event
+            const helpText = this.getTriggerHelpText(node.data.event || 'playMusic');
+            const help = document.createElement('div');
+            help.style.cssText = 'margin-bottom: 15px; padding: 10px; background: #2d2d30; border-left: 3px solid #007acc; color: #cccccc; font-size: 12px; border-radius: 4px;';
+            help.innerHTML = `<strong>ℹ️ ${node.data.event || 'playMusic'}:</strong><br>${helpText}`;
+            content.appendChild(help);
+            
+            // Parameters JSON editor
             this.addTextArea(content, 'Parameters (JSON)', JSON.stringify(node.data.params || {}, null, 2), 
                 (val) => { 
                     try { 
@@ -1850,5 +1882,74 @@ export class SargemQuestEditor {
             const svg = canvas.querySelector('svg');
             if (svg) svg.remove();
         }
+    }
+
+    /**
+     * Get parameter template for trigger event type
+     */
+    getTriggerParamTemplate(eventType) {
+        const templates = {
+            'playMusic': {
+                trackPath: 'music/forest.ogg'
+            },
+            'stopMusic': {},
+            'playSound': {
+                soundId: 'zombie',
+                variation: false
+            },
+            'setFlag': {
+                flag: 'example_flag',
+                value: true
+            },
+            'spawnNPC': {
+                npcId: 'goblin',
+                emoji: '👹',
+                name: 'Grik',
+                x: 10,
+                y: 5,
+                z: 0,
+                scale: 1
+            },
+            'removeNPC': {
+                npcId: 'quest_npc_goblin_123'
+            },
+            'showStatus': {
+                message: 'Quest objective updated!',
+                type: 'info'
+            },
+            'teleport': {
+                x: 100,
+                y: 10,
+                z: -50
+            },
+            'setTime': {
+                hour: 12.0
+            },
+            'setWeather': {
+                weather: 'rain'
+            }
+        };
+        
+        return templates[eventType] || {};
+    }
+
+    /**
+     * Get help text for trigger event type
+     */
+    getTriggerHelpText(eventType) {
+        const helpTexts = {
+            'playMusic': 'Play a background music track. Use path like "music/boss.ogg"',
+            'stopMusic': 'Stop the currently playing music. No parameters needed.',
+            'playSound': 'Play a one-shot sound effect. soundId: zombie, cat, ghost. Use variation:true for random pitch.',
+            'setFlag': 'Set a persistent quest flag. Use for tracking quest progress.',
+            'spawnNPC': 'Spawn an NPC at coordinates. Set emoji, position, and scale.',
+            'removeNPC': 'Remove an NPC by its ID. Use the ID from spawnNPC.',
+            'showStatus': 'Display a status message. Types: info, error, discovery, warning',
+            'teleport': 'Teleport player to coordinates. Requires x, y, z.',
+            'setTime': 'Change time of day. Hour is 0-24 (e.g. 12.5 = 12:30 PM)',
+            'setWeather': 'Set weather type: clear, rain, storm, snow, fog (coming soon)'
+        };
+        
+        return helpTexts[eventType] || 'Configure parameters for this trigger event.';
     }
 }

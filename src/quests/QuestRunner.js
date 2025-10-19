@@ -4,6 +4,7 @@
  * Handles dialogue, choices, NPCs, items, combat, etc.
  */
 
+import * as THREE from 'three';
 import { ChatOverlay } from '../ui/Chat.js';
 
 export class QuestRunner {
@@ -27,6 +28,25 @@ export class QuestRunner {
         // Choice tracking (for personality quiz)
         this.choiceTracking = {};  // { nodeId: chosenIndex }
         this.onQuestComplete = null;  // Callback when quest ends
+
+        // Quest flags for condition checking
+        this.questFlags = new Map();
+        this.loadQuestFlags(); // Load saved flags from localStorage
+    }
+
+    /**
+     * Load quest flags from localStorage
+     */
+    loadQuestFlags() {
+        try {
+            const savedFlags = JSON.parse(localStorage.getItem('questFlags') || '{}');
+            for (const [key, value] of Object.entries(savedFlags)) {
+                this.questFlags.set(key, value);
+            }
+            console.log('🚩 Loaded quest flags:', Object.keys(savedFlags));
+        } catch (e) {
+            console.error('❌ Failed to load quest flags:', e);
+        }
     }
 
     /**
@@ -555,8 +575,298 @@ export class QuestRunner {
 
         console.log(`⚡ Triggering event: ${event}`, params);
         
-        // TODO: Implement event system
+        if (!event) {
+            console.warn('⚠️ Trigger node has no event specified');
+            this.goToNext(node);
+            return;
+        }
+
+        // Handle different trigger types
+        switch (event.toLowerCase()) {
+            case 'playmusic':
+                this.triggerPlayMusic(params);
+                break;
+            
+            case 'stopmusic':
+                this.triggerStopMusic();
+                break;
+            
+            case 'playsound':
+                this.triggerPlaySound(params);
+                break;
+            
+            case 'setflag':
+                this.triggerSetFlag(params);
+                break;
+            
+            case 'spawnnpc':
+                this.triggerSpawnNPC(params);
+                break;
+            
+            case 'removenpc':
+                this.triggerRemoveNPC(params);
+                break;
+            
+            case 'showstatus':
+                this.triggerShowStatus(params);
+                break;
+            
+            case 'teleport':
+                this.triggerTeleport(params);
+                break;
+            
+            case 'settime':
+                this.triggerSetTime(params);
+                break;
+            
+            case 'setweather':
+                this.triggerSetWeather(params);
+                break;
+            
+            default:
+                console.warn(`⚠️ Unknown trigger event: ${event}`);
+                break;
+        }
+        
+        // Continue to next node immediately (triggers are non-blocking)
         this.goToNext(node);
+    }
+
+    // ========================================
+    // TRIGGER EVENT HANDLERS
+    // ========================================
+
+    /**
+     * Play music track
+     * params: { trackPath: 'music/forest.ogg' }
+     */
+    triggerPlayMusic(params) {
+        const trackPath = params.trackPath || params.track || '';
+        if (!trackPath) {
+            console.warn('⚠️ playMusic trigger missing trackPath parameter');
+            return;
+        }
+
+        console.log(`🎵 Playing music: ${trackPath}`);
+        if (this.voxelWorld?.musicSystem) {
+            this.voxelWorld.musicSystem.play(trackPath);
+            this.voxelWorld.updateStatus(`🎵 Now playing: ${trackPath}`, 'info');
+        } else {
+            console.warn('⚠️ MusicSystem not available');
+        }
+    }
+
+    /**
+     * Stop current music
+     */
+    triggerStopMusic() {
+        console.log('🎵 Stopping music');
+        if (this.voxelWorld?.musicSystem) {
+            this.voxelWorld.musicSystem.stop();
+            this.voxelWorld.updateStatus('🎵 Music stopped', 'info');
+        }
+    }
+
+    /**
+     * Play a sound effect
+     * params: { soundId: 'zombie', variation: true }
+     */
+    triggerPlaySound(params) {
+        const soundId = params.soundId || params.sound || '';
+        if (!soundId) {
+            console.warn('⚠️ playSound trigger missing soundId parameter');
+            return;
+        }
+
+        console.log(`🔊 Playing sound: ${soundId}`);
+        if (this.voxelWorld?.sfxSystem) {
+            if (params.variation) {
+                this.voxelWorld.sfxSystem.playWithVariation(soundId);
+            } else {
+                this.voxelWorld.sfxSystem.play(soundId);
+            }
+        } else {
+            console.warn('⚠️ SoundEffectsSystem not available');
+        }
+    }
+
+    /**
+     * Set a quest flag for use in conditions
+     * params: { flag: 'metKing', value: true }
+     */
+    triggerSetFlag(params) {
+        const flag = params.flag || params.name || '';
+        const value = params.value ?? true;
+
+        if (!flag) {
+            console.warn('⚠️ setFlag trigger missing flag parameter');
+            return;
+        }
+
+        if (!this.questFlags) {
+            this.questFlags = new Map();
+        }
+
+        this.questFlags.set(flag, value);
+        console.log(`🚩 Set flag: ${flag} = ${value}`);
+        
+        // Also save to localStorage for persistence
+        try {
+            const savedFlags = JSON.parse(localStorage.getItem('questFlags') || '{}');
+            savedFlags[flag] = value;
+            localStorage.setItem('questFlags', JSON.stringify(savedFlags));
+            console.log(`💾 Flag saved to localStorage: ${flag}`);
+        } catch (e) {
+            console.error('❌ Failed to save flag to localStorage:', e);
+        }
+    }
+
+    /**
+     * Spawn an NPC
+     * params: { npcId: 'goblin', x: 10, y: 5, z: -3, scale: 1 }
+     */
+    triggerSpawnNPC(params) {
+        const npcId = params.npcId || params.id || '';
+        const x = params.x ?? 0;
+        const y = params.y ?? 5;
+        const z = params.z ?? 0;
+        const scale = params.scale ?? 1;
+        const name = params.name || npcId;
+
+        if (!npcId) {
+            console.warn('⚠️ spawnNPC trigger missing npcId parameter');
+            return;
+        }
+
+        console.log(`👤 Spawning NPC: ${npcId} at (${x}, ${y}, ${z})`);
+        
+        if (this.voxelWorld?.npcManager) {
+            const npc = this.voxelWorld.npcManager.spawn({
+                id: `quest_npc_${npcId}_${Date.now()}`,
+                name: name,
+                emoji: params.emoji || '👤',
+                position: new THREE.Vector3(x, y, z),
+                scale: scale,
+                onInteract: params.onInteract || null
+            });
+            
+            // Track quest NPCs for cleanup
+            this.questNPCs.push(npc);
+            
+            this.voxelWorld.updateStatus(`👤 ${name} appeared!`, 'discovery');
+        } else {
+            console.warn('⚠️ NPCManager not available');
+        }
+    }
+
+    /**
+     * Remove an NPC by ID
+     * params: { npcId: 'quest_npc_goblin_123456' }
+     */
+    triggerRemoveNPC(params) {
+        const npcId = params.npcId || params.id || '';
+        
+        if (!npcId) {
+            console.warn('⚠️ removeNPC trigger missing npcId parameter');
+            return;
+        }
+
+        console.log(`👤 Removing NPC: ${npcId}`);
+        
+        if (this.voxelWorld?.npcManager) {
+            this.voxelWorld.npcManager.remove(npcId);
+            this.voxelWorld.updateStatus(`👤 NPC removed`, 'info');
+        }
+    }
+
+    /**
+     * Show a status message
+     * params: { message: 'You found a secret!', type: 'discovery' }
+     */
+    triggerShowStatus(params) {
+        const message = params.message || params.text || '';
+        const type = params.type || 'info';
+
+        if (!message) {
+            console.warn('⚠️ showStatus trigger missing message parameter');
+            return;
+        }
+
+        console.log(`📢 Status: ${message}`);
+        
+        if (this.voxelWorld?.updateStatus) {
+            this.voxelWorld.updateStatus(message, type);
+        }
+    }
+
+    /**
+     * Teleport player to coordinates
+     * params: { x: 100, y: 10, z: -50 }
+     */
+    triggerTeleport(params) {
+        const x = params.x ?? null;
+        const y = params.y ?? null;
+        const z = params.z ?? null;
+
+        if (x === null || y === null || z === null) {
+            console.warn('⚠️ teleport trigger missing x/y/z parameters');
+            return;
+        }
+
+        console.log(`🌀 Teleporting player to (${x}, ${y}, ${z})`);
+        
+        if (this.voxelWorld?.camera) {
+            this.voxelWorld.camera.position.set(x, y, z);
+            this.voxelWorld.updateStatus(`🌀 Teleported to (${x}, ${y}, ${z})`, 'info');
+        }
+    }
+
+    /**
+     * Set time of day
+     * params: { hour: 12.5 }
+     */
+    triggerSetTime(params) {
+        const hour = params.hour ?? params.time ?? null;
+
+        if (hour === null) {
+            console.warn('⚠️ setTime trigger missing hour parameter');
+            return;
+        }
+
+        console.log(`⏰ Setting time to ${hour}:00`);
+        
+        if (this.voxelWorld) {
+            this.voxelWorld.currentTime = hour;
+            if (this.voxelWorld.updateDayNightCycle) {
+                this.voxelWorld.updateDayNightCycle();
+            }
+            const formatted = Math.floor(hour).toString().padStart(2, '0') + ':' + 
+                              Math.floor((hour % 1) * 60).toString().padStart(2, '0');
+            this.voxelWorld.updateStatus(`⏰ Time set to ${formatted}`, 'info');
+        }
+    }
+
+    /**
+     * Set weather (if weather system exists)
+     * params: { weather: 'rain' }
+     */
+    triggerSetWeather(params) {
+        const weather = params.weather || params.type || '';
+
+        if (!weather) {
+            console.warn('⚠️ setWeather trigger missing weather parameter');
+            return;
+        }
+
+        console.log(`🌦️ Setting weather: ${weather}`);
+        
+        if (this.voxelWorld?.weatherSystem) {
+            this.voxelWorld.weatherSystem.setWeather(weather);
+            this.voxelWorld.updateStatus(`🌦️ Weather: ${weather}`, 'info');
+        } else {
+            console.warn('⚠️ Weather system not implemented yet');
+            this.voxelWorld?.updateStatus(`🌦️ Weather triggers not yet implemented`, 'info');
+        }
     }
 
     /**
