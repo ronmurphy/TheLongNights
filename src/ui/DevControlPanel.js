@@ -4,7 +4,9 @@
  * A developer console/modal that provides buttons for all debug commands.
  * Eliminates the need to type commands in the browser console.
  *
- * Available via Electron menu: View > Dev Controls
+ * Available via:
+ * - Keyboard: Ctrl+D (Cmd+D on Mac)
+ * - Electron menu: View > Dev Controls
  */
 
 export class DevControlPanel {
@@ -25,6 +27,16 @@ export class DevControlPanel {
             return;
         }
 
+        // Release pointer lock
+        if (document.pointerLockElement) {
+            document.exitPointerLock();
+        }
+
+        // Disable game controls
+        if (this.voxelWorld.controlsEnabled !== undefined) {
+            this.voxelWorld.controlsEnabled = false;
+        }
+
         this.isOpen = true;
         this.createModal();
         console.log('🛠️ Dev Control Panel opened');
@@ -41,6 +53,19 @@ export class DevControlPanel {
         this.modal.remove();
         this.modal = null;
         this.isOpen = false;
+
+        // Re-enable game controls
+        if (this.voxelWorld.controlsEnabled !== undefined) {
+            this.voxelWorld.controlsEnabled = true;
+        }
+
+        // Re-engage pointer lock
+        setTimeout(() => {
+            if (this.voxelWorld.renderer && this.voxelWorld.renderer.domElement) {
+                this.voxelWorld.renderer.domElement.requestPointerLock();
+            }
+        }, 100);
+
         console.log('🛠️ Dev Control Panel closed');
     }
 

@@ -11660,6 +11660,18 @@ class NebulaVoxelApp {
                 e.preventDefault();
             }
 
+            // 🛠️ Ctrl+D for Developer Control Panel (toggle)
+            if (key === 'd' && (e.ctrlKey || e.metaKey)) {
+                if (this.devControlPanel) {
+                    if (this.devControlPanel.isOpen) {
+                        this.devControlPanel.close();
+                    } else {
+                        this.devControlPanel.open();
+                    }
+                }
+                e.preventDefault();
+            }
+
             // 🎵 Music controls (work regardless of controlsEnabled, but not during text input)
             // + key (or =): Volume up
             if (key === '+' || key === '=') {

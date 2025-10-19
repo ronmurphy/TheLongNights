@@ -140,7 +140,29 @@ export class CraftedTools {
     handleLeftClick(selectedSlot, pos) {
         const selectedItem = selectedSlot?.itemType;
 
-        // 🔨 STONE HAMMER COMBAT: AoE melee weapon
+        // � MACHETE COMBAT: Medium damage melee weapon
+        const isMachete = selectedItem === 'machete' || selectedItem === 'crafted_machete';
+        if (isMachete && this.voxelWorld.bloodMoonSystem) {
+            const hitEnemy = this.checkMeleeAttack(pos, 2, 1.5); // 2 damage, single target
+            if (hitEnemy) {
+                this.voxelWorld.createExplosionEffect(pos.x, pos.y, pos.z, 'slash');
+                this.voxelWorld.updateStatus('🔪 Machete slash!', 'combat');
+                return false; // Continue to harvesting (dual function!)
+            }
+        }
+
+        // 🔥 TORCH COMBAT: Light damage with burn chance
+        const isTorch = selectedItem === 'torch' || selectedItem === 'crafted_torch';
+        if (isTorch && this.voxelWorld.bloodMoonSystem) {
+            const hitEnemy = this.checkMeleeAttack(pos, 1, 1.5); // 1 damage, single target
+            if (hitEnemy) {
+                this.voxelWorld.createExplosionEffect(pos.x, pos.y, pos.z, 'fire');
+                this.voxelWorld.updateStatus('🔥 Torch burn!', 'combat');
+                return false; // Continue with default behavior (torch placement)
+            }
+        }
+
+        // �🔨 STONE HAMMER COMBAT: AoE melee weapon
         const isStoneHammer = selectedItem === 'stone_hammer' || selectedItem === 'crafted_stone_hammer';
         if (isStoneHammer && this.voxelWorld.bloodMoonSystem) {
             const hitEnemy = this.checkMeleeAttack(pos, 3, 2); // 3 damage, radius 2 (AoE)
@@ -455,6 +477,60 @@ export class CraftedTools {
         console.log(`💥 DETONATING${comboText} at (${centerX}, ${centerY}, ${centerZ}) with radius ${radius}`);
 
         const blocksDestroyed = [];
+        const explosionCenter = new THREE.Vector3(centerX + 0.5, centerY + 0.5, centerZ + 0.5);
+
+        // 💥 DAMAGE ENEMIES IN BLAST RADIUS
+        if (this.voxelWorld.bloodMoonSystem) {
+            const enemies = this.voxelWorld.bloodMoonSystem.activeEnemies;
+            let enemiesHit = 0;
+
+            for (const [enemyId, enemy] of enemies) {
+                if (enemy.health <= 0) continue;
+
+                const enemyPos = enemy.sprite.position;
+                const distance = explosionCenter.distanceTo(enemyPos);
+
+                if (distance <= radius + 1) { // +1 for generous hit detection
+                    // Calculate falloff damage (full damage at center, 1 damage at edge)
+                    const damagePercent = 1.0 - (distance / (radius + 1));
+                    const baseDamage = isCombo ? 10 : 5; // Combo explosions deal 2x damage
+                    const damage = Math.max(1, Math.ceil(baseDamage * damagePercent));
+
+                    console.log(`💥 Explosion hit ${enemy.entityType}! Distance: ${distance.toFixed(1)}, Damage: ${damage}`);
+                    this.voxelWorld.bloodMoonSystem.hitEnemy(enemyId, damage);
+                    enemiesHit++;
+                }
+            }
+
+            if (enemiesHit > 0) {
+                this.voxelWorld.updateStatus(`💥 Explosion hit ${enemiesHit} enemies!`, 'success');
+            }
+        }
+
+        // 💥 DAMAGE PLAYER IF IN BLAST RADIUS
+        const playerPos = this.voxelWorld.camera.position;
+        const playerDistance = explosionCenter.distanceTo(playerPos);
+
+        if (playerDistance <= radius + 2) { // +2 for player safety margin
+            // Calculate falloff damage
+            const damagePercent = 1.0 - (playerDistance / (radius + 2));
+            const baseDamage = isCombo ? 8 : 4; // Combo explosions hurt more
+            const damage = Math.max(1, Math.ceil(baseDamage * damagePercent));
+
+            console.log(`💥 Player caught in explosion! Distance: ${playerDistance.toFixed(1)}, Damage: ${damage}`);
+            
+            // Apply damage to player
+            if (this.voxelWorld.combatSystem && this.voxelWorld.playerStats) {
+                this.voxelWorld.playerStats.takeDamage(damage);
+                this.voxelWorld.updateStatus(`💥 Explosion damaged you for ${damage} HP!`, 'danger');
+                
+                // Check if player died
+                if (this.voxelWorld.playerStats.currentHP <= 0) {
+                    console.log('💀 Player died from explosion!');
+                    // Death is handled by playerStats.takeDamage()
+                }
+            }
+        }
 
         // Scan all blocks in spherical radius
         for (let x = -radius; x <= radius; x++) {
