@@ -65,6 +65,19 @@
       }
     },
     {
+      "id": "q5_gender",
+      "type": "choice",
+      "data": {
+        "question": "How do you see yourself?",
+        "options": [
+          "Male",
+          "Female",
+          "Nonbinary",
+          "Surprise me!"
+        ]
+      }
+    },
+    {
       "id": "end",
       "type": "dialogue",
       "data": {
@@ -143,21 +156,41 @@
     },
     {
       "fromId": "q4_companion",
-      "toId": "end",
+      "toId": "q5_gender",
       "sourceHandle": "output_0"
     },
     {
       "fromId": "q4_companion",
-      "toId": "end",
+      "toId": "q5_gender",
       "sourceHandle": "output_1"
     },
     {
       "fromId": "q4_companion",
-      "toId": "end",
+      "toId": "q5_gender",
       "sourceHandle": "output_2"
     },
     {
       "fromId": "q4_companion",
+      "toId": "q5_gender",
+      "sourceHandle": "output_3"
+    },
+    {
+      "fromId": "q5_gender",
+      "toId": "end",
+      "sourceHandle": "output_0"
+    },
+    {
+      "fromId": "q5_gender",
+      "toId": "end",
+      "sourceHandle": "output_1"
+    },
+    {
+      "fromId": "q5_gender",
+      "toId": "end",
+      "sourceHandle": "output_2"
+    },
+    {
+      "fromId": "q5_gender",
       "toId": "end",
       "sourceHandle": "output_3"
     }

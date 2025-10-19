@@ -41,6 +41,7 @@ import { SaveSystem } from './SaveSystem.js';
 import { AnimalSystem } from './AnimalSystem.js';
 import { QuestRunner } from './quests/QuestRunner.js';
 import { PlayerCharacter } from './PlayerCharacter.js';
+import { PlayerCompanionUI } from './ui/PlayerCompanionUI.js';
 
 // 🚀 Enable BVH acceleration for all BufferGeometry raycasting
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
@@ -306,8 +307,8 @@ class NebulaVoxelApp {
         // 📘 Initialize Companion Codex
         this.companionCodex = new CompanionCodex(this);
 
-        // 🖼️ Initialize Companion Portrait HUD
-        this.companionPortrait = new CompanionPortrait(this);
+        // 🖼️ Initialize Companion Portrait HUD (DISABLED - replaced by PlayerCompanionUI)
+        // this.companionPortrait = new CompanionPortrait(this);
 
         // 🎓 Initialize Tutorial Script System
         this.tutorialSystem = new TutorialScriptSystem(this);
@@ -320,6 +321,10 @@ class NebulaVoxelApp {
         // 🧙 Initialize Player Character (stats, race, equipment)
         this.playerCharacter = new PlayerCharacter();
         console.log('🧙 PlayerCharacter initialized');
+
+        // 🖼️ Initialize Player + Companion Avatar UI (bottom-right)
+        this.playerCompanionUI = new PlayerCompanionUI(this);
+        console.log('🖼️ Player + Companion UI initialized');
 
         // 🐈‍⬛ Initialize Sargem Quest Editor (dev tool, StarNode-based)
         this.sargemEditor = new SargemQuestEditor(this);
@@ -11130,6 +11135,11 @@ class NebulaVoxelApp {
                 this.playerHP.updateFallDamage();
             }
 
+            // 🖼️ Update Player + Companion UI
+            if (this.playerCompanionUI) {
+                this.playerCompanionUI.update();
+            }
+
             // Update companion hunt system (movement, discoveries, return logic)
             if (this.companionHuntSystem && this.gameTime !== undefined) {
                 this.companionHuntSystem.update(this.gameTime);
@@ -12088,9 +12098,10 @@ class NebulaVoxelApp {
         this.createStatusBar = () => {
             const statusBar = document.createElement('div');
             statusBar.style.cssText = `
-                position: absolute;
-                bottom: 16px;
-                left: 16px;
+                position: fixed;
+                top: 20px;
+                left: 50%;
+                transform: translateX(-50%);
                 background: rgba(0,0,0,0.8);
                 color: white;
                 padding: 10px 16px;

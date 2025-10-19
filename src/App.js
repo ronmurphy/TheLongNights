@@ -5,14 +5,10 @@ import { initVoxelWorld } from './VoxelWorld.js';
 import { SplashScreen } from './SplashScreen.js';
 import { GameIntroOverlay } from './ui/GameIntroOverlay.js';
 import { ChatOverlay } from './ui/Chat.js';
-import { initEmojiSupport } from './EmojiRenderer.js'; // Universal emoji support
 // import { initWorkbench } from './ShapeForgeWorkbench.js'; // To be created
 
 window.addEventListener('DOMContentLoaded', () => {
   console.log('DOM loaded, initializing app...');
-
-  // Initialize universal emoji support (works on Wine, Windows, Linux, macOS)
-  initEmojiSupport();
 
   const gameContainer = document.getElementById('gameContainer');
   const workbenchContainer = document.getElementById('workbenchContainer');
@@ -89,7 +85,8 @@ window.addEventListener('DOMContentLoaded', () => {
               survival: choices['q1_survival'],   // 0-3
               gear: choices['q2_gear'],           // 0-3
               ancestry: choices['q3_ancestry'],   // 0-3
-              companion: choices['q4_companion']  // 0-3
+              companion: choices['q4_companion'], // 0-3
+              gender: choices['q5_gender']        // 0-3
             };
 
             // Process quiz answers and create player character
@@ -123,24 +120,28 @@ window.addEventListener('DOMContentLoaded', () => {
             console.log(`Preferred Companion: ${summary.preferredCompanion}`);
             console.log('═══════════════════════════════════════');
 
-            // Now show companion selection with preferred companion
-            console.log('👋 Showing companion selection overlay...');
-            const introOverlay = new GameIntroOverlay();
+            // Show player avatar UI now that quiz is complete
+            if (app.playerCompanionUI) {
+              app.playerCompanionUI.show();
+              console.log('🖼️ Player avatar UI displayed');
+            }
 
-            introOverlay.setCompletionCallback(async (selectedCompanion) => {
-              console.log(`🎮 Player selected starter companion: ${selectedCompanion}`);
+            // Use companion from quiz Q4 (no UI chooser needed)
+            const selectedCompanion = summary.preferredCompanion;
+            console.log(`🤝 Companion assigned from quiz: ${selectedCompanion}`);
 
-              // Save player data with starter companion AND character data
-              const playerData = {
-                starterMonster: selectedCompanion,
-                monsterCollection: [selectedCompanion],
-                firstPlayTime: Date.now(),
-                character: app.playerCharacter.save()  // Save character stats
-              };
-              localStorage.setItem('NebulaWorld_playerData', JSON.stringify(playerData));
-              console.log('✅ Player data saved!');
+            // Save player data with starter companion AND character data
+            const playerData = {
+              starterMonster: selectedCompanion,
+              monsterCollection: [selectedCompanion],
+              firstPlayTime: Date.now(),
+              character: app.playerCharacter.save()  // Save character stats
+            };
+            localStorage.setItem('NebulaWorld_playerData', JSON.stringify(playerData));
+            console.log('✅ Player data saved!');
 
-              // Load companion data for chat
+            // Load companion data and show tutorial (async wrapper)
+            (async () => {
               const companionData = await ChatOverlay.loadCompanionData(selectedCompanion);
               const companionName = companionData ? companionData.name : selectedCompanion;
 
@@ -174,12 +175,7 @@ window.addEventListener('DOMContentLoaded', () => {
                   window.voxelApp.spawnStarterBackpack();
                 }
               });
-            });
-
-            // Show overlay after a short delay (let world finish loading)
-            setTimeout(() => {
-              introOverlay.show();
-            }, 500);
+            })();
           });
         })
         .catch(error => {

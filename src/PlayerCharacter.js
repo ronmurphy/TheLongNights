@@ -16,6 +16,7 @@ export class PlayerCharacter {
 
         // Character customization
         this.race = 'human';  // human, elf, dwarf, goblin
+        this.gender = 'male';  // male, female, nonbinary
         this.level = 1;
         this.xp = 0;
         this.xpToNextLevel = 100;
@@ -38,7 +39,8 @@ export class PlayerCharacter {
             survival: null,  // 0-3: STR, DEX, VIT, LCK
             gear: null,      // 0-3: weapon, tool, magic, food
             ancestry: null,  // 0-3: human, elf, dwarf, goblin
-            companion: null  // 0-3: fighter, scavenger, wanderer, guardian
+            companion: null, // 0-3: fighter, scavenger, wanderer, guardian
+            gender: null     // 0-3: male, female, nonbinary, random
         };
 
         // Equipment slots (for sprite layering later)
@@ -111,10 +113,24 @@ export class PlayerCharacter {
                 break;
         }
 
-        // Question 4: Companion Preference
-        const companions = ['goblin_grunt', 'rat', 'wanderer', 'guardian'];
-        this.preferredCompanion = companions[answers.companion];
-        console.log(`  Q4: Preferred companion → ${this.preferredCompanion}`);
+        // Question 4: Companion Race (assign one of the 3 non-player races)
+        const allRaces = ['human', 'elf', 'dwarf', 'goblin'];
+        const availableCompanions = allRaces.filter(r => r !== this.race);
+        this.preferredCompanion = availableCompanions[answers.companion % availableCompanions.length];
+        console.log(`  Q4: Preferred companion → ${this.preferredCompanion} (from ${availableCompanions.join(', ')})`);
+
+        // Question 5: Gender Selection
+        const genders = ['male', 'female', 'nonbinary', 'random'];
+        const genderChoice = genders[answers.gender];
+
+        if (genderChoice === 'random') {
+            // "Surprise me!" - randomly pick male or female
+            this.gender = Math.random() < 0.5 ? 'male' : 'female';
+            console.log(`  Q5: Random gender → ${this.gender}`);
+        } else {
+            this.gender = genderChoice;
+            console.log(`  Q5: Gender → ${this.gender}`);
+        }
 
         // Calculate derived stats
         this.updateDerivedStats();

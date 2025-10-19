@@ -37,6 +37,7 @@ export class PlayerHP {
      */
     createHeartDisplay() {
         // Create container div
+        // HIDDEN: Hearts now shown in Party UI instead
         this.heartContainer = document.createElement('div');
         this.heartContainer.id = 'player-hearts';
         this.heartContainer.style.cssText = `
@@ -44,7 +45,7 @@ export class PlayerHP {
             top: 20px;
             left: 50%;
             transform: translateX(-50%);
-            display: flex;
+            display: none;
             gap: 8px;
             font-size: 32px;
             z-index: 1000;
@@ -70,19 +71,11 @@ export class PlayerHP {
 
     /**
      * Update heart display
+     * DISABLED: Hearts now shown in PlayerCompanionUI instead
      */
     updateHeartDisplay() {
-        this.hearts.forEach((heart, index) => {
-            if (index < this.currentHP) {
-                // Full heart
-                heart.textContent = '❤️';
-                heart.style.transform = 'scale(1)';
-            } else {
-                // Broken heart
-                heart.textContent = '💔';
-                heart.style.transform = 'scale(0.9)';
-            }
-        });
+        // No-op - hearts are now displayed in PlayerCompanionUI
+        return;
     }
 
     /**

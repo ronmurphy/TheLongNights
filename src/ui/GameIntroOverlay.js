@@ -6,10 +6,11 @@
  */
 
 export class GameIntroOverlay {
-    constructor() {
+    constructor(playerRace = null) {
         this.overlayElement = null;
         this.currentStep = 'story'; // 'story' or 'monster_select'
         this.onComplete = null; // Callback when player finishes selection
+        this.playerRace = playerRace; // Filter out player's race from companion choices
 
         this.createOverlay();
     }
@@ -186,7 +187,13 @@ export class GameIntroOverlay {
 
         // Load entities data
         const entitiesData = await this.loadEntities();
-        const starters = entitiesData.starter_choices; // ["rat", "goblin_grunt", "troglodyte"]
+        let starters = entitiesData.starter_choices; // ["human", "elf", "dwarf", "goblin"]
+
+        // Filter out player's race if provided
+        if (this.playerRace) {
+            starters = starters.filter(race => race !== this.playerRace);
+            console.log(`🎭 Filtered companions (excluding ${this.playerRace}):`, starters);
+        }
 
         const contentArea = document.getElementById('intro-content');
         contentArea.innerHTML = `

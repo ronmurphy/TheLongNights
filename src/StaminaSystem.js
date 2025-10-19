@@ -123,6 +123,7 @@ export class StaminaSystem {
      */
     createStaminaDisplay() {
         // Create container div
+        // HIDDEN: Stamina now shown in Party UI instead
         this.staminaContainer = document.createElement('div');
         this.staminaContainer.id = 'player-stamina';
         this.staminaContainer.style.cssText = `
@@ -139,6 +140,7 @@ export class StaminaSystem {
             z-index: 1000;
             pointer-events: none;
             filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.5));
+            display: none;
         `;
 
         // Create fill bar
