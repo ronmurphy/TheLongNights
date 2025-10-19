@@ -346,11 +346,15 @@ export class DevControlPanel {
         // Open Sargem Editor
         this.modal.querySelector('#dev-open-sargem').addEventListener('click', () => {
             this.executeCommand('openTutorialEditor', 'Opening Sargem Quest Editor...');
+            // Close dev panel when opening Sargem
+            this.close();
         });
 
         // Open Randy Editor
         this.modal.querySelector('#dev-open-randy').addEventListener('click', () => {
             this.executeCommand('openStructureDesigner', 'Opening Randy Structure Designer...', undefined, true);
+            // Close dev panel when opening Randy
+            this.close();
         });
 
         // Toggle LOD

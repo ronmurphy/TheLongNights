@@ -6,11 +6,12 @@
  */
 
 export class ChatOverlay {
-    constructor() {
+    constructor(questRunner = null) {
         this.overlayElement = null;
         this.messageQueue = [];
         this.currentMessageIndex = 0;
         this.onSequenceComplete = null;
+        this.questRunner = questRunner; // Reference to QuestRunner for test mode flag
     }
 
     /**
@@ -321,42 +322,66 @@ export class ChatOverlay {
             rightContainer.style.filter = 'brightness(1)';
             
         } else if (isCompanionSpeaking) {
-            // Load companion portrait from entities.json
-            console.log(`🔍 Loading portrait for character: ${message.character}`);
-            const loadStartTime = performance.now();
+            // Check if we're in Sargem test mode
+            const isSargemTest = this.questRunner && this.questRunner.isSargemTest;
             
-            const entityData = await ChatOverlay.loadCompanionData(message.character);
-            const loadEndTime = performance.now();
-            console.log(`⏱️ Entity data loaded in ${(loadEndTime - loadStartTime).toFixed(2)}ms`);
-            
-            // Check if elements still exist after async load
-            const currentRightPortrait = document.getElementById('chat-portrait-right');
-            if (!currentRightPortrait) {
-                console.warn('⚠️ Portrait element removed during async load');
-                return;
-            }
-            
-            if (entityData && entityData.sprite_portrait) {
-                const isCompanion = entityData.type === 'companion';
-                const folder = isCompanion ? 'player_avatars' : 'entities';
-                const portraitPath = `art/${folder}/${entityData.sprite_portrait}`;
+            if (isSargemTest) {
+                // Sargem test mode - always use black cat portrait
+                console.log('🐈‍⬛ Sargem test mode - using cat_sit.png for companion portrait');
+                const catPortraitPath = 'art/animals/cat_sit.png';
                 
-                console.log(`📸 Setting companion portrait: ${portraitPath}`);
-                const imgLoadStart = performance.now();
+                const currentRightPortrait = document.getElementById('chat-portrait-right');
+                if (currentRightPortrait) {
+                    await new Promise((resolve) => {
+                        currentRightPortrait.onload = () => {
+                            console.log('✅ Sargem test cat portrait loaded');
+                            resolve();
+                        };
+                        currentRightPortrait.onerror = (err) => {
+                            console.error('❌ Sargem test cat portrait failed to load', err);
+                            resolve();
+                        };
+                        currentRightPortrait.src = catPortraitPath;
+                    });
+                }
+            } else {
+                // Normal mode - load companion portrait from entities.json
+                console.log(`🔍 Loading portrait for character: ${message.character}`);
+                const loadStartTime = performance.now();
                 
-                // WAIT for image to load
-                await new Promise((resolve) => {
-                    currentRightPortrait.onload = () => {
-                        const imgLoadEnd = performance.now();
-                        console.log(`✅ Companion portrait loaded in ${(imgLoadEnd - imgLoadStart).toFixed(2)}ms`);
-                        resolve();
-                    };
-                    currentRightPortrait.onerror = (err) => {
-                        console.error(`❌ Companion portrait failed to load: ${portraitPath}`, err);
-                        resolve();
-                    };
-                    currentRightPortrait.src = portraitPath;
-                });
+                const entityData = await ChatOverlay.loadCompanionData(message.character);
+                const loadEndTime = performance.now();
+                console.log(`⏱️ Entity data loaded in ${(loadEndTime - loadStartTime).toFixed(2)}ms`);
+                
+                // Check if elements still exist after async load
+                const currentRightPortrait = document.getElementById('chat-portrait-right');
+                if (!currentRightPortrait) {
+                    console.warn('⚠️ Portrait element removed during async load');
+                    return;
+                }
+                
+                if (entityData && entityData.sprite_portrait) {
+                    const isCompanion = entityData.type === 'companion';
+                    const folder = isCompanion ? 'player_avatars' : 'entities';
+                    const portraitPath = `art/${folder}/${entityData.sprite_portrait}`;
+                    
+                    console.log(`📸 Setting companion portrait: ${portraitPath}`);
+                    const imgLoadStart = performance.now();
+                    
+                    // WAIT for image to load
+                    await new Promise((resolve) => {
+                        currentRightPortrait.onload = () => {
+                            const imgLoadEnd = performance.now();
+                            console.log(`✅ Companion portrait loaded in ${(imgLoadEnd - imgLoadStart).toFixed(2)}ms`);
+                            resolve();
+                        };
+                        currentRightPortrait.onerror = (err) => {
+                            console.error(`❌ Companion portrait failed to load: ${portraitPath}`, err);
+                            resolve();
+                        };
+                        currentRightPortrait.src = portraitPath;
+                    });
+                }
             }
             
             // Set companion name

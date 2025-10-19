@@ -4,6 +4,7 @@
  * Based on StarNode system - vanilla JS, no dependencies
  */
 
+import * as THREE from 'three';
 import { TutorialConverter } from '../utils/TutorialConverter.js';
 import { ElectronFileSystem } from '../utils/ElectronFileSystem.js';
 import { QuestRunner } from '../quests/QuestRunner.js';
@@ -447,6 +448,23 @@ export class SargemQuestEditor {
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
             if (!this.isOpen) return;
+            
+            // Don't intercept keyboard events if user is typing in an input/textarea
+            const activeElement = document.activeElement;
+            const isTyping = activeElement && (
+                activeElement.tagName === 'INPUT' ||
+                activeElement.tagName === 'TEXTAREA' ||
+                activeElement.isContentEditable
+            );
+            
+            if (isTyping) {
+                // Allow Escape to work even when typing
+                if (e.key === 'Escape') {
+                    activeElement.blur(); // Unfocus the input
+                    return;
+                }
+                return; // Don't intercept other keys while typing
+            }
             
             if (e.key === 'Escape') this.close();
             if (e.ctrlKey && e.key === 's') {
@@ -1520,11 +1538,48 @@ export class SargemQuestEditor {
             console.log('🎮 Game controls re-enabled for testing');
         }
 
+        // 🐈‍⬛ Spawn Sargem cat NPC a few blocks in front of player
+        if (this.voxelWorld && this.voxelWorld.npcManager) {
+            const playerPos = this.voxelWorld.player.position;
+            const cameraDir = new THREE.Vector3();
+            this.voxelWorld.camera.getWorldDirection(cameraDir);
+            
+            // Calculate spawn position (3 blocks in front of player)
+            const distance = 3;
+            const spawnX = Math.floor(playerPos.x + cameraDir.x * distance);
+            const spawnZ = Math.floor(playerPos.z + cameraDir.z * distance);
+            
+            // Find ground height
+            let groundY = Math.floor(playerPos.y);
+            for (let y = groundY; y > 0; y--) {
+                const block = this.voxelWorld.getBlock(spawnX, y, spawnZ);
+                if (block && block !== 0) {
+                    groundY = y + 1;
+                    break;
+                }
+            }
+            
+            const spawnPos = new THREE.Vector3(spawnX, groundY, spawnZ);
+
+            // Spawn Sargem with test quest attached
+            const sargemNPC = this.voxelWorld.npcManager.spawn({
+                id: 'sargem_test_npc',
+                name: 'Sargem',
+                emoji: '🐈‍⬛',
+                position: spawnPos,
+                scale: 2,
+                onInteract: (npc) => {
+                    console.log('🐈‍⬛ Sargem clicked - starting test quest!');
+                    this.questRunner.startQuest(questData, null, true); // Pass true for isSargemTest
+                }
+            });
+
+            console.log(`🐈‍⬛ Sargem spawned at (${spawnX}, ${groundY}, ${spawnZ}) - click to start quest!`);
+            this.voxelWorld.updateStatus('🐈‍⬛ Click Sargem to start the test quest!', 'info');
+        }
+
         // Show HUD button to return to Sargem
         this.showTestHUD();
-
-        // 🎯 Run the quest!
-        this.questRunner.startQuest(questData);
     }
 
     /**
@@ -1601,7 +1656,12 @@ export class SargemQuestEditor {
             this.voxelWorld.tutorialScriptSystem.stopAll();
         }
 
-        // Cleanup any NPCs spawned by the quest
+        // Remove Sargem test NPC specifically
+        if (this.voxelWorld?.npcManager) {
+            this.voxelWorld.npcManager.remove('sargem_test_npc');
+        }
+
+        // Cleanup any other NPCs spawned by the quest
         if (this.voxelWorld?.cleanupQuestNPCs) {
             this.voxelWorld.cleanupQuestNPCs();
         }
@@ -1610,7 +1670,7 @@ export class SargemQuestEditor {
         const hud = document.getElementById('sargem-test-hud');
         if (hud) hud.remove();
 
-        console.log('⏹️ Test stopped - NPCs cleaned up');
+        console.log('⏹️ Test stopped - NPCs cleaned up (including Sargem)');
     }
 
     /**

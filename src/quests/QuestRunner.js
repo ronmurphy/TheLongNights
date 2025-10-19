@@ -9,7 +9,7 @@ import { ChatOverlay } from '../ui/Chat.js';
 export class QuestRunner {
     constructor(voxelWorld) {
         this.voxelWorld = voxelWorld;
-        this.chatOverlay = new ChatOverlay();
+        this.chatOverlay = new ChatOverlay(this); // Pass reference to self
 
         // Current quest state
         this.currentQuest = null;
@@ -33,8 +33,9 @@ export class QuestRunner {
      * Load and start a quest
      * @param {Object} questData - Quest data from Sargem editor { nodes: [], connections: [] }
      * @param {Function} onComplete - Optional callback when quest completes (receives choiceTracking)
+     * @param {boolean} isSargemTest - If true, uses black cat portrait for all dialogue
      */
-    startQuest(questData, onComplete = null) {
+    startQuest(questData, onComplete = null, isSargemTest = false) {
         if (this.isRunning) {
             console.warn('⚠️ Quest already running!');
             return;
@@ -44,6 +45,7 @@ export class QuestRunner {
         this.connections = questData.connections || [];
         this.isRunning = true;
         this.onQuestComplete = onComplete;
+        this.isSargemTest = isSargemTest; // Store test mode flag
 
         // Reset node counters and choice tracking
         this.nodeCounters = {};
@@ -460,10 +462,72 @@ export class QuestRunner {
         const itemId = data.itemId || '';
         const amount = data.amount || 1;
 
+        if (!itemId) {
+            console.warn('⚠️ Item node has no itemId specified!');
+            this.goToNext(node);
+            return;
+        }
+
         console.log(`🎁 ${action} ${amount}x ${itemId}`);
+
+        if (action === 'give') {
+            // Add items to player inventory
+            if (this.voxelWorld && this.voxelWorld.inventory) {
+                this.voxelWorld.inventory.addToInventory(itemId, amount);
+                
+                // Show status message
+                const itemName = this.getItemDisplayName(itemId);
+                this.voxelWorld.updateStatus(`🎁 Received ${amount}x ${itemName}!`, 'discovery');
+                
+                console.log(`✅ Gave player ${amount}x ${itemId}`);
+            } else {
+                console.error('❌ Inventory system not available!');
+            }
+            
+        } else if (action === 'take') {
+            // Remove items from player inventory
+            if (this.voxelWorld && this.voxelWorld.inventory) {
+                // Check if player has enough items
+                const currentAmount = this.voxelWorld.countItemInSlots(itemId);
+                
+                if (currentAmount >= amount) {
+                    this.voxelWorld.inventory.removeFromInventory(itemId, amount);
+                    
+                    // Show status message
+                    const itemName = this.getItemDisplayName(itemId);
+                    this.voxelWorld.updateStatus(`📦 Removed ${amount}x ${itemName}`, 'info');
+                    
+                    console.log(`✅ Took ${amount}x ${itemId} from player`);
+                } else {
+                    console.warn(`⚠️ Player doesn't have enough ${itemId} (has ${currentAmount}, needs ${amount})`);
+                    
+                    // Show warning message
+                    const itemName = this.getItemDisplayName(itemId);
+                    this.voxelWorld.updateStatus(`❌ Not enough ${itemName}!`, 'error');
+                }
+            } else {
+                console.error('❌ Inventory system not available!');
+            }
+        } else {
+            console.warn(`⚠️ Unknown item action: ${action}`);
+        }
         
-        // TODO: Integrate with inventory system
         this.goToNext(node);
+    }
+
+    /**
+     * Get display name for an item (capitalize and format)
+     */
+    getItemDisplayName(itemId) {
+        // Remove prefixes like "crafted_"
+        let name = itemId.replace(/^crafted_/, '');
+        
+        // Replace underscores with spaces and capitalize each word
+        name = name.split('_')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ');
+        
+        return name;
     }
 
     /**
@@ -579,6 +643,7 @@ export class QuestRunner {
         this.nodes = [];
         this.connections = [];
         this.onQuestComplete = null;
+        this.isSargemTest = false; // Clear test mode flag
 
         // Cleanup quest NPCs
         this.cleanupNPCs();
