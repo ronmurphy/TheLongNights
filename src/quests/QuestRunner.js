@@ -177,6 +177,7 @@ export class QuestRunner {
     executeDialogue(node) {
         const data = node.data;
         const speaker = data.speaker || 'companion';
+        const character = data.character || speaker; // Character ID for portrait (e.g., 'elf_female')
         const text = data.text || 'Hello!';
         const emoji = speaker === 'companion' ? '🐈‍⬛' : data.emoji || '🙂';
 
@@ -189,10 +190,10 @@ export class QuestRunner {
         }
 
         // Show dialogue using Chat overlay with callback
-        console.log(`🎬 Showing dialogue, speaker="${speaker}", text="${text.substring(0, 50)}..."`);
+        console.log(`🎬 Showing dialogue, speaker="${speaker}", character="${character}", text="${text.substring(0, 50)}..."`);
         this.chatOverlay.showMessage({
-            character: speaker,
-            name: speaker === 'companion' ? 'Sargem' : speaker,
+            character: character,  // Use character ID for portrait lookup
+            name: speaker,  // Use speaker for display name
             text: text,
             emoji: emoji
         }, () => {

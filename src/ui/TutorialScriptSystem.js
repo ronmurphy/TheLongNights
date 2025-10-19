@@ -198,7 +198,7 @@ export class TutorialScriptSystem {
      */
     async showMessageSequence(messages) {
         // Refresh companion info before showing messages (in case player switched companions)
-        this.refreshCompanion();
+        await this.refreshCompanion();
         
         for (let i = 0; i < messages.length; i++) {
             const msg = messages[i];

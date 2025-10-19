@@ -190,13 +190,10 @@ export class ChatOverlay {
         chatBox.appendChild(continueBtn);
         this.overlayElement.appendChild(chatBox);
 
-        // Add to DOM
+        // Add to DOM but keep invisible
         document.body.appendChild(this.overlayElement);
-
-        // Fade in
-        setTimeout(() => {
-            this.overlayElement.style.opacity = '1';
-        }, 10);
+        
+        // DON'T fade in here - let showNextMessage do it after loading portrait
     }
 
     async showNextMessage() {
@@ -207,38 +204,81 @@ export class ChatOverlay {
 
         // Update portrait
         const portrait = document.getElementById('chat-portrait');
+        if (!portrait) {
+            console.warn('⚠️ Portrait element not found - overlay may have been removed');
+            return;
+        }
+        
         if (message.portrait) {
-            // Use provided portrait image
+            // Use provided portrait image (direct path)
             portrait.src = message.portrait;
             portrait.style.fontSize = ''; // Clear emoji styling
             portrait.style.lineHeight = '';
             portrait.style.textAlign = '';
+        } else if (message.character) {
+            // Load portrait from entities.json using sprite_portrait field (PRIORITY over emoji)
+            console.log(`🔍 Loading portrait for character: ${message.character}`);
+            const loadStartTime = performance.now();
+            
+            const entityData = await ChatOverlay.loadCompanionData(message.character);
+            const loadEndTime = performance.now();
+            console.log(`⏱️ Entity data loaded in ${(loadEndTime - loadStartTime).toFixed(2)}ms`);
+            
+            // Check if portrait element still exists after async load
+            const currentPortrait = document.getElementById('chat-portrait');
+            if (!currentPortrait) {
+                console.warn('⚠️ Portrait element removed during async load');
+                return;
+            }
+            
+            if (entityData && entityData.sprite_portrait) {
+                // Check if it's a companion (use player_avatars) or monster (use entities)
+                const isCompanion = entityData.type === 'companion';
+                const folder = isCompanion ? 'player_avatars' : 'entities';
+                const portraitPath = `art/${folder}/${entityData.sprite_portrait}`;
+                
+                console.log(`📸 Setting portrait src: ${portraitPath} (isCompanion: ${isCompanion})`);
+                const imgLoadStart = performance.now();
+                
+                // WAIT for image to actually load before continuing
+                await new Promise((resolve, reject) => {
+                    currentPortrait.onload = () => {
+                        const imgLoadEnd = performance.now();
+                        console.log(`✅ Portrait image loaded in ${(imgLoadEnd - imgLoadStart).toFixed(2)}ms`);
+                        resolve();
+                    };
+                    currentPortrait.onerror = (err) => {
+                        console.error(`❌ Portrait image failed to load: ${portraitPath}`, err);
+                        resolve(); // Resolve anyway to not block the UI
+                    };
+                    currentPortrait.src = portraitPath;
+                });
+                
+                currentPortrait.style.fontSize = ''; // Clear emoji styling
+                currentPortrait.style.lineHeight = '';
+                currentPortrait.style.textAlign = '';
+                currentPortrait.textContent = ''; // Clear emoji
+            } else {
+                // No sprite_portrait found - fallback to emoji if available
+                if (message.emoji) {
+                    currentPortrait.removeAttribute('src');
+                    currentPortrait.alt = '';
+                    currentPortrait.style.fontSize = '40px';
+                    currentPortrait.style.lineHeight = '60px';
+                    currentPortrait.style.textAlign = 'center';
+                    currentPortrait.textContent = message.emoji;
+                } else {
+                    console.warn(`⚠️ No sprite_portrait or emoji for ${message.character}`);
+                }
+            }
         } else if (message.emoji) {
-            // Use emoji as portrait (for NPCs without images)
+            // Use emoji as portrait (for NPCs without character ID)
             portrait.removeAttribute('src'); // Remove image src
             portrait.alt = '';
             portrait.style.fontSize = '40px';
             portrait.style.lineHeight = '60px';
             portrait.style.textAlign = 'center';
             portrait.textContent = message.emoji;
-        } else if (message.character) {
-            // Load portrait from entities.json using sprite_portrait field
-            const entityData = await ChatOverlay.loadCompanionData(message.character);
-            if (entityData && entityData.sprite_portrait) {
-                // Check if it's a companion (use player_avatars) or monster (use entities)
-                const isCompanion = entityData.type === 'companion';
-                const folder = isCompanion ? 'player_avatars' : 'entities';
-                portrait.src = `art/${folder}/${entityData.sprite_portrait}`;
-                console.log(`📸 Loaded companion portrait from ${folder}: ${entityData.sprite_portrait}`);
-            } else {
-                // Fallback to old naming convention if entities.json fails
-                portrait.src = `art/entities/${message.character}.jpeg`;
-                console.warn(`⚠️ No sprite_portrait found for ${message.character}, using fallback`);
-            }
-            portrait.style.fontSize = ''; // Clear emoji styling
-            portrait.style.lineHeight = '';
-            portrait.style.textAlign = '';
-            portrait.textContent = ''; // Clear emoji
         }
 
         // Update name
@@ -256,6 +296,15 @@ export class ChatOverlay {
             continueBtn.textContent = 'Close ✓';
         } else {
             continueBtn.textContent = 'Continue ▶';
+        }
+        
+        // Fade in overlay now that everything is loaded
+        if (this.overlayElement) {
+            setTimeout(() => {
+                if (this.overlayElement) {
+                    this.overlayElement.style.opacity = '1';
+                }
+            }, 10);
         }
     }
 
