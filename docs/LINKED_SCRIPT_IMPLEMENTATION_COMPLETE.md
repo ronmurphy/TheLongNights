@@ -603,3 +603,31 @@ fetch('assets/data/companion_introduction.json')
 **Implementation Time:** ~3 hours
 
 **Lines of Code:** ~250 (added), ~40 (removed)
+
+-- brad update >
+
+What We Did:
+
+Implemented link_script node type in QuestRunner
+Added template variable system ({{companion_id}}, {{companion_name}}, {{player_race}})
+Created companion_introduction.json quest file
+Fixed timing issue by calling callback before linking
+Added copy-data build script to copy JSON files to dist
+How It Works:
+
+personalityQuiz.json → link_script node → companion_introduction.json
+                    ↓
+              Calls callback first
+                    ↓
+         Saves playerData to localStorage
+                    ↓
+    Template variables replaced with real data
+                    ↓
+          Companion intro executes with correct name
+
+To Continue Working:
+
+Read the "Testing Guide" section for verification steps
+Check "Future Enhancements" for ideas on what to add next
+Use "Quick Reference Commands" for debugging
+See "Known Issues & Limitations" for edge cases
