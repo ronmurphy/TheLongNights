@@ -49,7 +49,7 @@ If in-game doesn't work:
    ```
 5. Should look like:
    ```
-   "C:\...\VoxelWorld.exe" --force_high_performance_gpu
+   "C:\...\TheLongNights.exe" --force_high_performance_gpu
    ```
 
 ---
@@ -58,14 +58,14 @@ If in-game doesn't work:
 
 ### Terminal Command:
 ```bash
-./VoxelWorld --force_high_performance_gpu
+./TheLongNights --force_high_performance_gpu
 ```
 
 Or create launcher script:
 ```bash
 #!/bin/bash
-cd /path/to/VoxelWorld
-./VoxelWorld --force_high_performance_gpu
+cd /path/to/TheLongNights
+./TheLongNights --force_high_performance_gpu
 ```
 
 ---

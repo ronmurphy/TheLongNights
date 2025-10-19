@@ -6,7 +6,7 @@
 
 **Shortcut Target:**
 ```
-"C:\Path\To\VoxelWorld.exe" --switch1 --switch2
+"C:\Path\To\TheLongNights.exe" --switch1 --switch2
 ```
 
 **Important:**
@@ -20,11 +20,11 @@
 
 **Terminal:**
 ```bash
-./VoxelWorld --switch1 --switch2
+./TheLongNights --switch1 --switch2
 ```
 
 **Important:**
-- Use `./VoxelWorld` (dot-slash)
+- Use `./TheLongNights` (dot-slash)
 - Use **double dash** (--)
 - Space-separated
 
@@ -93,24 +93,24 @@
 
 **Windows:**
 ```
-"C:\Games\VoxelWorld.exe" --force_high_performance_gpu
+"C:\Games\TheLongNights.exe" --force_high_performance_gpu
 ```
 
 **Linux:**
 ```bash
-./VoxelWorld --force_high_performance_gpu
+./TheLongNights --force_high_performance_gpu
 ```
 
 ### ❌ WRONG
 
 **Windows (switches inside quotes):**
 ```
-"C:\Games\VoxelWorld.exe --force_high_performance_gpu"
+"C:\Games\TheLongNights.exe --force_high_performance_gpu"
 ```
 
 **Linux (no dot-slash):**
 ```bash
-VoxelWorld --force_high_performance_gpu
+TheLongNights --force_high_performance_gpu
 ```
 
 ---

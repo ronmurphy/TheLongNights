@@ -1,6 +1,6 @@
 # 🚀 Quick Start Guide
 
-## Welcome to VoxelWorld!
+## Welcome to The Long Nights!
 
 ### Basic Controls
 
