@@ -45,7 +45,7 @@ export class PlayerCompanionUI {
 
         panel.style.cssText = `
             position: fixed;
-            bottom: 80px;
+            bottom: 20px;
             ${side}: 20px;
             background: rgba(40, 30, 20, 0.95);
             border: 3px solid #8b7355;

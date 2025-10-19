@@ -70,12 +70,108 @@ export class ChatOverlay {
             padding-bottom: 40px;
         `;
 
-        // Chat box container
+        // Visual Novel style: Two portraits on sides
+        const portraitsContainer = document.createElement('div');
+        portraitsContainer.id = 'chat-portraits';
+        portraitsContainer.style.cssText = `
+            position: fixed;
+            bottom: 200px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 5%;
+            pointer-events: none;
+            z-index: 50003;
+        `;
+
+        // Left portrait (Player)
+        const leftPortraitContainer = document.createElement('div');
+        leftPortraitContainer.id = 'chat-portrait-left-container';
+        leftPortraitContainer.style.cssText = `
+            position: relative;
+            transition: opacity 0.3s, filter 0.3s;
+        `;
+        
+        const leftPortrait = document.createElement('img');
+        leftPortrait.id = 'chat-portrait-left';
+        leftPortrait.style.cssText = `
+            width: 300px;
+            height: 400px;
+            object-fit: contain;
+            object-position: bottom;
+            filter: drop-shadow(0 10px 30px rgba(0, 0, 0, 0.8));
+        `;
+        
+        const leftNameTag = document.createElement('div');
+        leftNameTag.id = 'chat-name-left';
+        leftNameTag.style.cssText = `
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #8B7355 0%, #A0826D 50%, #8B7355 100%);
+            border: 2px solid #D4AF37;
+            border-radius: 20px;
+            padding: 8px 20px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #2C1810;
+            text-shadow: 1px 1px 2px rgba(212, 175, 55, 0.3);
+            white-space: nowrap;
+        `;
+        
+        leftPortraitContainer.appendChild(leftPortrait);
+        leftPortraitContainer.appendChild(leftNameTag);
+        portraitsContainer.appendChild(leftPortraitContainer);
+
+        // Right portrait (Companion) - flipped horizontally
+        const rightPortraitContainer = document.createElement('div');
+        rightPortraitContainer.id = 'chat-portrait-right-container';
+        rightPortraitContainer.style.cssText = `
+            position: relative;
+            transition: opacity 0.3s, filter 0.3s;
+        `;
+        
+        const rightPortrait = document.createElement('img');
+        rightPortrait.id = 'chat-portrait-right';
+        rightPortrait.style.cssText = `
+            width: 300px;
+            height: 400px;
+            object-fit: contain;
+            object-position: bottom;
+            transform: scaleX(-1);
+            filter: drop-shadow(0 10px 30px rgba(0, 0, 0, 0.8));
+        `;
+        
+        const rightNameTag = document.createElement('div');
+        rightNameTag.id = 'chat-name-right';
+        rightNameTag.style.cssText = `
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #8B7355 0%, #A0826D 50%, #8B7355 100%);
+            border: 2px solid #D4AF37;
+            border-radius: 20px;
+            padding: 8px 20px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #2C1810;
+            text-shadow: 1px 1px 2px rgba(212, 175, 55, 0.3);
+            white-space: nowrap;
+        `;
+        
+        rightPortraitContainer.appendChild(rightPortrait);
+        rightPortraitContainer.appendChild(rightNameTag);
+        portraitsContainer.appendChild(rightPortraitContainer);
+
+        // Chat box container (now simpler, just text and button)
         const chatBox = document.createElement('div');
         chatBox.id = 'chat-box';
         chatBox.style.cssText = `
             width: 80%;
-            max-width: 700px;
+            max-width: 900px;
             background: linear-gradient(135deg, #8B7355 0%, #A0826D 50%, #8B7355 100%);
             border: 4px solid #4A3728;
             border-radius: 12px;
@@ -85,42 +181,19 @@ export class ChatOverlay {
             position: relative;
         `;
 
-        // Character info section (portrait + name)
-        const characterSection = document.createElement('div');
-        characterSection.id = 'chat-character';
-        characterSection.style.cssText = `
-            display: flex;
-            align-items: center;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #D4AF37;
-        `;
-
-        // Portrait
-        const portrait = document.createElement('img');
-        portrait.id = 'chat-portrait';
-        portrait.style.cssText = `
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            border: 3px solid #D4AF37;
-            margin-right: 15px;
-            object-fit: cover;
-            background: #4A3728;
-        `;
-
-        // Name label
-        const nameLabel = document.createElement('div');
-        nameLabel.id = 'chat-name';
-        nameLabel.style.cssText = `
+        // Speaker name (centered above text)
+        const speakerName = document.createElement('div');
+        speakerName.id = 'chat-speaker-name';
+        speakerName.style.cssText = `
             font-size: 20px;
             font-weight: bold;
             color: #2C1810;
             text-shadow: 1px 1px 2px rgba(212, 175, 55, 0.3);
+            text-align: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #D4AF37;
         `;
-
-        characterSection.appendChild(portrait);
-        characterSection.appendChild(nameLabel);
 
         // Dialogue text area
         const textArea = document.createElement('div');
@@ -185,9 +258,12 @@ export class ChatOverlay {
         });
 
         // Assemble chat box
-        chatBox.appendChild(characterSection);
+        chatBox.appendChild(speakerName);
         chatBox.appendChild(textArea);
         chatBox.appendChild(continueBtn);
+        
+        // Add portraits and chat box to overlay
+        this.overlayElement.appendChild(portraitsContainer);
         this.overlayElement.appendChild(chatBox);
 
         // Add to DOM but keep invisible
@@ -202,21 +278,50 @@ export class ChatOverlay {
         const message = this.messageQueue[this.currentMessageIndex];
         // DON'T increment here - let the Continue button handler do it
 
-        // Update portrait
-        const portrait = document.getElementById('chat-portrait');
-        if (!portrait) {
-            console.warn('⚠️ Portrait element not found - overlay may have been removed');
+        // Get portrait elements
+        const leftPortrait = document.getElementById('chat-portrait-left');
+        const rightPortrait = document.getElementById('chat-portrait-right');
+        const leftName = document.getElementById('chat-name-left');
+        const rightName = document.getElementById('chat-name-right');
+        const leftContainer = document.getElementById('chat-portrait-left-container');
+        const rightContainer = document.getElementById('chat-portrait-right-container');
+        const speakerName = document.getElementById('chat-speaker-name');
+        
+        if (!leftPortrait || !rightPortrait) {
+            console.warn('⚠️ Portrait elements not found - overlay may have been removed');
             return;
         }
+
+        // Load player portrait (left side) - get from localStorage
+        const playerDataRaw = localStorage.getItem('NebulaWorld_playerData');
+        const playerData = JSON.parse(playerDataRaw || '{}');
+        const playerRace = playerData.character?.race || 'human';
+        const playerGender = playerData.character?.gender || 'male';
+        const playerPortraitPath = `art/player_avatars/${playerRace}_${playerGender}.png`;
         
-        if (message.portrait) {
-            // Use provided portrait image (direct path)
-            portrait.src = message.portrait;
-            portrait.style.fontSize = ''; // Clear emoji styling
-            portrait.style.lineHeight = '';
-            portrait.style.textAlign = '';
-        } else if (message.character) {
-            // Load portrait from entities.json using sprite_portrait field (PRIORITY over emoji)
+        leftPortrait.src = playerPortraitPath;
+        leftName.textContent = 'You';
+        
+        // Determine who is speaking and load companion portrait (right side)
+        const isNarrator = message.name === 'Narrator' || message.character === 'narrator';
+        const isCompanionSpeaking = message.character && message.character !== 'player' && !isNarrator;
+        
+        if (isNarrator) {
+            // Narrator mode - show narrator.png on both sides
+            const narratorPath = 'art/player_avatars/narrator.png';
+            leftPortrait.src = narratorPath;
+            rightPortrait.src = narratorPath;
+            leftName.textContent = 'Narrator';
+            rightName.textContent = 'Narrator';
+            
+            // Both portraits equally visible for narrator
+            leftContainer.style.opacity = '1';
+            leftContainer.style.filter = 'brightness(1)';
+            rightContainer.style.opacity = '1';
+            rightContainer.style.filter = 'brightness(1)';
+            
+        } else if (isCompanionSpeaking) {
+            // Load companion portrait from entities.json
             console.log(`🔍 Loading portrait for character: ${message.character}`);
             const loadStartTime = performance.now();
             
@@ -224,68 +329,56 @@ export class ChatOverlay {
             const loadEndTime = performance.now();
             console.log(`⏱️ Entity data loaded in ${(loadEndTime - loadStartTime).toFixed(2)}ms`);
             
-            // Check if portrait element still exists after async load
-            const currentPortrait = document.getElementById('chat-portrait');
-            if (!currentPortrait) {
+            // Check if elements still exist after async load
+            const currentRightPortrait = document.getElementById('chat-portrait-right');
+            if (!currentRightPortrait) {
                 console.warn('⚠️ Portrait element removed during async load');
                 return;
             }
             
             if (entityData && entityData.sprite_portrait) {
-                // Check if it's a companion (use player_avatars) or monster (use entities)
                 const isCompanion = entityData.type === 'companion';
                 const folder = isCompanion ? 'player_avatars' : 'entities';
                 const portraitPath = `art/${folder}/${entityData.sprite_portrait}`;
                 
-                console.log(`📸 Setting portrait src: ${portraitPath} (isCompanion: ${isCompanion})`);
+                console.log(`📸 Setting companion portrait: ${portraitPath}`);
                 const imgLoadStart = performance.now();
                 
-                // WAIT for image to actually load before continuing
-                await new Promise((resolve, reject) => {
-                    currentPortrait.onload = () => {
+                // WAIT for image to load
+                await new Promise((resolve) => {
+                    currentRightPortrait.onload = () => {
                         const imgLoadEnd = performance.now();
-                        console.log(`✅ Portrait image loaded in ${(imgLoadEnd - imgLoadStart).toFixed(2)}ms`);
+                        console.log(`✅ Companion portrait loaded in ${(imgLoadEnd - imgLoadStart).toFixed(2)}ms`);
                         resolve();
                     };
-                    currentPortrait.onerror = (err) => {
-                        console.error(`❌ Portrait image failed to load: ${portraitPath}`, err);
-                        resolve(); // Resolve anyway to not block the UI
+                    currentRightPortrait.onerror = (err) => {
+                        console.error(`❌ Companion portrait failed to load: ${portraitPath}`, err);
+                        resolve();
                     };
-                    currentPortrait.src = portraitPath;
+                    currentRightPortrait.src = portraitPath;
                 });
-                
-                currentPortrait.style.fontSize = ''; // Clear emoji styling
-                currentPortrait.style.lineHeight = '';
-                currentPortrait.style.textAlign = '';
-                currentPortrait.textContent = ''; // Clear emoji
-            } else {
-                // No sprite_portrait found - fallback to emoji if available
-                if (message.emoji) {
-                    currentPortrait.removeAttribute('src');
-                    currentPortrait.alt = '';
-                    currentPortrait.style.fontSize = '40px';
-                    currentPortrait.style.lineHeight = '60px';
-                    currentPortrait.style.textAlign = 'center';
-                    currentPortrait.textContent = message.emoji;
-                } else {
-                    console.warn(`⚠️ No sprite_portrait or emoji for ${message.character}`);
-                }
             }
-        } else if (message.emoji) {
-            // Use emoji as portrait (for NPCs without character ID)
-            portrait.removeAttribute('src'); // Remove image src
-            portrait.alt = '';
-            portrait.style.fontSize = '40px';
-            portrait.style.lineHeight = '60px';
-            portrait.style.textAlign = 'center';
-            portrait.textContent = message.emoji;
+            
+            // Set companion name
+            rightName.textContent = message.name || message.character;
+            
+            // Highlight companion, dim player
+            rightContainer.style.opacity = '1';
+            rightContainer.style.filter = 'brightness(1)';
+            leftContainer.style.opacity = '0.5';
+            leftContainer.style.filter = 'brightness(0.6) grayscale(0.3)';
+            
+        } else {
+            // Player is speaking - dim companion
+            rightContainer.style.opacity = '0.5';
+            rightContainer.style.filter = 'brightness(0.6) grayscale(0.3)';
+            leftContainer.style.opacity = '1';
+            leftContainer.style.filter = 'brightness(1)';
         }
-
-        // Update name
-        const nameLabel = document.getElementById('chat-name');
-        nameLabel.textContent = message.name || message.character || 'Unknown';
-
-        // Update text
+        
+        // Update speaker name and text
+        speakerName.textContent = message.name || (isNarrator ? 'Narrator' : (isCompanionSpeaking ? 'Companion' : 'You'));
+        
         const textArea = document.getElementById('chat-text');
         textArea.textContent = message.text;
 
@@ -317,8 +410,8 @@ export class ChatOverlay {
         }
         this.overlayElement = null;
 
-        // Re-request pointer lock after chat closes (unless workbench/other UI is open)
-        setTimeout(() => {
+        // Re-request pointer lock after chat closes (multiple attempts for reliability)
+        const reacquirePointerLock = () => {
             const canvas = document.querySelector('canvas');
             const voxelApp = window.voxelApp;
 
@@ -326,12 +419,26 @@ export class ChatOverlay {
             if (canvas && voxelApp) {
                 const isWorkbenchOpen = voxelApp.workbenchSystem?.isOpen;
                 const isToolBenchOpen = voxelApp.toolBenchSystem?.isOpen;
+                const isKitchenOpen = voxelApp.kitchenBenchSystem?.isOpen;
 
-                if (!isWorkbenchOpen && !isToolBenchOpen) {
+                if (!isWorkbenchOpen && !isToolBenchOpen && !isKitchenOpen && !document.pointerLockElement) {
+                    console.log('🔒 Re-acquiring pointer lock after chat close');
                     canvas.requestPointerLock();
+                    
+                    // Verify it worked after a short delay
+                    setTimeout(() => {
+                        if (!document.pointerLockElement) {
+                            console.warn('⚠️ Pointer lock failed, retrying...');
+                            canvas.requestPointerLock();
+                        }
+                    }, 50);
                 }
             }
-        }, 100);
+        };
+        
+        // Try immediately and again after a short delay
+        setTimeout(reacquirePointerLock, 10);
+        setTimeout(reacquirePointerLock, 100);
     }
 
     /**

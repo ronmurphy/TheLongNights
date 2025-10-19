@@ -113,7 +113,30 @@ console.log(voxelWorld.dayNightCycle.currentTime);
 voxelWorld.dayNightCycle.currentTime = 12;  // Noon
 voxelWorld.dayNightCycle.currentTime = 0;   // Midnight
 voxelWorld.dayNightCycle.currentTime = 6;   // Dawn
-voxelWorld.dayNightCycle.currentTime = 18;  // Dusk
+voxelWorld.dayNightCycle.currentTime = 18;  // Dusk (fog activates)
+voxelWorld.dayNightCycle.currentTime = 22;  // Late night
+
+// Speed up/slow down time
+voxelWorld.dayNightCycle.timeScale = 10;  // 10x faster
+voxelWorld.dayNightCycle.timeScale = 1;   // Normal speed (default)
+voxelWorld.dayNightCycle.timeScale = 0;   // Pause time
+```
+
+### Atmospheric Fog Control
+```javascript
+// Manually disable volumetric fog (for performance testing)
+if (voxelWorld.atmosphericFog) {
+    voxelWorld.atmosphericFog.deactivate();
+}
+
+// Manually enable fog
+if (voxelWorld.atmosphericFog) {
+    voxelWorld.atmosphericFog.activate(false);  // Normal night fog
+    voxelWorld.atmosphericFog.activate(true);   // Blood moon fog
+}
+
+// Check if fog is active
+console.log(voxelWorld.atmosphericFog?.isActive);
 ```
 
 ### Biome Info

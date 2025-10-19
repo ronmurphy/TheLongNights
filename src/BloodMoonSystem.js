@@ -45,10 +45,31 @@ export class BloodMoonSystem {
             attackCooldown: 2000,    // Milliseconds between attacks
         };
         
-        // Animation loop (60 FPS)
-        this.animationInterval = setInterval(() => this.updateEnemies(), 16); // ~60 FPS
+        // Animation loop (60 FPS) - only runs during blood moon
+        this.animationInterval = null;
         
         console.log('🩸 BloodMoonSystem initialized');
+    }
+    
+    /**
+     * Start animation loop (called when blood moon begins)
+     */
+    startAnimationLoop() {
+        if (this.animationInterval) return; // Already running
+        
+        this.animationInterval = setInterval(() => this.updateEnemies(), 16); // ~60 FPS
+        console.log('🩸 Animation loop started');
+    }
+    
+    /**
+     * Stop animation loop (called when blood moon ends)
+     */
+    stopAnimationLoop() {
+        if (this.animationInterval) {
+            clearInterval(this.animationInterval);
+            this.animationInterval = null;
+            console.log('🩸 Animation loop stopped');
+        }
     }
     
     /**
@@ -218,6 +239,11 @@ export class BloodMoonSystem {
      */
     spawnEnemy(entityId, x, y, z, speedMultiplier = 1.0) {
         console.log(`🩸 spawnEnemy called: ${entityId} at (${x.toFixed(1)}, ${y.toFixed(1)}, ${z.toFixed(1)}) [${speedMultiplier.toFixed(2)}x speed]`);
+        
+        // Start animation loop when first enemy spawns
+        if (this.activeEnemies.size === 0) {
+            this.startAnimationLoop();
+        }
         
         // Load enemy data from entities.json
         const entityData = this.getEntityData(entityId);
@@ -506,6 +532,9 @@ export class BloodMoonSystem {
      */
     cleanup() {
         console.log(`🩸 Cleaning up ${this.activeEnemies.size} enemies...`);
+        
+        // Stop animation loop when blood moon ends
+        this.stopAnimationLoop();
         
         // Remove all enemies
         const enemyIds = Array.from(this.activeEnemies.keys());

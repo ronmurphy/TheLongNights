@@ -21,6 +21,7 @@ import { ModificationTracker } from './serialization/ModificationTracker.js';
 import { GhostSystem } from './GhostSystem.js';
 import { AngryGhostSystem } from './AngryGhostSystem.js';
 import { BloodMoonSystem } from './BloodMoonSystem.js';
+import { AtmosphericFog } from './AtmosphericFog.js';
 import { BattleSystem } from './BattleSystem.js';
 import { BattleArena } from './BattleArena.js';
 import { RPGIntegration } from './rpg/RPGIntegration.js';
@@ -377,6 +378,9 @@ class NebulaVoxelApp {
 
         // 🩸 Initialize Blood Moon System (enemy spawning during blood moons)
         this.bloodMoonSystem = null;
+
+        // 🌫️ Initialize Atmospheric Fog System (volumetric fog during night/blood moon)
+        this.atmosphericFog = null;
 
         // ⚔️ Initialize Battle System (Pokemon-style auto-battler)
         this.battleSystem = null;
@@ -8469,7 +8473,8 @@ class NebulaVoxelApp {
         // 🩸 Initialize Blood Moon System now that scene is ready
         this.bloodMoonSystem = new BloodMoonSystem(this);
 
-        // 🎄 Initialize Christmas System now that scene is ready
+
+        // �🎄 Initialize Christmas System now that scene is ready
         this.christmasSystem = new ChristmasSystem(this);
 
         // 🎲 Initialize RPG System now that scene is ready
@@ -8584,6 +8589,9 @@ class NebulaVoxelApp {
         const height = window.innerHeight;
         this.camera = new THREE.PerspectiveCamera(75, width / height, 0.01, 1000); // Near-plane: 0.01 (was 0.1) to prevent sprite clipping
         this.camera.position.set(0, 10, 20);
+
+        // 🌫️ Initialize Atmospheric Fog System NOW that camera is ready
+        this.atmosphericFog = new AtmosphericFog(this.scene, this.camera);
 
         // � Initialize LOD Manager now that camera is ready
         this.lodManager = new ChunkLODManager(this);
@@ -11048,6 +11056,14 @@ class NebulaVoxelApp {
                 this.farmingSystem.update();
             }
 
+            // 🌫️ Update atmospheric fog - volumetric smoke layers during night/blood moon
+            if (this.atmosphericFog) {
+                const isNight = this.dayNightCycle.currentTime >= 18 || this.dayNightCycle.currentTime < 6;
+                const isBloodMoonActive = this.dayNightCycle.bloodMoonActive || false;
+                this.atmosphericFog.checkTimeAndUpdate(isNight, isBloodMoonActive);
+                this.atmosphericFog.update(deltaTime);
+            }
+
             // 🗡️ Update spear system - check for pickup proximity
             if (this.spearSystem) {
                 this.spearSystem.update();
@@ -12117,8 +12133,8 @@ class NebulaVoxelApp {
             const statusBar = document.createElement('div');
             statusBar.style.cssText = `
                 position: fixed;
-                top: 20px;
-                left: 50%;
+                top: 0px;
+                left: 15%;
                 transform: translateX(-50%);
                 background: rgba(0,0,0,0.8);
                 color: white;
@@ -12128,16 +12144,17 @@ class NebulaVoxelApp {
                 font-size: 14px;
                 pointer-events: auto;
                 z-index: 1000;
-                border-left: 4px solid #4CAF50;
+                border: 2px solid #000000ff;
                 box-shadow: 0 4px 12px rgba(0,0,0,0.3);
                 backdrop-filter: blur(4px);
                 transition: all 0.3s ease;
                 opacity: 0.9;
-                min-width: 200px;
-                max-width: 400px;
+                width: 70%;
+                max-width: 800px;
+                text-align: center;
             `;
             statusBar.innerHTML = `
-                <div style="display: flex; align-items: center; gap: 8px;">
+                <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
                     <span id="status-icon">🎮</span>
                     <span id="status-text">Ready to explore!</span>
                 </div>
