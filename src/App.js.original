@@ -5,7 +5,6 @@ import { initVoxelWorld } from './VoxelWorld.js';
 import { SplashScreen } from './SplashScreen.js';
 import { GameIntroOverlay } from './ui/GameIntroOverlay.js';
 import { ChatOverlay } from './ui/Chat.js';
-import { MainMenu } from './ui/MainMenu.js';
 // import { initWorkbench } from './ShapeForgeWorkbench.js'; // To be created
 
 window.addEventListener('DOMContentLoaded', () => {
@@ -20,6 +19,9 @@ window.addEventListener('DOMContentLoaded', () => {
 
   // Initialize splash screen
   const splashScreen = new SplashScreen();
+
+  // Check if this is a first-time player (no saved game)
+  const hasPlayerData = localStorage.getItem('NebulaWorld_playerData') !== null;
 
   function showGame() {
     console.log('showGame() called');
@@ -64,28 +66,9 @@ window.addEventListener('DOMContentLoaded', () => {
     window['testChristmas'] = () => app.testChristmas();
     console.log('🎄 testDouglas() and testChristmas() available globally');
 
-    // === MAIN MENU SYSTEM ===
-    // Show main menu with New Game / Load Game / Dev Mode options
-    const mainMenu = new MainMenu(
-      () => startNewGame(app),      // NEW GAME callback
-      () => loadExistingGame(app),  // LOAD GAME callback
-      () => startDevMode(app)        // DEV MODE callback
-    );
-    
-    mainMenu.show();
-    console.log('🎮 Main Menu displayed - awaiting player choice');
-
-    // === GAME MODE FUNCTIONS ===
-
-    /**
-     * 🆕 NEW GAME: Clear saves and start personality quiz
-     */
-    function startNewGame(app) {
-      console.log('🆕 Starting new game - loading personality quiz...');
-      
-      // Clear any existing save data
-      localStorage.removeItem('NebulaWorld_playerData');
-      localStorage.removeItem('NebulaWorld_devMode');
+    // If first-time player, show personality quiz THEN intro overlay AFTER world loads
+    if (!hasPlayerData) {
+      console.log('👋 First-time player detected! Starting personality quiz...');
 
       // Load personality quiz data
       fetch('data/personalityQuiz.json')
@@ -137,6 +120,12 @@ window.addEventListener('DOMContentLoaded', () => {
             console.log(`Preferred Companion: ${summary.preferredCompanion}`);
             console.log('═══════════════════════════════════════');
 
+            // Show player avatar UI now that quiz is complete
+            if (app.playerCompanionUI) {
+              app.playerCompanionUI.show();
+              console.log('🖼️ Player avatar UI displayed');
+            }
+
             // Use companion from quiz Q4 with randomly assigned gender (Daggerfall-style)
             // Fallback to 'male' if gender somehow undefined
             const companionGender = summary.companionGender || 'male';
@@ -155,72 +144,17 @@ window.addEventListener('DOMContentLoaded', () => {
             localStorage.setItem('NebulaWorld_playerData', JSON.stringify(playerData));
             console.log('✅ Player data saved:', playerData);
 
-            // Show player avatar UI now that character data is saved
-            if (app.playerCompanionUI) {
-              app.playerCompanionUI.update().then(() => {
-                app.playerCompanionUI.show();
-                console.log('🖼️ Player avatar UI displayed');
-              });
-            }
-
             // 🔗 Linked script handles companion introduction
             // The personality quiz now links to companion_introduction.json
             // which shows tutorial chat with template variables ({{companion_id}}, etc.)
             // and spawns the starter backpack
-            console.log('📜 Quiz will link to companion_introduction.json...');
+            console.log('� Quiz will link to companion_introduction.json...');
           });
         })
         .catch(error => {
           console.error('❌ Failed to load personality quiz:', error);
         });
     }
-
-    /**
-     * 📁 LOAD GAME: Load existing save file
-     */
-    function loadExistingGame(app) {
-      console.log('📁 Loading existing game...');
-      
-      const playerData = JSON.parse(localStorage.getItem('NebulaWorld_playerData') || '{}');
-      
-      if (playerData.character) {
-        // Load character data
-        app.playerCharacter.load(playerData.character);
-        console.log('✅ Character loaded:', app.playerCharacter.getSummary());
-        
-        // Update and show UI
-        if (app.playerCompanionUI) {
-          app.playerCompanionUI.update().then(() => {
-            app.playerCompanionUI.show();
-            console.log('🖼️ Player avatar UI displayed');
-          });
-        }
-        
-        // TODO: Load world state, inventory, quest progress, etc.
-        console.log('🌍 Game loaded - ready to play!');
-      } else {
-        console.error('❌ No character data found in save file');
-      }
-    }
-
-    /**
-     * 🔧 DEV MODE: Skip setup for testing
-     */
-    function startDevMode(app) {
-      console.log('🔧 Starting dev mode...');
-      
-      // Set dev mode flag (separate from player data)
-      localStorage.setItem('NebulaWorld_devMode', 'true');
-      
-      // Call unlockUI() to set up test environment
-      if (window.unlockUI) {
-        window.unlockUI();
-        console.log('✅ Dev mode active - UI unlocked with test data');
-      } else {
-        console.error('❌ unlockUI() not available');
-      }
-    }
-
   }).catch(error => {
     console.error('❌ Failed to initialize The Long Nights:', error);
     console.error('Error stack:', error.stack);

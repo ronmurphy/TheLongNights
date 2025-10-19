@@ -7203,15 +7203,20 @@ class NebulaVoxelApp {
 
             // 🖼️ NEW: Set up PlayerCompanionUI with default test companion (goblin_male)
             if (this.playerCompanionUI) {
-                // Create test playerData if it doesn't exist
+                // Only create test playerData if it doesn't exist at all
+                // Don't override existing data (e.g., from quiz or save file)
                 let playerData = JSON.parse(localStorage.getItem('NebulaWorld_playerData') || '{}');
-                if (!playerData.starterMonster) {
+                if (!playerData.starterMonster && !playerData.character) {
+                    // No data exists - create minimal test data for development
                     playerData.starterMonster = 'goblin_male'; // Test companion
                     playerData.monsterCollection = ['goblin_male'];
                     localStorage.setItem('NebulaWorld_playerData', JSON.stringify(playerData));
-                    console.log('🧪 Test companion set: goblin_male');
+                    console.log('🧪 Test companion set: goblin_male (dev mode)');
                 }
-                this.playerCompanionUI.show();
+                // Update UI to show current data, then show panels
+                this.playerCompanionUI.update().then(() => {
+                    this.playerCompanionUI.show();
+                });
             }
 
             console.log('✅ UI unlocked! Hotbar, backpack, companion, and workbench are now available.');

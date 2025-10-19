@@ -151,8 +151,17 @@ export class QuestRunner {
                 this.executeTrigger(node);
                 break;
             
+            case 'action':
+                this.executeAction(node);
+                break;
+            
             case 'link_script':
                 await this.executeLinkScript(node);
+                break;
+            
+            case 'end':
+                console.log('🏁 End node reached - quest complete');
+                this.stopQuest();
                 break;
             
             default:
@@ -180,6 +189,7 @@ export class QuestRunner {
         }
 
         // Show dialogue using Chat overlay with callback
+        console.log(`🎬 Showing dialogue, speaker="${speaker}", text="${text.substring(0, 50)}..."`);
         this.chatOverlay.showMessage({
             character: speaker,
             name: speaker === 'companion' ? 'Sargem' : speaker,
@@ -187,6 +197,7 @@ export class QuestRunner {
             emoji: emoji
         }, () => {
             // Callback: Find next node and execute it
+            console.log('🔄 Dialogue callback fired, calling goToNext');
             this.goToNext(node);
         });
     }
@@ -484,6 +495,31 @@ export class QuestRunner {
     }
 
     /**
+     * Execute custom action code
+     */
+    executeAction(node) {
+        const data = node.data;
+        const actionType = data.actionType || 'custom';
+        const code = data.code || '';
+
+        console.log(`🎬 Executing action: ${actionType}`);
+        
+        if (actionType === 'custom' && code) {
+            try {
+                // Execute the custom code
+                // eslint-disable-next-line no-eval
+                eval(code);
+                console.log(`✅ Action code executed: ${code.substring(0, 50)}...`);
+            } catch (error) {
+                console.error(`❌ Action code failed:`, error);
+            }
+        }
+        
+        // Continue to next node
+        this.goToNext(node);
+    }
+
+    /**
      * Go to the next connected node
      */
     goToNext(currentNode, outputIndex = 0) {
@@ -624,12 +660,12 @@ export class QuestRunner {
     }
 
     /**
-     * Load a quest file from assets/data/
+     * Load a quest file from data/
      */
     async loadQuestFile(filename) {
         // Ensure .json extension
         const path = filename.endsWith('.json') ? filename : `${filename}.json`;
-        const fullPath = `assets/data/${path}`;
+        const fullPath = `data/${path}`;
         
         console.log(`📖 Loading quest file: ${fullPath}`);
         
@@ -651,7 +687,12 @@ export class QuestRunner {
      * {{player_race}} → "Human"
      */
     applyTemplateVariables(questData) {
-        const playerData = JSON.parse(localStorage.getItem('NebulaWorld_playerData') || '{}');
+        const playerDataRaw = localStorage.getItem('NebulaWorld_playerData');
+        console.log(`📦 Raw playerData from localStorage:`, playerDataRaw);
+        
+        const playerData = JSON.parse(playerDataRaw || '{}');
+        console.log(`📦 Parsed playerData:`, playerData);
+        
         const companionId = playerData.activeCompanion || playerData.starterMonster || 'rat';
         
         // Get companion name from entities.json (synchronous for now, could be cached)
@@ -676,29 +717,57 @@ export class QuestRunner {
                 if (node.data) {
                     // Replace in text fields
                     if (node.data.text) {
+                        const originalText = node.data.text;
                         node.data.text = node.data.text
                             .replace(/\{\{companion_id\}\}/g, companionId)
                             .replace(/\{\{companion_name\}\}/g, companionName)
                             .replace(/\{\{player_race\}\}/g, playerRaceName);
+                        
+                        if (originalText !== node.data.text) {
+                            console.log(`  ✏️  Replaced text in node ${node.id}:`);
+                            console.log(`    Before: "${originalText}"`);
+                            console.log(`    After: "${node.data.text}"`);
+                        }
                     }
                     
                     // Replace in question fields
                     if (node.data.question) {
+                        const originalQuestion = node.data.question;
                         node.data.question = node.data.question
                             .replace(/\{\{companion_id\}\}/g, companionId)
                             .replace(/\{\{companion_name\}\}/g, companionName)
                             .replace(/\{\{player_race\}\}/g, playerRaceName);
+                        
+                        if (originalQuestion !== node.data.question) {
+                            console.log(`  ✏️  Replaced question in node ${node.id}:`);
+                            console.log(`    Before: "${originalQuestion}"`);
+                            console.log(`    After: "${node.data.question}"`);
+                        }
                     }
                     
                     // Replace in speaker/character fields
                     if (node.data.speaker) {
+                        const originalSpeaker = node.data.speaker;
                         node.data.speaker = node.data.speaker
-                            .replace(/\{\{companion_id\}\}/g, companionId);
+                            .replace(/\{\{companion_id\}\}/g, companionId)
+                            .replace(/\{\{companion_name\}\}/g, companionName)
+                            .replace(/\{\{player_race\}\}/g, playerRaceName);
+                        
+                        if (originalSpeaker !== node.data.speaker) {
+                            console.log(`  ✏️  Replaced speaker in node ${node.id}: "${originalSpeaker}" → "${node.data.speaker}"`);
+                        }
                     }
                     
                     if (node.data.character) {
+                        const originalCharacter = node.data.character;
                         node.data.character = node.data.character
-                            .replace(/\{\{companion_id\}\}/g, companionId);
+                            .replace(/\{\{companion_id\}\}/g, companionId)
+                            .replace(/\{\{companion_name\}\}/g, companionName)
+                            .replace(/\{\{player_race\}\}/g, playerRaceName);
+                        
+                        if (originalCharacter !== node.data.character) {
+                            console.log(`  ✏️  Replaced character in node ${node.id}: "${originalCharacter}" → "${node.data.character}"`);
+                        }
                     }
                 }
             });

@@ -1,6 +1,7 @@
 /**
- * Vite plugin to copy the data/ folder to dist/ during build
- * This ensures JSON data files are available in production builds
+ * Vite plugin to copy the assets/data/ folder to dist/data/ during build
+ * This ensures JSON data files (quest scripts, recipes, etc.) are available in production builds
+ * Note: Vite's publicDir copies assets/ to dist/ but this plugin ensures data/ is at dist/data/
  */
 
 import { copyFileSync, mkdirSync, readdirSync, statSync } from 'fs';
@@ -10,7 +11,7 @@ export default function copyDataFiles() {
     return {
         name: 'copy-data-files',
         writeBundle() {
-            const sourceDir = 'data';
+            const sourceDir = 'assets/data';
             const targetDir = 'dist/data';
 
             // Create target directory if it doesn't exist

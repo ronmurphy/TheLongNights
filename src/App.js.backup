@@ -64,32 +64,35 @@ window.addEventListener('DOMContentLoaded', () => {
     window['testChristmas'] = () => app.testChristmas();
     console.log('🎄 testDouglas() and testChristmas() available globally');
 
-    // === MAIN MENU SYSTEM ===
-    // Show main menu with New Game / Load Game / Dev Mode options
+    // 🎮 NEW: Show main menu instead of auto-starting
     const mainMenu = new MainMenu(
-      () => startNewGame(app),      // NEW GAME callback
-      () => loadExistingGame(app),  // LOAD GAME callback
-      () => startDevMode(app)        // DEV MODE callback
+      // NEW GAME callback
+      () => startNewGame(app),
+      // LOAD GAME callback
+      () => loadExistingGame(app),
+      // DEV MODE callback
+      () => startDevMode(app)
     );
     
     mainMenu.show();
     console.log('🎮 Main Menu displayed - awaiting player choice');
+  }).catch(error => {
+    console.error('❌ Failed to initialize The Long Nights:', error);
+    console.error('Error stack:', error.stack);
+    // Hide splash on error
+    if (splashScreen) {
+      splashScreen.updateProgress(100, 'Error loading game');
+      setTimeout(() => splashScreen.hide(), 2000);
+    }
+  });
 
-    // === GAME MODE FUNCTIONS ===
-
-    /**
-     * 🆕 NEW GAME: Clear saves and start personality quiz
-     */
-    function startNewGame(app) {
-      console.log('🆕 Starting new game - loading personality quiz...');
-      
-      // Clear any existing save data
-      localStorage.removeItem('NebulaWorld_playerData');
-      localStorage.removeItem('NebulaWorld_devMode');
-
-      // Load personality quiz data
-      fetch('data/personalityQuiz.json')
-        .then(r => r.json())
+  // 🆕 NEW GAME: Start personality quiz
+  function startNewGame(app) {
+    console.log('🆕 Starting new game - loading personality quiz...');
+    
+    // Load personality quiz data
+    fetch('data/personalityQuiz.json')
+      .then(r => r.json())
         .then(quizData => {
           console.log('🎭 Loaded personality quiz, starting quest...');
 
@@ -167,60 +170,13 @@ window.addEventListener('DOMContentLoaded', () => {
             // The personality quiz now links to companion_introduction.json
             // which shows tutorial chat with template variables ({{companion_id}}, etc.)
             // and spawns the starter backpack
-            console.log('📜 Quiz will link to companion_introduction.json...');
+            console.log('� Quiz will link to companion_introduction.json...');
           });
         })
         .catch(error => {
           console.error('❌ Failed to load personality quiz:', error);
         });
     }
-
-    /**
-     * 📁 LOAD GAME: Load existing save file
-     */
-    function loadExistingGame(app) {
-      console.log('📁 Loading existing game...');
-      
-      const playerData = JSON.parse(localStorage.getItem('NebulaWorld_playerData') || '{}');
-      
-      if (playerData.character) {
-        // Load character data
-        app.playerCharacter.load(playerData.character);
-        console.log('✅ Character loaded:', app.playerCharacter.getSummary());
-        
-        // Update and show UI
-        if (app.playerCompanionUI) {
-          app.playerCompanionUI.update().then(() => {
-            app.playerCompanionUI.show();
-            console.log('🖼️ Player avatar UI displayed');
-          });
-        }
-        
-        // TODO: Load world state, inventory, quest progress, etc.
-        console.log('🌍 Game loaded - ready to play!');
-      } else {
-        console.error('❌ No character data found in save file');
-      }
-    }
-
-    /**
-     * 🔧 DEV MODE: Skip setup for testing
-     */
-    function startDevMode(app) {
-      console.log('🔧 Starting dev mode...');
-      
-      // Set dev mode flag (separate from player data)
-      localStorage.setItem('NebulaWorld_devMode', 'true');
-      
-      // Call unlockUI() to set up test environment
-      if (window.unlockUI) {
-        window.unlockUI();
-        console.log('✅ Dev mode active - UI unlocked with test data');
-      } else {
-        console.error('❌ unlockUI() not available');
-      }
-    }
-
   }).catch(error => {
     console.error('❌ Failed to initialize The Long Nights:', error);
     console.error('Error stack:', error.stack);

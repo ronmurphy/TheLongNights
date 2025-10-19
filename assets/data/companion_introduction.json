@@ -58,24 +58,29 @@
   ],
   "connections": [
     {
-      "source": "start",
-      "target": "minimap_hint"
+      "fromId": "start",
+      "toId": "minimap_hint",
+      "sourceHandle": "output_0"
     },
     {
-      "source": "minimap_hint",
-      "target": "controls_hint"
+      "fromId": "minimap_hint",
+      "toId": "controls_hint",
+      "sourceHandle": "output_0"
     },
     {
-      "source": "controls_hint",
-      "target": "backpack_hint"
+      "fromId": "controls_hint",
+      "toId": "backpack_hint",
+      "sourceHandle": "output_0"
     },
     {
-      "source": "backpack_hint",
-      "target": "spawn_backpack"
+      "fromId": "backpack_hint",
+      "toId": "spawn_backpack",
+      "sourceHandle": "output_0"
     },
     {
-      "source": "spawn_backpack",
-      "target": "end"
+      "fromId": "spawn_backpack",
+      "toId": "end",
+      "sourceHandle": "output_0"
     }
   ]
 }

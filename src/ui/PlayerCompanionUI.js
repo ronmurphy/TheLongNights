@@ -73,7 +73,8 @@ export class PlayerCompanionUI {
             background: rgba(0, 0, 0, 0.3);
             border-radius: 4px;
         `;
-        avatar.src = 'art/player_avatars/human_male.png'; // Default
+        // Don't set src here - wait for update() to load actual sprite
+        // This prevents loading errors for avatars that don't exist yet
         panel.appendChild(avatar);
 
         // Store reference
@@ -261,7 +262,8 @@ export class PlayerCompanionUI {
     }
 
     /**
-     * Load sprite with caching
+     * Load sprite with caching and gender fallback
+     * If female/nonbinary sprite doesn't exist, falls back to male sprite
      */
     loadSprite(path, imgElement) {
         if (this.spriteCache[path]) {
@@ -277,8 +279,29 @@ export class PlayerCompanionUI {
             console.log(`✅ Loaded sprite: ${path}`);
         };
         img.onerror = () => {
-            console.warn(`⚠️ Failed to load sprite: ${path}, using fallback`);
-            // Keep default/current sprite
+            // Fallback logic: Try male version if female/nonbinary sprite doesn't exist
+            const fallbackPath = path.replace(/_female\.png$/, '_male.png')
+                                     .replace(/_nonbinary\.png$/, '_male.png');
+            
+            if (fallbackPath !== path && !this.spriteCache[fallbackPath]) {
+                console.warn(`⚠️ Failed to load sprite: ${path}, trying fallback: ${fallbackPath}`);
+                
+                // Try loading male version
+                const fallbackImg = new Image();
+                fallbackImg.onload = () => {
+                    this.spriteCache[path] = fallbackPath; // Cache the fallback for this path
+                    imgElement.src = fallbackPath;
+                    console.log(`✅ Loaded fallback sprite: ${fallbackPath}`);
+                };
+                fallbackImg.onerror = () => {
+                    console.error(`❌ Failed to load fallback sprite: ${fallbackPath}`);
+                    // Keep default/current sprite - no image loaded
+                };
+                fallbackImg.src = fallbackPath;
+            } else {
+                console.warn(`⚠️ Failed to load sprite: ${path}, no fallback available`);
+                // Keep default/current sprite
+            }
         };
         img.src = path;
     }

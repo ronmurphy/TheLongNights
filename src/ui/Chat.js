@@ -22,8 +22,8 @@ export class ChatOverlay {
      * @param {string} message.text - Dialogue text
      * @param {Function} onComplete - Callback when message is dismissed
      */
-    async showMessage(message, onComplete = null) {
-        await this.showSequence([message], onComplete);
+    showMessage(message, onComplete = null) {
+        this.showSequence([message], onComplete);
     }
 
     /**
@@ -31,7 +31,7 @@ export class ChatOverlay {
      * @param {Array} messages - Array of message objects
      * @param {Function} onComplete - Callback when all messages are shown
      */
-    async showSequence(messages, onComplete = null) {
+    showSequence(messages, onComplete = null) {
         this.messageQueue = messages;
         this.currentMessageIndex = 0;
         this.onSequenceComplete = onComplete;
@@ -42,7 +42,7 @@ export class ChatOverlay {
         }
 
         // Show first message
-        await this.showNextMessage();
+        this.showNextMessage();
     }
 
     createOverlay() {
@@ -166,7 +166,22 @@ export class ChatOverlay {
         });
 
         continueBtn.addEventListener('click', () => {
-            this.showNextMessage();
+            console.log(`🖱️ Continue clicked: currentIndex=${this.currentMessageIndex}, queueLength=${this.messageQueue.length}`);
+            
+            // Check if there are more messages IN THE QUEUE after this one
+            if (this.currentMessageIndex + 1 < this.messageQueue.length) {
+                // There are more messages - advance to next one
+                this.currentMessageIndex++;
+                console.log(`➡️ Advancing to next message (index ${this.currentMessageIndex})`);
+                this.showNextMessage();
+            } else {
+                // This was the last message - hide and call callback
+                console.log('✅ Last message, hiding chat and calling callback');
+                this.hide();
+                if (this.onSequenceComplete) {
+                    this.onSequenceComplete();
+                }
+            }
         });
 
         // Assemble chat box
@@ -185,17 +200,10 @@ export class ChatOverlay {
     }
 
     async showNextMessage() {
-        if (this.currentMessageIndex >= this.messageQueue.length) {
-            // Sequence complete
-            this.hide();
-            if (this.onSequenceComplete) {
-                this.onSequenceComplete();
-            }
-            return;
-        }
-
+        console.log(`💬 showNextMessage: displaying message at index ${this.currentMessageIndex}`);
+        
         const message = this.messageQueue[this.currentMessageIndex];
-        this.currentMessageIndex++;
+        // DON'T increment here - let the Continue button handler do it
 
         // Update portrait
         const portrait = document.getElementById('chat-portrait');
@@ -243,7 +251,8 @@ export class ChatOverlay {
 
         // Update continue button text
         const continueBtn = document.getElementById('chat-continue-btn');
-        if (this.currentMessageIndex >= this.messageQueue.length) {
+        // Check if there are more messages AFTER this one
+        if (this.currentMessageIndex + 1 >= this.messageQueue.length) {
             continueBtn.textContent = 'Close ✓';
         } else {
             continueBtn.textContent = 'Continue ▶';
@@ -253,29 +262,27 @@ export class ChatOverlay {
     hide() {
         if (!this.overlayElement) return;
 
-        this.overlayElement.style.opacity = '0';
+        // Immediately remove and clean up - no setTimeout!
+        if (this.overlayElement.parentNode) {
+            this.overlayElement.parentNode.removeChild(this.overlayElement);
+        }
+        this.overlayElement = null;
+
+        // Re-request pointer lock after chat closes (unless workbench/other UI is open)
         setTimeout(() => {
-            if (this.overlayElement && this.overlayElement.parentNode) {
-                this.overlayElement.parentNode.removeChild(this.overlayElement);
-                this.overlayElement = null;
-            }
+            const canvas = document.querySelector('canvas');
+            const voxelApp = window.voxelApp;
 
-            // Re-request pointer lock after chat closes (unless workbench/other UI is open)
-            setTimeout(() => {
-                const canvas = document.querySelector('canvas');
-                const voxelApp = window.voxelApp;
+            // Don't re-engage pointer lock if workbench or other modals are open
+            if (canvas && voxelApp) {
+                const isWorkbenchOpen = voxelApp.workbenchSystem?.isOpen;
+                const isToolBenchOpen = voxelApp.toolBenchSystem?.isOpen;
 
-                // Don't re-engage pointer lock if workbench or other modals are open
-                if (canvas && voxelApp) {
-                    const isWorkbenchOpen = voxelApp.workbenchSystem?.isOpen;
-                    const isToolBenchOpen = voxelApp.toolBenchSystem?.isOpen;
-
-                    if (!isWorkbenchOpen && !isToolBenchOpen) {
-                        canvas.requestPointerLock();
-                    }
+                if (!isWorkbenchOpen && !isToolBenchOpen) {
+                    canvas.requestPointerLock();
                 }
-            }, 100);
-        }, 300);
+            }
+        }, 100);
     }
 
     /**
