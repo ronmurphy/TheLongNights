@@ -7,7 +7,7 @@ export class StructureGenerator {
     constructor(seed = 12345, billboardItems = {}, voxelWorld = null) {
         this.seed = seed;
         this.voxelWorld = voxelWorld; // Reference to The Long Nights for minimap tracking
-        this.STRUCTURE_FREQUENCY = 0.05; // 5% of chunks - rare but findable (~1 per 20 chunks)
+        this.STRUCTURE_FREQUENCY = 0.02; // 2% of chunks - REDUCED for performance (~1 per 50 chunks)
         this.MIN_STRUCTURE_DISTANCE = 80; // Minimum blocks between structures
 
         // 🚀 PERFORMANCE: Cache structure check results to prevent duplicate calculations
@@ -60,6 +60,124 @@ export class StructureGenerator {
     }
     
     /**
+     * 🧊 Generate tundra igloos (small hollow sphere, mostly buried)
+     * 1 chunk size (8x8), hollow sphere with entrance
+     * ~2% spawn chance in tundra biomes (REDUCED for performance)
+     */
+    generateIgloo(chunkX, chunkZ, addBlockFn, getHeightFn) {
+        // 2% spawn rate (REDUCED from 5%)
+        const noise = this.seededNoise(chunkX * 59, chunkZ * 61);
+        const threshold = 1.0 - 0.02;
+        if (noise < threshold) return;
+
+        // Random position within chunk
+        const offsetX = Math.floor(this.seededNoise(chunkX * 67, chunkZ * 71) * 8);
+        const offsetZ = Math.floor(this.seededNoise(chunkX * 73, chunkZ * 79) * 8);
+        const centerX = chunkX * 16 + offsetX;
+        const centerZ = chunkZ * 16 + offsetZ;
+
+        // Get ground height
+        let groundY = getHeightFn(centerX, centerZ);
+        if (groundY === null || groundY < 0) {
+            groundY = 8;
+        }
+
+        // Igloo dimensions (small - fits in 1 chunk)
+        const radius = 4; // 8 block diameter
+        const centerY = groundY + 2; // Slightly buried (2 blocks above ground = half buried)
+
+        console.log(`🧊 Igloo at (${centerX}, ${groundY}, ${centerZ}): radius=${radius}`);
+
+        // Build hollow sphere
+        for (let dx = -radius; dx <= radius; dx++) {
+            for (let dy = -radius; dy <= radius; dy++) {
+                for (let dz = -radius; dz <= radius; dz++) {
+                    const worldX = centerX + dx;
+                    const worldY = centerY + dy;
+                    const worldZ = centerZ + dz;
+
+                    const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+                    // Only build the SHELL (hollow - outer radius but not inner)
+                    const isShell = distance <= radius && distance >= radius - 1;
+
+                    // 2x2 entrance on south side (low blocks only)
+                    const isEntrance = (dy <= -1) && // Bottom half only
+                                      (dz === radius) && // South face
+                                      (Math.abs(dx) <= 1); // 2 blocks wide
+
+                    if (isShell && !isEntrance && worldY >= 0) {
+                        addBlockFn(worldX, worldY, worldZ, 'snow', false);
+                    }
+                }
+            }
+        }
+    }
+    
+    /**
+     * 🏜️ Generate desert pyramids (test for mountain system)
+     * 3x3 chunk size, tall pyramid with hollow interior and 2x2 entrance
+     * Uses same rarity system as ruins (~2% spawn chance - REDUCED)
+     */
+    generateDesertPyramid(chunkX, chunkZ, addBlockFn, getHeightFn) {
+        // Use same spawn system as ruins (2% chance - REDUCED)
+        const noise = this.seededNoise(chunkX * 31, chunkZ * 37);
+        const threshold = 1.0 - 0.02; // 2% spawn rate
+        if (noise < threshold) return;
+
+        // Random position within chunk (center-ish)
+        const offsetX = Math.floor(this.seededNoise(chunkX * 41, chunkZ * 43) * 8) + 4;
+        const offsetZ = Math.floor(this.seededNoise(chunkX * 47, chunkZ * 53) * 8) + 4;
+        const centerX = chunkX * 16 + offsetX;
+        const centerZ = chunkZ * 16 + offsetZ;
+
+        // Get ground height at pyramid center
+        let groundY = getHeightFn(centerX, centerZ);
+        if (groundY === null || groundY < 0) {
+            groundY = 8;
+        }
+
+        // Pyramid dimensions (smaller for performance)
+        const baseSize = 16; // 2x2 chunks (32 block diameter)
+        const height = 16; // 16 blocks tall
+
+        console.log(`🏜️ Desert Pyramid at (${centerX}, ${groundY}, ${centerZ}): base=${baseSize}, height=${height}`);
+
+        // Build hollow pyramid layer by layer
+        for (let y = 0; y < height; y++) {
+            // Calculate size at this height (pyramid tapers from base to peak)
+            const heightRatio = y / height;
+            const currentSize = Math.floor(baseSize * (1 - heightRatio));
+            
+            if (currentSize < 1) continue;
+
+            // Build square layer
+            for (let dx = -currentSize; dx <= currentSize; dx++) {
+                for (let dz = -currentSize; dz <= currentSize; dz++) {
+                    const worldX = centerX + dx;
+                    const worldZ = centerZ + dz;
+                    const worldY = groundY + y;
+
+                    // Only build on the EDGES (hollow interior)
+                    const isEdge = Math.abs(dx) === currentSize || Math.abs(dz) === currentSize;
+                    
+                    // 2x2 entrance on south side (dz = currentSize)
+                    const isEntrance = (y < 3) && // First 3 layers
+                                      (dz === currentSize) && // South face
+                                      (Math.abs(dx) <= 1); // 2 blocks wide
+
+                    if (isEdge && !isEntrance) {
+                        addBlockFn(worldX, worldY, worldZ, 'sandstone', false);
+                    }
+                }
+            }
+        }
+
+        // Add capstone at peak
+        addBlockFn(centerX, groundY + height, centerZ, 'sandstone', false);
+    }
+    
+    /**
      * Main entry point - called from BiomeWorldGen after terrain generation
      * @param {number} chunkX - Chunk X coordinate
      * @param {number} chunkZ - Chunk Z coordinate
@@ -68,6 +186,16 @@ export class StructureGenerator {
      * @param {string} biome - Current biome name (optional, for future biome-specific ruins)
      */
     generateStructuresForChunk(chunkX, chunkZ, addBlockFn, getHeightFn, biome = 'default') {
+        // 🏜️ DESERT PYRAMID: Hollow structure test (5% spawn rate, same as ruins)
+        if (biome === 'Desert' || (biome && biome.name === 'Desert')) {
+            this.generateDesertPyramid(chunkX, chunkZ, addBlockFn, getHeightFn);
+        }
+
+        // 🧊 TUNDRA IGLOO: Small hollow sphere test (5% spawn rate)
+        if (biome === 'Tundra' || (biome && biome.name === 'Tundra')) {
+            this.generateIgloo(chunkX, chunkZ, addBlockFn, getHeightFn);
+        }
+
         // Check if this chunk should have a structure origin point
         const structureData = this.checkForStructure(chunkX, chunkZ);
 
