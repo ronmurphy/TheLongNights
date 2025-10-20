@@ -1467,11 +1467,39 @@ class NebulaVoxelApp {
         this.animateBillboards = (currentTime) => {
             // 🎯 PERFORMANCE: Only animate billboards in activeBillboards array
             // This avoids iterating through the entire this.world object
+            
+            const playerPos = this.player.position;
+            
+            // 🚀 PERFORMANCE: Calculate animation distance based on render distance
+            // Each chunk is 8x8 blocks, add 1 chunk buffer beyond visible area
+            const chunkSize = 8;
+            const animationChunks = this.renderDistance + 1; // Visible chunks + 1 buffer
+            const maxAnimDistance = animationChunks * chunkSize;
+            const maxAnimDistanceSq = maxAnimDistance * maxAnimDistance;
+            
             this.activeBillboards.forEach(billboard => {
                 if (!billboard || !billboard.userData) return;
                 
                 const userData = billboard.userData;
                 const config = userData.config;
+                const billboardType = userData.billboardType || 'unknown';
+                
+                // 🎯 PERFORMANCE: Distance cull based on billboard type
+                // Discovery items & hunt markers: Always animate (player will gather them)
+                // Enemies/environmental: Only animate if within render distance
+                const isAlwaysVisible = billboardType === 'discovery' || 
+                                       billboardType === 'hunt_marker' ||
+                                       billboardType === 'companion_find';
+                
+                if (!isAlwaysVisible) {
+                    // Calculate squared distance (avoids expensive sqrt)
+                    const dx = billboard.position.x - playerPos.x;
+                    const dz = billboard.position.z - playerPos.z;
+                    const distSq = dx * dx + dz * dz;
+                    
+                    // Skip animation if too far (but billboard stays tracked)
+                    if (distSq > maxAnimDistanceSq) return;
+                }
 
                 // Floating animation - if enabled
                 if (config.float) {
@@ -1487,17 +1515,17 @@ class NebulaVoxelApp {
             });
 
             // 👻 Animate Halloween ghost billboards (distance culled)
-            const playerPos = this.player.position;
+            // Reuse playerPos and maxAnimDistanceSq from above
             this.ghostBillboards.forEach((ghostData) => {
                 const billboard = ghostData.billboard;
                 if (!billboard || !billboard.userData) return;
                 
-                // 🎯 PERFORMANCE: Skip animation for distant ghosts (>100 blocks)
-                const dist = Math.sqrt(
-                    Math.pow(billboard.position.x - playerPos.x, 2) +
-                    Math.pow(billboard.position.z - playerPos.z, 2)
-                );
-                if (dist > 100) return;
+                // 🎯 PERFORMANCE: Skip animation for distant ghosts (render distance + 1 chunk)
+                const dx = billboard.position.x - playerPos.x;
+                const dz = billboard.position.z - playerPos.z;
+                const distSq = dx * dx + dz * dz;
+                
+                if (distSq > maxAnimDistanceSq) return;
                 
                 const userData = billboard.userData;
                 const config = userData.config;
