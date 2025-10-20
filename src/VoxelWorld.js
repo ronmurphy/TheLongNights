@@ -8606,7 +8606,7 @@ class NebulaVoxelApp {
         console.log(`🌫️ Fog initialized (render distance: ${this.renderDistance})`);
 
         // 👻 Initialize Ghost System now that scene is ready
-        this.ghostSystem = new GhostSystem(this.scene, this.enhancedGraphics);
+        this.ghostSystem = new GhostSystem(this.scene, this.enhancedGraphics, this);
 
         // ⚔️ Initialize Battle System now that scene is ready
         this.battleSystem = new BattleSystem(this);
@@ -8615,7 +8615,7 @@ class NebulaVoxelApp {
         this.battleArena = new BattleArena(this);
 
         // 💀 Initialize Angry Ghost System now that scene is ready
-        this.angryGhostSystem = new AngryGhostSystem(this.scene, this.enhancedGraphics, this.battleSystem);
+        this.angryGhostSystem = new AngryGhostSystem(this.scene, this.enhancedGraphics, this.battleSystem, this);
 
         // 🩸 Initialize Blood Moon System now that scene is ready
         this.bloodMoonSystem = new BloodMoonSystem(this);
@@ -11895,6 +11895,57 @@ class NebulaVoxelApp {
             if (key === '0') {
                 if (this.musicSystem) {
                     this.musicSystem.toggleMute();
+                }
+                e.preventDefault();
+            }
+
+            // 🔊 Sound Effects controls (Ctrl + -, =, 0)
+            // Ctrl + = : SFX Volume up
+            if ((key === '+' || key === '=') && (e.ctrlKey || e.metaKey)) {
+                if (this.sfxSystem) {
+                    this.sfxSystem.volumeUp();
+                    this.updateStatus(`🔊 SFX Volume: ${Math.round(this.sfxSystem.volume * 100)}%`, 'discovery');
+                }
+                e.preventDefault();
+            }
+            // Ctrl + - : SFX Volume down
+            if (key === '-' && (e.ctrlKey || e.metaKey)) {
+                if (this.sfxSystem) {
+                    this.sfxSystem.volumeDown();
+                    this.updateStatus(`🔊 SFX Volume: ${Math.round(this.sfxSystem.volume * 100)}%`, 'discovery');
+                }
+                e.preventDefault();
+            }
+            // Ctrl + 0 : Toggle SFX mute
+            if (key === '0' && (e.ctrlKey || e.metaKey)) {
+                if (this.sfxSystem) {
+                    this.sfxSystem.toggleMute();
+                    this.updateStatus(`🔊 SFX: ${this.sfxSystem.isMuted ? 'MUTED' : 'UNMUTED'}`, 'discovery');
+                }
+                e.preventDefault();
+            }
+
+            // Ctrl + G : Test ghost sound (debug)
+            if (key === 'g' && (e.ctrlKey || e.metaKey)) {
+                if (this.sfxSystem) {
+                    console.log('═══════════════════════════════════════════════');
+                    console.log('🔊 CTRL+G PRESSED - Testing Ghost Sound');
+                    console.log('═══════════════════════════════════════════════');
+                    console.log('SoundEffects System:', this.sfxSystem);
+                    console.log('Is Muted:', this.sfxSystem.isMuted);
+                    console.log('Current Volume:', this.sfxSystem.volume);
+                    console.log('Sounds Loaded:', Array.from(this.sfxSystem.sounds.keys()));
+                    console.log('Ghost Sound Data:', this.sfxSystem.sounds.get('ghost'));
+                    
+                    const result = this.sfxSystem.play('ghost', { volume: 0.8 });
+                    
+                    console.log('Play Result (instance ID):', result);
+                    console.log('Currently Playing Sounds:', this.sfxSystem.playingSounds.size);
+                    console.log('═══════════════════════════════════════════════');
+                    
+                    this.updateStatus(`🔊 Ghost Test: Vol=${Math.round(this.sfxSystem.volume * 100)}% Muted=${this.sfxSystem.isMuted}`, 'discovery');
+                } else {
+                    console.log('❌ SoundEffects system not initialized!');
                 }
                 e.preventDefault();
             }

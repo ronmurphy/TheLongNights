@@ -8,9 +8,10 @@
 import * as THREE from 'three';
 
 export class GhostSystem {
-    constructor(scene, enhancedGraphics) {
+    constructor(scene, enhancedGraphics, voxelWorld = null) {
         this.scene = scene;
         this.enhancedGraphics = enhancedGraphics;
+        this.voxelWorld = voxelWorld;
 
         // Ghost registry - Map<ghostId, ghostData>
         this.ghosts = new Map();
@@ -18,6 +19,10 @@ export class GhostSystem {
 
         // Animation timing
         this.time = 0;
+
+        // Sound effect timing (prevent spam)
+        this.lastGhostSound = 0;
+        this.ghostSoundCooldown = 8000; // 8 seconds between ghost sounds
 
         // Ghost config
         this.config = {
@@ -300,6 +305,25 @@ export class GhostSystem {
 
             // 3. APPLY FLOATING Y POSITION
             ghost.sprite.position.y = ghost.baseY + floatY;
+
+            // 4. SPATIAL AUDIO - Play ghost sounds when VERY close (2-3 blocks)
+            // Only play when ghost is close enough to be scary!
+            if (this.voxelWorld?.sfxSystem && distanceToPlayer <= 3) {
+                const now = Date.now();
+                if (now - this.lastGhostSound > this.ghostSoundCooldown) {
+                    this.voxelWorld.sfxSystem.playSpatial(
+                        'ghost',
+                        ghost.sprite.position,
+                        playerPosition,
+                        {
+                            maxDistance: 10, // Reduced from 50 (sound only carries 10 blocks)
+                            pitchVariation: 0.15,
+                            volume: 0.8 // Louder since they're very close
+                        }
+                    );
+                    this.lastGhostSound = now;
+                }
+            }
         });
     }
 

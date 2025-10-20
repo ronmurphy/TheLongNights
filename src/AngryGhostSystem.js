@@ -8,10 +8,11 @@
 import * as THREE from 'three';
 
 export class AngryGhostSystem {
-    constructor(scene, enhancedGraphics, battleSystem) {
+    constructor(scene, enhancedGraphics, battleSystem, voxelWorld = null) {
         this.scene = scene;
         this.enhancedGraphics = enhancedGraphics;
         this.battleSystem = battleSystem;
+        this.voxelWorld = voxelWorld;
 
         // Angry ghost registry - Map<ghostId, ghostData>
         this.angryGhosts = new Map();
@@ -19,6 +20,10 @@ export class AngryGhostSystem {
 
         // Animation timing
         this.time = 0;
+
+        // Sound effect timing (prevent spam)
+        this.lastAngryGhostSound = 0;
+        this.angryGhostSoundCooldown = 10000; // 10 seconds (less frequent than friendly ghosts)
 
         // Angry ghost config
         this.config = {
@@ -158,6 +163,26 @@ export class AngryGhostSystem {
                 const dx = playerPosition.x - ghost.sprite.position.x;
                 const dz = playerPosition.z - ghost.sprite.position.z;
                 const distanceToPlayer = Math.sqrt(dx * dx + dz * dz);
+
+                // SPATIAL AUDIO - Play angry ghost sounds when VERY close (2-3 blocks)
+                // Only play when ghost is close enough to be threatening!
+                if (this.voxelWorld?.sfxSystem && distanceToPlayer <= 3) {
+                    const now = Date.now();
+                    if (now - this.lastAngryGhostSound > this.angryGhostSoundCooldown) {
+                        this.voxelWorld.sfxSystem.playSpatial(
+                            'ghost',
+                            ghost.sprite.position,
+                            playerPosition,
+                            {
+                                maxDistance: 10, // Reduced from 60
+                                pitchVariation: 0.2,
+                                volume: 0.9,  // Very loud - angry ghost is right on you!
+                                rate: 0.8     // Lower pitch (more menacing)
+                            }
+                        );
+                        this.lastAngryGhostSound = now;
+                    }
+                }
 
                 if (distanceToPlayer < this.config.battleTriggerRange) {
                     console.log(`💀 Battle triggered by ${ghost.id} at distance ${distanceToPlayer.toFixed(2)}`);
