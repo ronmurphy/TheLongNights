@@ -7,7 +7,7 @@ export class StructureGenerator {
     constructor(seed = 12345, billboardItems = {}, voxelWorld = null) {
         this.seed = seed;
         this.voxelWorld = voxelWorld; // Reference to The Long Nights for minimap tracking
-        this.STRUCTURE_FREQUENCY = 0.02; // 2% of chunks - REDUCED for performance (~1 per 50 chunks)
+        this.STRUCTURE_FREQUENCY = 0.03; // 3% of chunks - REDUCED for performance (~1 per 50 chunks)
         this.MIN_STRUCTURE_DISTANCE = 80; // Minimum blocks between structures
 
         // 🚀 PERFORMANCE: Cache structure check results to prevent duplicate calculations
