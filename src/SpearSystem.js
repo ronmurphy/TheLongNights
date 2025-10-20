@@ -26,7 +26,7 @@ export class SpearSystem {
     }
 
     /**
-     * Start charging a spear throw
+     * Start charging a spear throw with sweet spot targeting
      */
     startCharging() {
         const selectedSlot = this.voxelWorld.hotbarSystem.getSelectedSlot();
@@ -43,18 +43,22 @@ export class SpearSystem {
         this.isCharging = true;
         this.chargeStartTime = Date.now();
         
+        // 🎯 Calculate sweet spot (shifts dynamically)
+        this.sweetSpotSize = 0.25; // 25% sweet spot for spears (moderate difficulty)
+        this.sweetSpotCenter = 0.5 + (Math.random() - 0.5) * 0.2; // 40-60%
+        
         // Show charge indicator
         if (this.voxelWorld.staminaSystem) {
             this.voxelWorld.staminaSystem.showChargeIndicator();
         }
         
-        console.log('🗡️ Started charging spear throw...');
+        console.log(`🗡️ Started charging spear throw... Sweet spot: ${(this.sweetSpotSize * 100).toFixed(0)}%`);
         
         return true;
     }
 
     /**
-     * Release charged throw
+     * Release charged throw with sweet spot accuracy
      */
     releaseThrow(targetPos) {
         if (!this.isCharging) {
@@ -64,11 +68,28 @@ export class SpearSystem {
         const chargeDuration = Date.now() - this.chargeStartTime;
         const chargePercent = Math.min(chargeDuration / this.maxChargeDuration, 1.0);
         
-        // Power scaling: 0.5x to 2.0x distance
-        const power = 0.5 + (chargePercent * 1.5);
+        // 🎯 Check if player hit the sweet spot
+        const sweetSpotMin = this.sweetSpotCenter - this.sweetSpotSize / 2;
+        const sweetSpotMax = this.sweetSpotCenter + this.sweetSpotSize / 2;
+        const hitSweetSpot = chargePercent >= sweetSpotMin && chargePercent <= sweetSpotMax;
         
-        // Stamina cost: 5 base + (charge% * 15) = 5 to 20 stamina
-        const staminaCost = Math.floor(5 + (chargePercent * 15));
+        // Power scaling based on sweet spot accuracy
+        let power;
+        if (hitSweetSpot) {
+            // Perfect! Full power range 1.5x to 2.0x
+            const centerOffset = Math.abs(chargePercent - this.sweetSpotCenter) / (this.sweetSpotSize / 2);
+            power = 2.0 - (centerOffset * 0.5); // 1.5x to 2.0x
+        } else {
+            // Missed sweet spot - reduced power 0.5x to 1.2x
+            const missAmount = Math.min(
+                Math.abs(chargePercent - sweetSpotMin),
+                Math.abs(chargePercent - sweetSpotMax)
+            );
+            power = 0.5 + (0.7 * (1.0 - Math.min(missAmount * 2, 1.0))); // 0.5x to 1.2x
+        }
+        
+        // Stamina cost: 5 base + (power * 10) = 5 to 25 stamina
+        const staminaCost = Math.floor(5 + (power * 10));
 
         this.isCharging = false;
         
@@ -77,7 +98,8 @@ export class SpearSystem {
             this.voxelWorld.staminaSystem.hideChargeIndicator();
         }
         
-        console.log(`🗡️ Released throw: ${(chargePercent * 100).toFixed(0)}% charge, ${power.toFixed(1)}x power, ${staminaCost} stamina`);
+        const accuracyText = hitSweetSpot ? '🎯 PERFECT!' : '⚠️ Off-target';
+        console.log(`🗡️ Released: ${(chargePercent * 100).toFixed(0)}% charge, ${power.toFixed(1)}x power, ${staminaCost} stamina, ${accuracyText}`);
         
         // Check stamina
         if (this.voxelWorld.staminaSystem && this.voxelWorld.staminaSystem.currentStamina < staminaCost) {
@@ -359,39 +381,34 @@ export class SpearSystem {
      * Update spear billboards and charge indicator
      * Call this in main update loop
      */
-    update() {
-        // Update charge indicator
-        if (this.isCharging) {
-            const chargeDuration = Date.now() - this.chargeStartTime;
-            const chargePercent = Math.min(chargeDuration / this.maxChargeDuration, 1.0);
-            const power = 0.5 + (chargePercent * 1.5);
-            const staminaCost = Math.floor(5 + (chargePercent * 15));
+    update(deltaTime) {
+        // Update charge indicator with sweet spot visualization
+        if (this.isCharging && this.voxelWorld.staminaSystem) {
+            const elapsed = Date.now() - this.chargeStartTime;
+            const percent = Math.min(elapsed / this.maxChargeDuration, 1.0);
             
-            // Update visual charge bar
-            if (this.voxelWorld.staminaSystem) {
-                this.voxelWorld.staminaSystem.updateChargeIndicator(chargePercent, power, staminaCost);
-            }
+            // 🎯 Check if in sweet spot
+            const sweetSpotMin = this.sweetSpotCenter - this.sweetSpotSize / 2;
+            const sweetSpotMax = this.sweetSpotCenter + this.sweetSpotSize / 2;
+            const inSweetSpot = percent >= sweetSpotMin && percent <= sweetSpotMax;
+            
+            this.voxelWorld.staminaSystem.updateChargeIndicatorWithSweetSpot(
+                percent,
+                this.sweetSpotCenter,
+                this.sweetSpotSize,
+                inSweetSpot
+            );
         }
-        
-        if (this.thrownSpears.length === 0) return;
 
-        const playerPos = this.voxelWorld.camera.position;
-
-        // Update billboard orientation for all thrown spears (stuck in ground only)
-        for (let i = this.thrownSpears.length - 1; i >= 0; i--) {
-            const spear = this.thrownSpears[i];
-
-            // Only update billboard facing for spears stuck in ground (not flying)
-            if (spear.mesh.userData.isBillboard && !spear.mesh.userData.isFlying) {
-                // Face camera with tilt maintained
-                const spearPos = spear.mesh.position;
-                const cameraDir = new THREE.Vector3()
-                    .subVectors(playerPos, spearPos)
-                    .normalize();
-                
-                // Calculate yaw angle to face camera
-                const angle = Math.atan2(cameraDir.x, cameraDir.z);
-                spear.mesh.rotation.set(Math.PI / 4, angle, 0); // 45° tilt + face camera
+        // Update flying spears (billboard facing)
+        for (const spearData of this.thrownSpears) {
+            if (spearData.mesh.userData.isBillboard && !spearData.mesh.userData.isFlying) {
+                // Make spear face camera (billboard effect) when stuck in ground
+                const cameraPos = this.voxelWorld.camera.position;
+                const dx = cameraPos.x - spearData.mesh.position.x;
+                const dz = cameraPos.z - spearData.mesh.position.z;
+                const angle = Math.atan2(dx, dz);
+                spearData.mesh.rotation.y = angle;
             }
         }
     }

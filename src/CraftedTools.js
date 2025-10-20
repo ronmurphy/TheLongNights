@@ -332,6 +332,10 @@ export class CraftedTools {
             return true; // Tool action handled, don't continue to block placement
         }
 
+        /* 💣 OLD DEMOLITION CHARGE PLACEMENT SYSTEM (DISABLED)
+         * This old system placed a block and detonated it after 3 seconds.
+         * Now we use DemolitionChargeSystem for skill-based throwing with sweet spot timing!
+         * 
         // 💣 DEMOLITION CHARGE: Place explosive that detonates after 3 seconds
         const isDemolitionCharge = selectedBlock === 'demolition_charge' || selectedBlock === 'crafted_demolition_charge';
 
@@ -405,6 +409,7 @@ export class CraftedTools {
             console.log(`💣 Demolition charge placed, ${selectedSlot.quantity} charges remaining`);
             return true; // Tool action handled, don't continue to block placement
         }
+        */ // END OF OLD DEMOLITION CHARGE SYSTEM
 
         // 💧 WATERING CAN: Only when watering can is SELECTED in hotbar (Minecraft-style)
         const isWateringCanSelected = selectedBlock === 'watering_can' || selectedBlock === 'crafted_watering_can';
