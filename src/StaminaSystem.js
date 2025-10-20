@@ -242,6 +242,11 @@ export class StaminaSystem {
         // Apply stamina change
         this.currentStamina = Math.max(0, Math.min(this.maxStamina, this.currentStamina + staminaChange));
 
+        // 🔄 SYNC: Update PlayerCharacter stamina for player panel display
+        if (this.voxelWorld && this.voxelWorld.playerCharacter) {
+            this.voxelWorld.playerCharacter.currentStamina = this.currentStamina;
+        }
+
         // 🧹 PERFORMANCE: Trigger cleanup when player stops moving
         this.checkCleanupTrigger();
 
