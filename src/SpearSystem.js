@@ -284,21 +284,25 @@ export class SpearSystem {
             }
         }
 
-        // Create billboard (vertical plane)
-        const geometry = new THREE.PlaneGeometry(0.4, 1.2); // Thin and tall
+        // Create billboard (larger and more visible during flight)
+        const geometry = new THREE.PlaneGeometry(0.6, 1.8); // Larger: 0.6x1.8 blocks
         const material = new THREE.MeshBasicMaterial({
             map: texture,
             transparent: true,
             alphaTest: 0.1,
-            side: THREE.DoubleSide
+            side: THREE.DoubleSide,
+            depthWrite: true, // Ensure proper depth sorting
+            depthTest: true
         });
 
         const spearMesh = new THREE.Mesh(geometry, material);
         spearMesh.position.set(position.x, position.y, position.z);
         spearMesh.userData.isSpear = true;
         spearMesh.userData.prevPos = position;
+        spearMesh.userData.isFlying = true; // Track if currently in flight
 
         this.voxelWorld.scene.add(spearMesh);
+        console.log(`🗡️ Created spear projectile at (${position.x.toFixed(1)}, ${position.y.toFixed(1)}, ${position.z.toFixed(1)})`);
         return spearMesh;
     }
 
@@ -306,15 +310,18 @@ export class SpearSystem {
      * Stick spear in ground at target position
      */
     stickSpearInGround(spearMesh, targetPos, spearType) {
+        // Mark as no longer flying
+        spearMesh.userData.isFlying = false;
+        
         // Position spear at ground level, slightly raised
-        const groundY = Math.floor(targetPos.y) + 0.6; // Stick out of ground
+        const groundY = Math.floor(targetPos.y) + 0.8; // Raised more to be visible
         spearMesh.position.set(
             targetPos.x,
             groundY,
             targetPos.z
         );
 
-        // Tilt spear slightly (45 degrees)
+        // Reset rotation and tilt spear (45 degrees forward tilt)
         spearMesh.rotation.set(Math.PI / 4, 0, 0);
 
         // Make it always face camera and harvestable like world items
@@ -360,14 +367,21 @@ export class SpearSystem {
 
         const playerPos = this.voxelWorld.camera.position;
 
-        // Update billboard orientation for all thrown spears
+        // Update billboard orientation for all thrown spears (stuck in ground only)
         for (let i = this.thrownSpears.length - 1; i >= 0; i--) {
             const spear = this.thrownSpears[i];
 
-            // Billboard effect - always face camera
-            if (spear.mesh.userData.isBillboard) {
-                spear.mesh.lookAt(playerPos);
-                spear.mesh.rotateX(Math.PI / 4); // Keep the tilt
+            // Only update billboard facing for spears stuck in ground (not flying)
+            if (spear.mesh.userData.isBillboard && !spear.mesh.userData.isFlying) {
+                // Face camera with tilt maintained
+                const spearPos = spear.mesh.position;
+                const cameraDir = new THREE.Vector3()
+                    .subVectors(playerPos, spearPos)
+                    .normalize();
+                
+                // Calculate yaw angle to face camera
+                const angle = Math.atan2(cameraDir.x, cameraDir.z);
+                spear.mesh.rotation.set(Math.PI / 4, angle, 0); // 45° tilt + face camera
             }
         }
     }

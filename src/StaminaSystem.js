@@ -155,23 +155,22 @@ export class StaminaSystem {
         this.staminaContainer.appendChild(this.staminaFill);
         document.body.appendChild(this.staminaContainer);
 
-        // 🗡️ Create charge indicator (hidden by default)
+        // 🗡️ Create charge indicator (positioned over player panel, hidden by default)
         this.chargeContainer = document.createElement('div');
         this.chargeContainer.id = 'spear-charge';
         this.chargeContainer.style.cssText = `
             position: fixed;
-            top: 82px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 200px;
-            height: 12px;
-            background: rgba(0, 0, 0, 0.6);
-            border: 2px solid rgba(255, 165, 0, 0.5);
-            border-radius: 6px;
+            bottom: 80px;
+            left: 30px;
+            width: 100px;
+            height: 16px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid rgba(255, 165, 0, 0.7);
+            border-radius: 8px;
             overflow: hidden;
-            z-index: 1000;
+            z-index: 150;
             pointer-events: none;
-            filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.5));
+            filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.8));
             display: none;
         `;
 
@@ -180,22 +179,24 @@ export class StaminaSystem {
         this.chargeFill.style.cssText = `
             width: 0%;
             height: 100%;
-            background: linear-gradient(to right, #f59e0b, #ef4444);
+            background: linear-gradient(to right, #fbbf24, #f59e0b, #ef4444);
             transition: width 0.05s linear;
+            box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.3);
         `;
 
         // Create charge label
         this.chargeLabel = document.createElement('div');
         this.chargeLabel.style.cssText = `
             position: absolute;
-            top: -1px;
+            top: 50%;
             left: 50%;
-            transform: translateX(-50%);
-            font-size: 10px;
+            transform: translate(-50%, -50%);
+            font-size: 11px;
             font-weight: bold;
             color: #fff;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+            text-shadow: 1px 1px 2px rgba(0,0,0,1), 0 0 4px rgba(0,0,0,0.8);
             white-space: nowrap;
+            pointer-events: none;
         `;
         this.chargeLabel.textContent = '🗡️ CHARGING';
 
