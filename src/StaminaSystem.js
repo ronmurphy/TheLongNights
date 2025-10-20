@@ -34,6 +34,9 @@ export class StaminaSystem {
         this.runSpeedMultiplier = 1.5;       // 50% faster when running
         this.depletedSpeedMultiplier = 0.5;  // 50% slower when exhausted
 
+        // Food buff multiplier (applied to drain rates)
+        this.foodDrainMultiplier = 1.0;      // 1.0 = normal, 0.5 = 50% less drain
+
         // Terrain multipliers (applied to drain rates)
         this.terrainMultipliers = {
             snow: 1.5,        // 50% more drain on snow
@@ -227,11 +230,11 @@ export class StaminaSystem {
         let staminaChange = 0;
 
         if (isMoving && isRunning && this.currentStamina > 0) {
-            // Running - fast drain with terrain penalty
-            staminaChange = -this.runningDrain * terrainMult * deltaTime;
+            // Running - fast drain with terrain penalty and food buff
+            staminaChange = -this.runningDrain * terrainMult * this.foodDrainMultiplier * deltaTime;
         } else if (isMoving && this.currentStamina > 0) {
-            // Walking - slow drain with terrain penalty
-            staminaChange = -this.walkingDrain * terrainMult * deltaTime;
+            // Walking - slow drain with terrain penalty and food buff
+            staminaChange = -this.walkingDrain * terrainMult * this.foodDrainMultiplier * deltaTime;
         } else if (!isMoving) {
             // Idle - regenerate stamina
             const regenRate = this.bootsActive 

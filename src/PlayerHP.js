@@ -9,9 +9,9 @@ export class PlayerHP {
     constructor(voxelWorld) {
         this.voxelWorld = voxelWorld;
 
-        // Health settings
-        this.maxHP = 3; // 3 hearts
-        this.currentHP = 3;
+        // Health settings (synced with PlayerCharacter: 2 HP = 1 heart)
+        this.maxHP = 6; // 6 HP = 3 hearts
+        this.currentHP = 6;
 
         // Damage cooldown (prevent rapid damage)
         this.invulnerable = false;
@@ -29,7 +29,7 @@ export class PlayerHP {
         // Create HUD
         this.createHeartDisplay();
 
-        console.log('❤️ PlayerHP system initialized: 3/3 hearts');
+        console.log('❤️ PlayerHP system initialized: 6/6 HP (3 hearts)');
     }
 
     /**
@@ -53,8 +53,9 @@ export class PlayerHP {
             pointer-events: none;
         `;
 
-        // Create 3 heart elements
-        for (let i = 0; i < this.maxHP; i++) {
+        // Create 3 heart elements (maxHP / 2 = num hearts)
+        const numHearts = Math.ceil(this.maxHP / 2);
+        for (let i = 0; i < numHearts; i++) {
             const heart = document.createElement('span');
             heart.textContent = '❤️'; // Red heart emoji
             heart.style.cssText = `
@@ -106,8 +107,18 @@ export class PlayerHP {
         this.currentHP = Math.max(0, this.currentHP - amount);
         console.log(`💔 Player took ${amount} damage! HP: ${this.currentHP}/${this.maxHP}`);
 
-        // Update display
+        // Update PlayerCharacter HP to stay in sync
+        if (this.voxelWorld.playerCharacter) {
+            this.voxelWorld.playerCharacter.currentHP = this.currentHP;
+        }
+
+        // Update display (old heart system - disabled)
         this.updateHeartDisplay();
+
+        // 🔄 Update PlayerCompanionUI to show heart changes
+        if (this.voxelWorld.playerCompanionUI) {
+            this.voxelWorld.playerCompanionUI.updatePlayer(this.voxelWorld.playerCharacter);
+        }
 
         // Flash screen red
         this.flashDamage();
@@ -149,8 +160,18 @@ export class PlayerHP {
         this.currentHP = Math.min(this.maxHP, this.currentHP + amount);
         console.log(`💚 Player healed ${this.currentHP - oldHP} HP! HP: ${this.currentHP}/${this.maxHP}`);
 
-        // Update display
+        // Update PlayerCharacter HP to stay in sync
+        if (this.voxelWorld.playerCharacter) {
+            this.voxelWorld.playerCharacter.currentHP = this.currentHP;
+        }
+
+        // Update display (old heart system - disabled)
         this.updateHeartDisplay();
+
+        // 🔄 Update PlayerCompanionUI to show heart changes
+        if (this.voxelWorld.playerCompanionUI) {
+            this.voxelWorld.playerCompanionUI.updatePlayer(this.voxelWorld.playerCharacter);
+        }
 
         // Pulse healed heart
         const healedHeart = this.hearts[oldHP];
@@ -213,8 +234,20 @@ export class PlayerHP {
     reset() {
         this.currentHP = this.maxHP;
         this.invulnerable = false;
+        
+        // Update PlayerCharacter HP to stay in sync
+        if (this.voxelWorld.playerCharacter) {
+            this.voxelWorld.playerCharacter.currentHP = this.currentHP;
+        }
+        
         this.updateHeartDisplay();
-        console.log('❤️ Player HP reset: 3/3 hearts');
+        
+        // 🔄 Update PlayerCompanionUI
+        if (this.voxelWorld.playerCompanionUI) {
+            this.voxelWorld.playerCompanionUI.updatePlayer(this.voxelWorld.playerCharacter);
+        }
+        
+        console.log('❤️ Player HP reset: 6/6 HP (3 hearts)');
     }
 
     /**
@@ -222,7 +255,19 @@ export class PlayerHP {
      */
     setHP(amount) {
         this.currentHP = Math.max(0, Math.min(this.maxHP, amount));
+        
+        // Update PlayerCharacter HP to stay in sync
+        if (this.voxelWorld.playerCharacter) {
+            this.voxelWorld.playerCharacter.currentHP = this.currentHP;
+        }
+        
         this.updateHeartDisplay();
+        
+        // 🔄 Update PlayerCompanionUI
+        if (this.voxelWorld.playerCompanionUI) {
+            this.voxelWorld.playerCompanionUI.updatePlayer(this.voxelWorld.playerCharacter);
+        }
+        
         console.log(`❤️ Player HP set to: ${this.currentHP}/${this.maxHP}`);
     }
 

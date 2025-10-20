@@ -55,6 +55,7 @@ import { farmingBlockTypes } from './FarmingBlockTypes.js';
 import { CraftedTools } from './CraftedTools.js';
 import { SpearSystem } from './SpearSystem.js';
 import { DemolitionChargeSystem } from './DemolitionChargeSystem.js';
+import { FoodSystem } from './FoodSystem.js';
 import { createEmojiChooser } from './EmojiChooser.js';
 import * as CANNON from 'cannon-es';
 
@@ -294,7 +295,11 @@ class NebulaVoxelApp {
         this.demolitionChargeSystem = new DemolitionChargeSystem(this, this.craftedTools);
         console.log('💣 DemolitionChargeSystem initialized');
 
-        // 🎯 Player upgrades (modifiable through ToolBench)
+        // � Initialize FoodSystem
+        this.foodSystem = new FoodSystem(this);
+        console.log('🍖 FoodSystem initialized');
+
+        // �🎯 Player upgrades (modifiable through ToolBench)
         this.backpackStackSize = 50;  // Can upgrade to 75, 100
         this.movementSpeed = 1.0;     // Can upgrade to 1.5 (speed boots)
         this.harvestSpeed = 1.0;      // Can upgrade to 1.5 (machete upgrade)
@@ -11240,6 +11245,11 @@ class NebulaVoxelApp {
                 this.demolitionChargeSystem.update();
             }
 
+            // 🍖 Update food system - buff expiration
+            if (this.foodSystem) {
+                this.foodSystem.update(deltaTime);
+            }
+
             // Check for nearby workbench (even when paused)
             this.checkWorkbenchProximity();
 
@@ -12126,9 +12136,19 @@ class NebulaVoxelApp {
                         
                         // Otherwise, heal player (if not at full HP)
                         if (this.playerHP && this.playerHP.currentHP < this.playerHP.maxHP) {
-                            this.playerHP.heal(1); // Restore 1 heart
-                            this.updateStatus('🧪 Healing potion restored 1 heart!', 'discovery');
-                            console.log('🧪 Healing potion used on player');
+                            // 💔 Smart healing: If odd HP (broken heart), heal just 1 HP to complete the heart
+                            const isOddHP = (this.playerHP.currentHP % 2) === 1;
+                            const healAmount = isOddHP ? 1 : 2; // 1 HP for broken heart, 2 HP for full heart
+                            
+                            this.playerHP.heal(healAmount);
+                            
+                            // Show proper emoji based on what was healed
+                            if (isOddHP) {
+                                this.updateStatus('🧪 Healing potion completed broken heart! 💔 → ❤️', 'discovery');
+                            } else {
+                                this.updateStatus('🧪 Healing potion restored 1 heart! ❤️', 'discovery');
+                            }
+                            console.log(`🧪 Healing potion used on player: +${healAmount} HP (had broken heart: ${isOddHP})`);
                             
                             // Consume charge
                             this.hotbarSystem.removeFromSlot(this.hotbarSystem.selectedSlotIndex, 1);
@@ -12219,20 +12239,21 @@ class NebulaVoxelApp {
                             }
 
                             // 🍳 FOOD CONSUMPTION: Right-click to eat food and apply buffs
-                            const foodKeys = Object.keys(this.kitchenBenchSystem.foodDatabase);
-                            if (foodKeys.includes(selectedBlock)) {
+                            if (this.foodSystem && this.foodSystem.isFood(selectedBlock)) {
                                 console.log(`🍽️ Eating ${selectedBlock}...`);
                                 
-                                // Apply food buff
-                                this.kitchenBenchSystem.applyFoodBuff(selectedBlock);
+                                // Eat the food
+                                const consumed = this.foodSystem.eatFood(selectedBlock);
                                 
-                                // Consume one food item
-                                selectedSlot.quantity--;
-                                if (selectedSlot.quantity === 0) {
-                                    selectedSlot.itemType = '';
+                                if (consumed) {
+                                    // Consume one food item
+                                    selectedSlot.quantity--;
+                                    if (selectedSlot.quantity === 0) {
+                                        selectedSlot.itemType = '';
+                                    }
+                                    
+                                    this.hotbar.updateHotbarDisplay();
                                 }
-                                
-                                this.hotbar.updateHotbarDisplay();
                                 return;
                             }
 

@@ -193,6 +193,24 @@ export class CombatantSprite {
             this.voxelWorld.companionPortrait.updateHP(this.currentHP);
             console.log(`🖼️ Updated companion portrait HP: ${this.currentHP}/${this.maxHP}`);
         }
+        
+        // 🔄 Update PlayerCompanionUI to show heart changes for companions
+        if (this.isPlayer && this.voxelWorld && this.voxelWorld.playerCompanionUI) {
+            // Need to update the companion data in localStorage so UI can read it
+            const playerData = JSON.parse(localStorage.getItem('NebulaWorld_playerData') || '{}');
+            if (!playerData.companionHP) playerData.companionHP = {};
+            
+            // Get companion ID (from playerData)
+            const companionId = playerData.activeCompanion || playerData.starterMonster;
+            if (companionId) {
+                playerData.companionHP[companionId] = this.currentHP;
+                localStorage.setItem('NebulaWorld_playerData', JSON.stringify(playerData));
+                
+                // Trigger UI update
+                this.voxelWorld.playerCompanionUI.update();
+                console.log(`💖 Updated companion hearts in UI: ${this.currentHP}/${this.maxHP}`);
+            }
+        }
     }
 
     /**
