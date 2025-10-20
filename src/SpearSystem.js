@@ -274,7 +274,17 @@ export class SpearSystem {
         if (this.voxelWorld.billboardTextureCache && this.voxelWorld.billboardTextureCache.has(textureKey)) {
             texture = this.voxelWorld.billboardTextureCache.get(textureKey);
         } else {
-            texture = new THREE.TextureLoader().load('assets/art/tools/stone_spear.png');
+            // Use EnhancedGraphics to get proper path
+            let texturePath = 'assets/art/tools/stone_spear.png'; // Fallback
+            
+            if (this.voxelWorld.enhancedGraphics && this.voxelWorld.enhancedGraphics.isReady()) {
+                if (this.voxelWorld.enhancedGraphics.toolImages.has(textureKey)) {
+                    const imageData = this.voxelWorld.enhancedGraphics.toolImages.get(textureKey);
+                    texturePath = imageData.path;
+                }
+            }
+            
+            texture = this.voxelWorld.textureLoader.load(texturePath);
             texture.magFilter = THREE.NearestFilter;
             texture.minFilter = THREE.NearestFilter;
             
