@@ -66,8 +66,8 @@ export class BiomeWorldGen {
                 variants: ['dense_forest', 'sparse_forest', 'old_growth'],
                 transitionZone: 'forest_edge',
                 specialFeatures: ['clearings', 'streams'],
-                treeDistribution: { min: 0.25, max: 0.40, clusters: true },
-                treeChance: 0.32 // Average of treeDistribution range
+                treeDistribution: { min: 0.15, max: 0.25, clusters: true },
+                treeChance: 0.20 // Reduced for better performance
             },
 
             desert: {
@@ -84,8 +84,8 @@ export class BiomeWorldGen {
                 variants: ['sandy_desert', 'rocky_desert', 'oasis'],
                 transitionZone: 'desert_edge',
                 specialFeatures: ['dunes', 'oases', 'mesas'],
-                treeDistribution: { min: 0.01, max: 0.03, clusters: false },
-                treeChance: 0.02 // Average of treeDistribution range
+                treeDistribution: { min: 0.005, max: 0.015, clusters: false },
+                treeChance: 0.01 // Reduced for better performance
             },
 
             mountain: {
@@ -102,8 +102,8 @@ export class BiomeWorldGen {
                 variants: ['rocky_peaks', 'alpine_meadows', 'mountain_forest'],
                 transitionZone: 'foothills',
                 specialFeatures: ['peaks', 'valleys', 'caves'],
-                treeDistribution: { min: 0.15, max: 0.30, clusters: true },
-                treeChance: 0.22 // Average of treeDistribution range
+                treeDistribution: { min: 0.10, max: 0.20, clusters: true },
+                treeChance: 0.15 // Reduced for better performance
             },
 
             plains: {
@@ -120,8 +120,8 @@ export class BiomeWorldGen {
                 variants: ['grasslands', 'meadows', 'prairie'],
                 transitionZone: 'plains_edge',
                 specialFeatures: ['rivers', 'hills', 'groves'],
-                treeDistribution: { min: 0.05, max: 0.12, clusters: true },
-                treeChance: 0.08 // Average of treeDistribution range
+                treeDistribution: { min: 0.03, max: 0.07, clusters: true },
+                treeChance: 0.05 // Reduced for better performance
             },
 
             tundra: {
@@ -138,8 +138,8 @@ export class BiomeWorldGen {
                 variants: ['frozen_tundra', 'taiga_edge', 'permafrost'],
                 transitionZone: 'tundra_border',
                 specialFeatures: ['ice_formations', 'frozen_lakes'],
-                treeDistribution: { min: 0.02, max: 0.05, clusters: false },
-                treeChance: 0.035 // Average of treeDistribution range
+                treeDistribution: { min: 0.01, max: 0.03, clusters: false },
+                treeChance: 0.02 // Reduced for better performance
             }
         };
     }
