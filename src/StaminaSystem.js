@@ -463,6 +463,48 @@ export class StaminaSystem {
     }
 
     /**
+     * 💣 Update charge indicator WITH sweet spot highlighting
+     * @param {number} chargePercent - Charge percentage (0.0 to 1.0)
+     * @param {number} sweetSpotCenter - Center of sweet spot (0.0 to 1.0)
+     * @param {number} sweetSpotSize - Size of sweet spot (0.15 to 0.4)
+     * @param {boolean} inSweetSpot - Is cursor currently in sweet spot?
+     */
+    updateChargeIndicatorWithSweetSpot(chargePercent, sweetSpotCenter, sweetSpotSize, inSweetSpot) {
+        if (!this.chargeFill || !this.chargeLabel) return;
+
+        // Update fill width
+        this.chargeFill.style.width = `${chargePercent * 100}%`;
+
+        // Update label text
+        const sweetSpotText = inSweetSpot ? '🎯 SWEET SPOT!' : '⚠️ OFF';
+        this.chargeLabel.textContent = `💣 ${(chargePercent * 100).toFixed(0)}% ${sweetSpotText}`;
+
+        // Color: Green if in sweet spot, red if outside
+        if (inSweetSpot) {
+            this.chargeFill.style.background = 'linear-gradient(to right, #10b981, #059669)'; // Green
+            this.chargeFill.style.boxShadow = 'inset 0 0 10px rgba(16, 185, 129, 0.8)'; // Glow
+        } else {
+            this.chargeFill.style.background = 'linear-gradient(to right, #fbbf24, #f59e0b, #ef4444)'; // Yellow to red
+            this.chargeFill.style.boxShadow = 'inset 0 2px 4px rgba(255, 255, 255, 0.3)';
+        }
+
+        // Draw sweet spot zone as background overlay
+        const sweetSpotMin = (sweetSpotCenter - sweetSpotSize / 2) * 100;
+        const sweetSpotMax = (sweetSpotCenter + sweetSpotSize / 2) * 100;
+        
+        // Add sweet spot indicator to container background
+        this.chargeContainer.style.background = `
+            linear-gradient(to right, 
+                rgba(0, 0, 0, 0.8) 0%, 
+                rgba(0, 0, 0, 0.8) ${sweetSpotMin}%, 
+                rgba(16, 185, 129, 0.4) ${sweetSpotMin}%, 
+                rgba(16, 185, 129, 0.4) ${sweetSpotMax}%, 
+                rgba(0, 0, 0, 0.8) ${sweetSpotMax}%, 
+                rgba(0, 0, 0, 0.8) 100%)
+        `;
+    }
+
+    /**
      * Cleanup and remove UI
      */
     dispose() {

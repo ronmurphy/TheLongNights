@@ -54,6 +54,7 @@ THREE.Mesh.prototype.raycast = acceleratedRaycast;
 import { farmingBlockTypes } from './FarmingBlockTypes.js';
 import { CraftedTools } from './CraftedTools.js';
 import { SpearSystem } from './SpearSystem.js';
+import { DemolitionChargeSystem } from './DemolitionChargeSystem.js';
 import { createEmojiChooser } from './EmojiChooser.js';
 import * as CANNON from 'cannon-es';
 
@@ -288,6 +289,10 @@ class NebulaVoxelApp {
         // 🗡️ Initialize SpearSystem
         this.spearSystem = new SpearSystem(this);
         console.log('🗡️ SpearSystem initialized');
+
+        // 💣 Initialize DemolitionChargeSystem
+        this.demolitionChargeSystem = new DemolitionChargeSystem(this, this.craftedTools);
+        console.log('💣 DemolitionChargeSystem initialized');
 
         // 🎯 Player upgrades (modifiable through ToolBench)
         this.backpackStackSize = 50;  // Can upgrade to 75, 100
@@ -11230,6 +11235,11 @@ class NebulaVoxelApp {
                 this.spearSystem.update();
             }
 
+            // 💣 Update demolition charge system - countdown and detonation
+            if (this.demolitionChargeSystem) {
+                this.demolitionChargeSystem.update();
+            }
+
             // Check for nearby workbench (even when paused)
             this.checkWorkbenchProximity();
 
@@ -12018,10 +12028,31 @@ class NebulaVoxelApp {
                 const selectedSlot = this.hotbarSystem.getSelectedSlot();
                 const selectedItem = selectedSlot?.itemType;
                 const isSpear = selectedItem === 'stone_spear' || selectedItem === 'crafted_stone_spear';
+                const isDemolitionCharge = selectedItem === 'demolition_charge' || selectedItem === 'crafted_demolition_charge';
                 
                 if (isSpear && selectedSlot.quantity > 0) {
                     this.spearSystem.startCharging();
                     // Don't return - let it continue to show green highlight
+                }
+                
+                // 💣 DEMOLITION CHARGE CHARGING: Start charging throw
+                if (isDemolitionCharge && selectedSlot.quantity > 0) {
+                    // Get target position for distance calculation
+                    this.raycaster.setFromCamera(new THREE.Vector2(0, 0), this.camera);
+                    const intersects = this.raycaster.intersectObjects(
+                        this.scene.children.filter(obj => obj.isMesh && obj !== this.targetHighlight)
+                    );
+                    
+                    if (intersects.length > 0) {
+                        const hit = intersects[0];
+                        const targetPos = {
+                            x: Math.floor(hit.point.x),
+                            y: Math.floor(hit.point.y),
+                            z: Math.floor(hit.point.z)
+                        };
+                        this.demolitionChargeSystem.startCharging(targetPos);
+                    }
+                    // Don't return - let it continue
                 }
             }
             
@@ -12279,6 +12310,12 @@ class NebulaVoxelApp {
                     
                     this.spearSystem.releaseThrow(targetPos);
                 }
+                return; // Don't continue to other mouseup actions
+            }
+
+            // 💣 DEMOLITION CHARGE RELEASE: Release charged throw
+            if (e.button === 2 && this.demolitionChargeSystem && this.demolitionChargeSystem.isCharging) {
+                this.demolitionChargeSystem.releaseThrow();
                 return; // Don't continue to other mouseup actions
             }
 
