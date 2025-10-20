@@ -1,6 +1,33 @@
 # Console Commands Reference
 
-## 🌫️ Fog Control (Silent Hill Style)
+## �️ Weather System
+
+### Start Weather
+```javascript
+// Start rain
+voxelWorld.weatherSystem.startWeather('rain');
+
+// Start thunder (requires elevation 50+, or falls back to rain)
+voxelWorld.weatherSystem.startWeather('thunder', voxelWorld.player.position.y);
+
+// Start snow
+voxelWorld.weatherSystem.startWeather('snow');
+```
+
+### Stop Weather
+```javascript
+voxelWorld.weatherSystem.stopWeather();
+```
+
+### Check Current Weather
+```javascript
+voxelWorld.weatherSystem.getWeather();  // Returns 'rain', 'thunder', 'snow', or null
+voxelWorld.weatherSystem.isWeatherActive();  // Returns true/false
+```
+
+---
+
+## �🌫️ Fog Control (Silent Hill Style)
 
 ### Toggle Hard Fog (Wall Effect)
 ```javascript
@@ -150,6 +177,34 @@ console.log('Current biome:', biome.name);
 
 ---
 
+## 🌦️ Weather Cycle Commands
+
+### Automatic Weather (ON by default)
+```javascript
+// Start automatic weather cycles
+voxelWorld.weatherCycleSystem.start();
+
+// Stop automatic weather cycles
+voxelWorld.weatherCycleSystem.stop();
+
+// Toggle cycles on/off
+voxelWorld.weatherCycleSystem.toggle();
+
+// Force specific weather immediately
+voxelWorld.weatherCycleSystem.forceWeather('rain');
+voxelWorld.weatherCycleSystem.forceWeather('thunder');
+voxelWorld.weatherCycleSystem.forceWeather('snow');
+
+// Get debug info
+voxelWorld.weatherCycleSystem.getDebugInfo();
+// Returns: {active, currentWeather, timeUntilChange, playerElevation, canThunder}
+
+// Check time until next weather change (in game hours)
+voxelWorld.weatherCycleSystem.getTimeUntilNextChange();
+```
+
+---
+
 ## 📋 Notes
 
 1. **Enhanced Graphics**: The system automatically checks for PNG files matching item/block names
@@ -157,5 +212,6 @@ console.log('Current biome:', biome.name);
 3. **Fallback**: If PNG not found, game uses emoji/procedural graphics
 4. **Console Access**: `voxelWorld` is the global game instance (available in browser console)
 5. **Fog Toggle**: Changes take effect immediately, updates fog rendering
+6. **Weather Cycles**: Automatic weather starts on game load, cycles every 6-24 hours (randomized)
 
 **Pro Tip**: Press F12 to open browser DevTools, then use Console tab for commands!

@@ -22,6 +22,8 @@ import { GhostSystem } from './GhostSystem.js';
 import { AngryGhostSystem } from './AngryGhostSystem.js';
 import { BloodMoonSystem } from './BloodMoonSystem.js';
 import { AtmosphericFog } from './AtmosphericFog.js';
+import { WeatherSystem } from './WeatherSystem.js';
+import { WeatherCycleSystem } from './WeatherCycleSystem.js';
 import { BattleSystem } from './BattleSystem.js';
 import { BattleArena } from './BattleArena.js';
 import { RPGIntegration } from './rpg/RPGIntegration.js';
@@ -8708,6 +8710,9 @@ class NebulaVoxelApp {
 
         // 🌫️ Initialize Atmospheric Fog System NOW that camera is ready
         this.atmosphericFog = new AtmosphericFog(this.scene, this.camera);
+        
+        // 🌦️ Initialize Weather System
+        this.weatherSystem = new WeatherSystem(this.scene, this.camera);
 
         // � Initialize LOD Manager now that camera is ready
         this.lodManager = new ChunkLODManager(this);
@@ -8836,6 +8841,7 @@ class NebulaVoxelApp {
             directionalLight: directionalLight,
             ambientLight: ambientLight,
             currentDay: 1, // Track total days passed (changed from 0 to 1 for Week 1, Day 1)
+            totalDays: 0, // Continuous day counter for weather system
             lastDayTime: 12, // Track when day changed for comparison
             
             // 🩸 BLOOD MOON SYSTEM
@@ -8847,6 +8853,15 @@ class NebulaVoxelApp {
             enemiesSpawnedThisBloodMoon: false, // Prevent duplicate spawns per blood moon
             totalBloodMoonsSurvived: 0 // Track total blood moons survived (achievement tracking)
         };
+        
+        // 🌦️ Initialize Weather Cycle System (after day/night cycle)
+        this.weatherCycleSystem = new WeatherCycleSystem(
+            this.weatherSystem,
+            this.player,
+            this.dayNightCycle
+        );
+        // Start weather cycles automatically
+        this.weatherCycleSystem.start();
 
         // Biome definitions
         // 🌍 Biome system now handled by BiomeWorldGen module
@@ -10408,6 +10423,7 @@ class NebulaVoxelApp {
                 
                 // 🩸 BLOOD MOON: Increment day and check for week rollover
                 this.dayNightCycle.currentDay++;
+                this.dayNightCycle.totalDays++; // 🌦️ For weather system
                 this.dayNightCycle.dayOfWeek++;
                 
                 // Check if week ended (day 7 just passed)
@@ -11178,6 +11194,16 @@ class NebulaVoxelApp {
                 const isBloodMoonActive = this.dayNightCycle.bloodMoonActive || false;
                 this.atmosphericFog.checkTimeAndUpdate(isNight, isBloodMoonActive);
                 this.atmosphericFog.update(deltaTime);
+            }
+            
+            // 🌦️ Update weather system - rain, thunder, snow particles
+            if (this.weatherSystem) {
+                this.weatherSystem.update(deltaTime);
+            }
+            
+            // 🌦️ Update weather cycle system - automatic weather changes
+            if (this.weatherCycleSystem) {
+                this.weatherCycleSystem.update(deltaTime);
             }
 
             // 🗡️ Update spear system - check for pickup proximity
