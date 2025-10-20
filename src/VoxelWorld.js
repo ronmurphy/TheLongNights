@@ -1096,7 +1096,8 @@ class NebulaVoxelApp {
                 metadata: metadata,
                 originalName: metadata.name,
                 dimensions: dimensions,
-                isCraftedObject: true
+                isCraftedObject: true,
+                floorPosition: { x: Math.floor(x), y: Math.floor(y), z: Math.floor(z) } // Store original floor position
             };
 
             // 🔥 Add effects BEFORE adding to scene (fire, glow, etc.)
@@ -12162,6 +12163,29 @@ class NebulaVoxelApp {
                     return;
                 }
 
+                // 🔥 CAMPFIRE INTERACTION: Check if right-clicking a campfire crafted object
+                if (e.button === 2 && hit.object.userData && hit.object.userData.isCraftedObject) {
+                    const itemId = hit.object.userData.itemId;
+                    const originalName = hit.object.userData.originalName;
+                    
+                    console.log(`🔥 Right-click on crafted object: ${originalName} (${itemId})`);
+                    
+                    // Check if it's a campfire (any campfire variant)
+                    if (itemId && itemId.toLowerCase().includes('campfire')) {
+                        console.log(`🔥 Campfire detected! Opening modal...`);
+                        // Use stored floor position from userData
+                        const floorPos = hit.object.userData.floorPosition;
+                        if (floorPos) {
+                            this.showCampfireModal(floorPos.x, floorPos.y, floorPos.z);
+                        } else {
+                            // Fallback to mesh position (for old campfires without floorPosition)
+                            const objPos = hit.object.position;
+                            this.showCampfireModal(Math.floor(objPos.x), Math.floor(objPos.y), Math.floor(objPos.z));
+                        }
+                        return; // Don't continue to other actions
+                    }
+                }
+
                 if (e.button === 0) { // Left click - harvesting (blocks or crafted objects)
                     // 🧪 HEALING POTION: Smart targeting system
                     const selectedSlot = this.hotbarSystem.getSelectedSlot();
@@ -14202,6 +14226,279 @@ class NebulaVoxelApp {
             modal.appendChild(closeBtn);
 
             document.body.appendChild(modal);
+        };
+
+        // 🔥 CAMPFIRE MODAL: Sleep, Save, or Remove campfire
+        this.showCampfireModal = (x, y, z) => {
+            // Disable controls and release pointer lock
+            this.controlsEnabled = false;
+            if (document.pointerLockElement) {
+                document.exitPointerLock();
+            }
+
+            // Create modal
+            const modal = document.createElement('div');
+            modal.id = 'campfire-modal';
+            modal.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: linear-gradient(135deg, #2a1810 0%, #1a0f08 100%);
+                border: 3px solid #FF4400;
+                border-radius: 12px;
+                padding: 30px;
+                max-width: 500px;
+                z-index: 10001;
+                box-shadow: 0 0 50px rgba(255,68,0,0.5);
+            `;
+
+            // Title
+            const title = document.createElement('h2');
+            title.textContent = '🔥 Campfire';
+            title.style.cssText = `
+                color: #FFD700;
+                font-size: 28px;
+                margin: 0 0 20px 0;
+                text-align: center;
+                text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            `;
+            modal.appendChild(title);
+
+            // Description
+            const desc = document.createElement('p');
+            desc.textContent = 'Your respawn point is set here. What would you like to do?';
+            desc.style.cssText = `
+                color: #F5E6D3;
+                font-size: 16px;
+                text-align: center;
+                margin-bottom: 25px;
+            `;
+            modal.appendChild(desc);
+
+            // Buttons container
+            const buttonsContainer = document.createElement('div');
+            buttonsContainer.style.cssText = `
+                display: flex;
+                flex-direction: column;
+                gap: 15px;
+            `;
+
+            // 😴 Sleep Button
+            const sleepBtn = document.createElement('button');
+            sleepBtn.innerHTML = '😴 Sleep (8 hours)';
+            sleepBtn.style.cssText = `
+                padding: 15px;
+                background: linear-gradient(180deg, #4A90E2, #2E5C8A);
+                border: 2px solid #6BAED6;
+                border-radius: 8px;
+                color: white;
+                font-size: 18px;
+                cursor: pointer;
+                font-weight: bold;
+                transition: all 0.3s;
+            `;
+            sleepBtn.onmouseover = () => sleepBtn.style.transform = 'scale(1.05)';
+            sleepBtn.onmouseout = () => sleepBtn.style.transform = 'scale(1)';
+            sleepBtn.onclick = () => {
+                this.handleCampfireSleep();
+                document.body.removeChild(modal);
+                // Re-enable controls and request pointer lock
+                this.controlsEnabled = true;
+                this.renderer.domElement.requestPointerLock();
+            };
+            buttonsContainer.appendChild(sleepBtn);
+
+            // 💾 Save Game Button
+            const saveBtn = document.createElement('button');
+            saveBtn.innerHTML = '💾 Save Game';
+            saveBtn.style.cssText = `
+                padding: 15px;
+                background: linear-gradient(180deg, #4CAF50, #2E7D32);
+                border: 2px solid #66BB6A;
+                border-radius: 8px;
+                color: white;
+                font-size: 18px;
+                cursor: pointer;
+                font-weight: bold;
+                transition: all 0.3s;
+            `;
+            saveBtn.onmouseover = () => saveBtn.style.transform = 'scale(1.05)';
+            saveBtn.onmouseout = () => saveBtn.style.transform = 'scale(1)';
+            saveBtn.onclick = () => {
+                document.body.removeChild(modal);
+                // Re-enable controls (slot picker will handle pointer lock)
+                this.controlsEnabled = true;
+                this.showSaveMenu(); // Open save slot picker
+            };
+            buttonsContainer.appendChild(saveBtn);
+
+            // 🗑️ Remove Campfire Button
+            const removeBtn = document.createElement('button');
+            removeBtn.innerHTML = '🗑️ Remove Campfire';
+            removeBtn.style.cssText = `
+                padding: 15px;
+                background: linear-gradient(180deg, #FF9800, #E65100);
+                border: 2px solid #FFB74D;
+                border-radius: 8px;
+                color: white;
+                font-size: 18px;
+                cursor: pointer;
+                font-weight: bold;
+                transition: all 0.3s;
+            `;
+            removeBtn.onmouseover = () => removeBtn.style.transform = 'scale(1.05)';
+            removeBtn.onmouseout = () => removeBtn.style.transform = 'scale(1)';
+            removeBtn.onclick = () => {
+                this.handleCampfireRemoval(x, y, z);
+                document.body.removeChild(modal);
+                // Re-enable controls and request pointer lock
+                this.controlsEnabled = true;
+                this.renderer.domElement.requestPointerLock();
+            };
+            buttonsContainer.appendChild(removeBtn);
+
+            // ✖ Close Button
+            const closeBtn = document.createElement('button');
+            closeBtn.innerHTML = '✖ Close';
+            closeBtn.style.cssText = `
+                padding: 15px;
+                background: linear-gradient(180deg, #8B0000, #600000);
+                border: 2px solid #A52A2A;
+                border-radius: 8px;
+                color: white;
+                font-size: 16px;
+                cursor: pointer;
+                font-weight: bold;
+                transition: all 0.3s;
+            `;
+            closeBtn.onmouseover = () => closeBtn.style.transform = 'scale(1.05)';
+            closeBtn.onmouseout = () => closeBtn.style.transform = 'scale(1)';
+            closeBtn.onclick = () => {
+                document.body.removeChild(modal);
+                // Re-enable controls and request pointer lock
+                this.controlsEnabled = true;
+                this.renderer.domElement.requestPointerLock();
+            };
+            buttonsContainer.appendChild(closeBtn);
+
+            modal.appendChild(buttonsContainer);
+            document.body.appendChild(modal);
+        };
+
+        // 🔥 Handle campfire sleep (8-hour time skip)
+        this.handleCampfireSleep = () => {
+            console.log('🔥 handleCampfireSleep called');
+            console.log('   TimeOfDaySystem:', this.timeOfDaySystem);
+            
+            if (!this.dayNightCycle) {
+                console.error('❌ TimeOfDaySystem not available!');
+                this.updateStatus('❌ Time system not available!', 'error');
+                return;
+            }
+
+            // Get initial time
+            const initialTime = this.dayNightCycle.currentTime;
+            console.log(`🔥 Initial time: ${initialTime}`);
+
+            const newTime = (initialTime + 8) % 24; // Wrap around at 24 hours
+            this.dayNightCycle.currentTime = newTime;
+
+            console.log(`New time: ${newTime}`);
+            this.updateStatus(`Slept for 8 hours. Time is now ${Math.floor(newTime)}:00`, 'success');
+
+            // Optional: Heal player on sleep
+            if (this.playerHP && this.playerHP.currentHP < this.playerHP.maxHP) {
+                const healAmount = Math.floor(this.playerHP.maxHP * 0.5); // Heal 50%
+                this.playerHP.heal(healAmount);
+                this.updateStatus(`❤️ Rested and healed ${healAmount} HP!`, 'success');
+                console.log(`❤️ Healed ${healAmount} HP`);
+            }
+
+            // Optional: Restore stamina
+            if (this.staminaSystem) {
+                this.staminaSystem.stamina = this.staminaSystem.maxStamina;
+                this.updateStatus(`⚡ Stamina fully restored!`, 'success');
+            }
+        };
+
+        // 🔥 Handle campfire removal
+        this.handleCampfireRemoval = (x, y, z) => {
+            // Crafted objects are stored by floor position
+            const blockKey = `${Math.floor(x)},${Math.floor(y)},${Math.floor(z)}`;
+            
+            // Check if this is a crafted object
+            if (!this.craftedObjects || !this.craftedObjects[blockKey]) {
+                console.error(`❌ No campfire found at (${x}, ${y}, ${z})`);
+                return;
+            }
+
+            const craftedData = this.craftedObjects[blockKey];
+            const itemId = craftedData.itemId;
+            const craftedMesh = craftedData.mesh;
+
+            // 🔥 CLEANUP: Remove effect objects (particles, lights) BEFORE removing mesh
+            if (craftedMesh && craftedMesh.userData.effectObjects && craftedMesh.userData.effectObjects.length > 0) {
+                craftedMesh.userData.effectObjects.forEach(effect => {
+                    if (effect.type === 'particles') {
+                        // Clean up sprite-based particles
+                        if (effect.sprites) {
+                            effect.sprites.forEach(sprite => {
+                                this.scene.remove(sprite);
+                                if (sprite.material) sprite.material.dispose();
+                            });
+                            console.log(`🔥 Removed ${effect.sprites.length} fire particles`);
+                        }
+                        // Clean up old BufferGeometry particles
+                        else if (effect.object) {
+                            this.scene.remove(effect.object);
+                            if (effect.object.geometry) effect.object.geometry.dispose();
+                            if (effect.object.material) effect.object.material.dispose();
+                        }
+                    }
+                    if (effect.type === 'light') {
+                        this.scene.remove(effect.object);
+                        console.log(`💡 Removed glow light`);
+                    }
+                });
+                craftedMesh.userData.effectObjects = [];
+                console.log(`✅ Cleaned up all effect objects for campfire`);
+            }
+
+            // Remove mesh from scene
+            if (craftedMesh) {
+                this.scene.remove(craftedMesh);
+                
+                // Clean up geometry and materials
+                if (craftedMesh.geometry) craftedMesh.geometry.dispose();
+                if (craftedMesh.material) {
+                    if (Array.isArray(craftedMesh.material)) {
+                        craftedMesh.material.forEach(mat => mat.dispose());
+                    } else {
+                        craftedMesh.material.dispose();
+                    }
+                }
+            }
+
+            // Remove from crafted objects dictionary
+            delete this.craftedObjects[blockKey];
+
+            // Give campfire back to player
+            this.inventory.addToInventory(itemId, 1);
+            
+            const emoji = this.getItemIcon(itemId, 'status');
+            this.updateStatus(`${emoji} Campfire removed and returned to inventory`, 'harvest');
+
+            // Clear respawn point if this was the respawn campfire
+            if (this.respawnCampfire && 
+                this.respawnCampfire.x === Math.floor(x) && 
+                this.respawnCampfire.y === Math.floor(y) && 
+                this.respawnCampfire.z === Math.floor(z)) {
+                this.respawnCampfire = null;
+                console.log('🔥 Respawn point cleared');
+            }
+
+            console.log(`🔥 Campfire removed at (${x}, ${y}, ${z})`);
         };
 
         // Music control event listeners
