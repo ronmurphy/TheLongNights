@@ -6932,18 +6932,9 @@ class NebulaVoxelApp {
                 staminaCost = Math.ceil(harvestTimeSeconds * 2);
             }
 
-            // 🌲 TREE BONUS: If harvesting a tree, multiply cost by trunk size!
-            // Check if this block is part of a registered tree
-            const treeId = this.getTreeIdFromBlock(x, y, z);
-            if (treeId) {
-                const treeMetadata = this.getTreeMetadata(treeId);
-                if (treeMetadata && treeMetadata.trunkBlocks) {
-                    const trunkCount = treeMetadata.trunkBlocks.length;
-                    const leafCount = treeMetadata.leafBlocks.length;
-                    staminaCost = staminaCost * trunkCount;
-                    console.log(`🌲 BIG TREE! ${treeMetadata.treeType} with ${trunkCount} trunk blocks → ${trunkCount}x multiplier = ${staminaCost} stamina cost`);
-                }
-            }
+            // 🌲 REMOVED: Tree trunk multiplier was making trees cost 20-30x stamina!
+            // Trees now use normal wood stamina cost (1-2 stamina per block)
+            // The entire tree gets removed automatically, so no need to multiply cost
             
             // Check if player has enough stamina
             if (this.staminaSystem && this.staminaSystem.currentStamina < staminaCost) {
