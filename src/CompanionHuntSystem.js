@@ -164,88 +164,33 @@ export class CompanionHuntSystem {
 
     /**
      * Create mini hunt indicator below stamina bar
+     * DEPRECATED - Now integrated into PlayerCompanionUI
      */
     createMiniHuntIndicator() {
+        // Hide old indicator if it exists
         if (this.miniIndicator) {
-            this.miniIndicator.style.display = 'flex';
-            return;
+            this.miniIndicator.style.display = 'none';
         }
-
-        // Create container matching hotbar style
-        this.miniIndicator = document.createElement('div');
-        this.miniIndicator.id = 'mini-hunt-indicator';
-        this.miniIndicator.style.cssText = `
-            position: fixed;
-            top: 82px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background: rgba(245, 230, 211, 0.9);
-            border: 3px solid #8B4513;
-            border-radius: 12px;
-            padding: 8px 12px;
-            z-index: 1000;
-            pointer-events: none;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5), inset 0 2px 5px rgba(255, 255, 255, 0.3);
-            font-family: Georgia, serif;
-        `;
-
-        // Create mini portrait - clone from main portrait image
-        const mainPortraitImg = document.getElementById('companion-portrait-img');
-        if (mainPortraitImg) {
-            this.miniPortrait = document.createElement('img');
-            this.miniPortrait.src = mainPortraitImg.src;
-            this.miniPortrait.style.cssText = `
-                width: 32px;
-                height: 32px;
-                border-radius: 6px;
-                border: 2px solid #8B4513;
-                object-fit: cover;
-                background: #2C1810;
-                box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
-            `;
-        } else {
-            // Fallback to div if image not found
-            this.miniPortrait = document.createElement('div');
-            this.miniPortrait.style.cssText = `
-                width: 32px;
-                height: 32px;
-                background: #2C1810;
-                border-radius: 6px;
-                border: 2px solid #8B4513;
-                box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
-            `;
+        
+        // Use new PlayerCompanionUI system instead
+        if (this.voxelWorld.playerCompanionUI) {
+            this.voxelWorld.playerCompanionUI.updateHuntStatus('Starting...');
         }
-
-        // Create timer text matching hotbar font style
-        this.miniTimer = document.createElement('div');
-        this.miniTimer.style.cssText = `
-            color: #4A2511;
-            font-family: Georgia, serif;
-            font-size: 14px;
-            font-weight: bold;
-            white-space: nowrap;
-            text-shadow: 1px 1px 1px rgba(255, 255, 255, 0.5);
-        `;
-        this.miniTimer.textContent = 'Starting...';
-
-        this.miniIndicator.appendChild(this.miniPortrait);
-        this.miniIndicator.appendChild(this.miniTimer);
-        document.body.appendChild(this.miniIndicator);
-
-        console.log('✨ Created mini hunt indicator with hotbar styling');
-
-        console.log('🎯 Mini hunt indicator created');
     }
 
     /**
      * Hide/remove mini hunt indicator
+     * DEPRECATED - Now integrated into PlayerCompanionUI
      */
     hideMiniHuntIndicator() {
+        // Hide old indicator if it exists
         if (this.miniIndicator) {
             this.miniIndicator.style.display = 'none';
+        }
+        
+        // Clear hunt status in new UI
+        if (this.voxelWorld.playerCompanionUI) {
+            this.voxelWorld.playerCompanionUI.updateHuntStatus(null);
         }
     }
 
@@ -412,91 +357,224 @@ export class CompanionHuntSystem {
 
     /**
      * Spawn a billboard item at discovery location
+     * Spawns 1-4 items in a cluster around the waypoint
      */
     spawnBillboardItem(discovery) {
-        const { position, item } = discovery;
+        const { position, item, id } = discovery;
 
-        // Get terrain height at position
-        const terrainY = this.voxelWorld.getTerrainHeight?.(position.x, position.z) || position.y;
-
+        // Determine how many items to spawn (1-4)
+        const itemCount = Math.floor(Math.random() * 4) + 1; // Random 1-4
+        
         // Get emoji from BILLBOARD_ITEMS or fallback
         const emoji = this.voxelWorld.BILLBOARD_ITEMS?.[item]?.emoji || this.getItemEmoji(item);
 
-        // Spawn billboard item using createWorldItem (same as world item spawning)
-        this.voxelWorld.createWorldItem(
-            Math.floor(position.x),
-            terrainY + 1,
-            Math.floor(position.z),
-            item,
-            emoji
-        );
+        console.log(`📍 Spawning ${itemCount}x ${emoji} ${item} near waypoint at (${Math.floor(position.x)}, ${Math.floor(position.z)})`);
 
-        // Store discovery ID for tracking
-        const key = `${Math.floor(position.x)},${terrainY + 1},${Math.floor(position.z)}`;
-        const worldItem = this.voxelWorld.worldItemPositions.find(wi => 
-            wi.x === Math.floor(position.x) && 
-            wi.y === terrainY + 1 && 
-            wi.z === Math.floor(position.z)
-        );
-        
-        if (worldItem) {
-            worldItem.discoveryId = discovery.id;
-            worldItem.isCompanionDiscovery = true;
-            console.log(`📍 Spawned companion discovery: ${emoji} ${item} at (${Math.floor(position.x)}, ${terrainY + 1}, ${Math.floor(position.z)})`);
+        // Spawn multiple items in a cluster (radius 2-4 blocks)
+        for (let i = 0; i < itemCount; i++) {
+            // First item at center, others scattered around
+            let offsetX = 0;
+            let offsetZ = 0;
+            
+            if (i > 0) {
+                // Random offset 2-4 blocks from center
+                const angle = Math.random() * Math.PI * 2;
+                const distance = 2 + Math.random() * 2; // 2-4 blocks
+                offsetX = Math.cos(angle) * distance;
+                offsetZ = Math.sin(angle) * distance;
+            }
+
+            const spawnX = Math.floor(position.x + offsetX);
+            const spawnZ = Math.floor(position.z + offsetZ);
+
+            // Get terrain height at spawn position
+            const terrainY = this.voxelWorld.getTerrainHeight?.(spawnX, spawnZ) || position.y;
+
+            // Spawn billboard item using createWorldItem
+            this.voxelWorld.createWorldItem(
+                spawnX,
+                terrainY + 1,
+                spawnZ,
+                item,
+                emoji
+            );
+
+            // Store discovery ID for tracking
+            const worldItem = this.voxelWorld.worldItemPositions.find(wi => 
+                wi.x === spawnX && 
+                wi.y === terrainY + 1 && 
+                wi.z === spawnZ
+            );
+            
+            if (worldItem) {
+                worldItem.discoveryId = id;
+                worldItem.isCompanionDiscovery = true;
+                console.log(`  ✓ Item ${i + 1}/${itemCount}: ${emoji} at (${spawnX}, ${terrainY + 1}, ${spawnZ})`);
+            }
         }
+
+        // Store item count in discovery for waypoint display
+        discovery.itemCount = itemCount;
+
+        console.log(`📍 Spawned ${itemCount}x companion discovery: ${emoji} ${item}`);
     }
 
     /**
-     * Add purple discovery marker to maps
+     * Find a valid spawn location on solid ground (for NPCs, specific items, etc.)
+     * Returns {x, y, z} or null if no valid location found
+     * 
+     * @param {number} centerX - Center X coordinate
+     * @param {number} centerZ - Center Z coordinate
+     * @param {number} radius - Search radius in blocks (default: 4)
+     * @param {number} maxAttempts - Maximum spawn attempts (default: 10)
+     * @returns {{x: number, y: number, z: number} | null}
+     */
+    findValidSpawnLocation(centerX, centerZ, radius = 4, maxAttempts = 10) {
+        for (let attempt = 0; attempt < maxAttempts; attempt++) {
+            // Random offset from center
+            let offsetX = 0;
+            let offsetZ = 0;
+            
+            if (attempt > 0) {
+                const angle = Math.random() * Math.PI * 2;
+                const distance = Math.random() * radius;
+                offsetX = Math.cos(angle) * distance;
+                offsetZ = Math.sin(angle) * distance;
+            }
+
+            const spawnX = Math.floor(centerX + offsetX);
+            const spawnZ = Math.floor(centerZ + offsetZ);
+            const terrainY = this.voxelWorld.getTerrainHeight?.(spawnX, spawnZ) || 15;
+
+            // Validate surface block
+            const blockBelow = this.voxelWorld.getBlock?.(spawnX, terrainY, spawnZ);
+            const validSurfaces = ['dirt', 'grass', 'stone', 'sand', 'snow'];
+            const isValidSurface = !blockBelow || validSurfaces.includes(blockBelow.type);
+
+            // Validate spawn position is air
+            const blockAtSpawn = this.voxelWorld.getBlock?.(spawnX, terrainY + 1, spawnZ);
+            const isAir = !blockAtSpawn;
+
+            // Validate headroom (2 blocks tall)
+            const blockAbove = this.voxelWorld.getBlock?.(spawnX, terrainY + 2, spawnZ);
+            const hasHeadroom = !blockAbove;
+
+            if (isValidSurface && isAir && hasHeadroom) {
+                console.log(`✅ Valid spawn location found at (${spawnX}, ${terrainY + 1}, ${spawnZ}) after ${attempt + 1} attempts`);
+                return { x: spawnX, y: terrainY + 1, z: spawnZ };
+            }
+        }
+
+        console.warn(`⚠️ No valid spawn location found near (${centerX}, ${centerZ}) after ${maxAttempts} attempts`);
+        return null;
+    }
+
+    /**
+     * Add purple discovery marker to maps AND create waypoint
      */
     addDiscoveryMarker(discovery) {
-        const { position, item } = discovery;
+        const { position, item, id, itemCount = 1 } = discovery;
+        const itemEmoji = this.getItemEmoji(item);
 
-        // Add to minimap (purple dot)
-        if (this.voxelWorld.minimap) {
-            this.voxelWorld.minimap.addMarker({
+        // Create explorer pin/waypoint that can be navigated to
+        if (this.voxelWorld.explorerPins) {
+            // Show item count if more than 1
+            const displayName = itemCount > 1 
+                ? `${itemEmoji} ${item} (×${itemCount})`
+                : `${itemEmoji} ${item}`;
+
+            const waypoint = {
+                id: id,
+                name: displayName,
+                color: '#a855f7',  // Purple
                 x: position.x,
                 z: position.z,
-                color: '#a855f7',  // Purple
-                label: `${this.getItemEmoji(item)} ${item}`,
-                type: 'companion_discovery',
-                id: discovery.id
-            });
-        }
+                created: new Date().toISOString(),
+                isCompanionDiscovery: true,
+                discoveryId: id,
+                itemCount: itemCount
+            };
 
-        // Add to journal map (purple dot)
-        if (this.voxelWorld.journal) {
-            this.voxelWorld.journal.addPOI({
-                x: position.x,
-                z: position.z,
-                name: `${this.getItemEmoji(item)} ${item}`,
-                type: 'companion_discovery',
-                color: '#a855f7',  // Purple
-                id: discovery.id
-            });
-        }
+            this.voxelWorld.explorerPins.push(waypoint);
+            
+            // Trigger pin list update if journal is open
+            if (this.voxelWorld.updatePinList) {
+                this.voxelWorld.updatePinList();
+            }
 
-        console.log(`🟣 Purple marker added for ${item}`);
+            console.log(`🟣 Waypoint created: ${displayName} at (${Math.floor(position.x)}, ${Math.floor(position.z)})`);
+        }
     }
 
     /**
-     * Handle item collection - remove markers and billboard
+     * Handle item collection - update waypoint count, remove when all items collected
      */
-    onItemCollected(discoveryId) {
-        // Remove from discoveries list
-        this.discoveries = this.discoveries.filter(d => d.id !== discoveryId);
+    onItemCollected(worldX, worldY, worldZ) {
+        // Find the world item at this position
+        const worldItem = this.voxelWorld.worldItemPositions.find(wi => 
+            wi.x === worldX && wi.y === worldY && wi.z === worldZ
+        );
 
-        // Remove minimap marker
-        if (this.voxelWorld.minimap) {
-            this.voxelWorld.minimap.removeMarker(discoveryId);
+        if (!worldItem || !worldItem.isCompanionDiscovery) {
+            return; // Not a companion discovery item
         }
 
-        // Remove journal POI
-        if (this.voxelWorld.journal) {
-            this.voxelWorld.journal.removePOI(discoveryId);
+        const discoveryId = worldItem.discoveryId;
+
+        // Find the waypoint/pin
+        if (this.voxelWorld.explorerPins) {
+            const pin = this.voxelWorld.explorerPins.find(p => p.discoveryId === discoveryId);
+            
+            if (pin && pin.itemCount !== undefined) {
+                // Decrement item count
+                pin.itemCount--;
+
+                console.log(`📍 Item collected from "${pin.name}" - ${pin.itemCount} remaining`);
+
+                // Update waypoint name to show remaining count
+                const discovery = this.discoveries.find(d => d.id === discoveryId);
+                if (discovery && pin.itemCount > 0) {
+                    const itemEmoji = this.getItemEmoji(discovery.item);
+                    pin.name = pin.itemCount > 1 
+                        ? `${itemEmoji} ${discovery.item} (×${pin.itemCount})`
+                        : `${itemEmoji} ${discovery.item}`;
+
+                    // Update pin list if journal is open
+                    if (this.voxelWorld.updatePinList) {
+                        this.voxelWorld.updatePinList();
+                    }
+
+                    // Re-render journal map
+                    if (this.voxelWorld.renderWorldMap) {
+                        this.voxelWorld.renderWorldMap();
+                    }
+                }
+
+                // Remove waypoint only when ALL items are collected
+                if (pin.itemCount <= 0) {
+                    const pinIndex = this.voxelWorld.explorerPins.indexOf(pin);
+                    if (pinIndex !== -1) {
+                        this.voxelWorld.explorerPins.splice(pinIndex, 1);
+                        console.log(`🗑️ All items collected! Removed waypoint: ${pin.name}`);
+                        
+                        // Remove from discoveries list
+                        this.discoveries = this.discoveries.filter(d => d.id !== discoveryId);
+
+                        // Update pin list if journal is open
+                        if (this.voxelWorld.updatePinList) {
+                            this.voxelWorld.updatePinList();
+                        }
+                        
+                        // Re-render journal map
+                        if (this.voxelWorld.renderWorldMap) {
+                            this.voxelWorld.renderWorldMap();
+                        }
+                    }
+                }
+            }
         }
 
-        console.log(`🗑️ Removed markers for discovery: ${discoveryId}`);
+        console.log(`✅ Companion discovery item collected`);
     }
 
     /**
@@ -595,17 +673,26 @@ export class CompanionHuntSystem {
      * Update portrait tooltip with remaining time
      */
     updatePortraitTimer(currentTime) {
-        if (!this.voxelWorld.companionPortrait?.portraitElement) return;
-
         const remainingTime = this.duration - (currentTime - this.startTime);
         const timeString = this.formatHuntTime(remainingTime);
         const itemsFound = this.discoveries.length;
         
-        const status = this.isReturning ? 'returning' : 'exploring';
-        this.voxelWorld.companionPortrait.portraitElement.title = 
-            `${this.companion.name} (${status}) - ${timeString}\nItems found: ${itemsFound}`;
+        // Update old companion portrait if it exists (legacy support)
+        if (this.voxelWorld.companionPortrait?.portraitElement) {
+            const status = this.isReturning ? 'returning' : 'exploring';
+            this.voxelWorld.companionPortrait.portraitElement.title = 
+                `${this.companion.name} (${status}) - ${timeString}\nItems found: ${itemsFound}`;
+        }
 
-        // Update mini hunt indicator timer
+        // Update NEW PlayerCompanionUI hunt status
+        if (this.voxelWorld.playerCompanionUI) {
+            const statusEmoji = this.isReturning ? '🔄' : '🎯';
+            this.voxelWorld.playerCompanionUI.updateHuntStatus(
+                `${statusEmoji} ${timeString} (${itemsFound})`
+            );
+        }
+
+        // Update old mini timer (legacy support)
         if (this.miniTimer) {
             this.miniTimer.textContent = `${timeString} (${itemsFound} items)`;
         }

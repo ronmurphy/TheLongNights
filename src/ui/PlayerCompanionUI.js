@@ -56,10 +56,30 @@ export class PlayerCompanionUI {
             align-items: center;
             gap: 6px;
             z-index: 100;
-            pointer-events: none;
+            pointer-events: auto;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
             min-width: 120px;
+            cursor: ${type === 'companion' ? 'pointer' : 'default'};
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
         `;
+
+        // Add click handler for companion panel
+        if (type === 'companion') {
+            panel.addEventListener('click', () => {
+                this.openCompanionMenu();
+            });
+
+            // Hover effects for companion panel
+            panel.addEventListener('mouseover', () => {
+                panel.style.transform = 'scale(1.05)';
+                panel.style.boxShadow = '0 6px 12px rgba(139, 115, 85, 0.8)';
+            });
+
+            panel.addEventListener('mouseout', () => {
+                panel.style.transform = 'scale(1)';
+                panel.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.5)';
+            });
+        }
 
         // Avatar image (larger for combat visibility)
         const avatar = document.createElement('img');
@@ -98,18 +118,22 @@ export class PlayerCompanionUI {
         nameLabel.textContent = type === 'player' ? 'You' : 'Companion';
         panel.appendChild(nameLabel);
 
-        // Hearts container with lighter background for visibility
+        // Hearts container with lighter background for visibility and wrapping
         const heartsContainer = document.createElement('div');
         heartsContainer.className = `${type}-hearts`;
         heartsContainer.style.cssText = `
             display: flex;
             justify-content: center;
+            flex-wrap: wrap;
             gap: 2px;
             font-size: 16px;
             background: rgba(255, 255, 255, 0.2);
             padding: 3px 6px;
             border-radius: 4px;
             width: 100%;
+            max-height: 50px;
+            overflow: hidden;
+            line-height: 1;
         `;
         panel.appendChild(heartsContainer);
 
@@ -134,6 +158,27 @@ export class PlayerCompanionUI {
         `;
         staminaContainer.appendChild(staminaBar);
         panel.appendChild(staminaContainer);
+
+        // Hunt status display (for companion only - shows "Exploring..." and timer)
+        if (type === 'companion') {
+            const huntStatus = document.createElement('div');
+            huntStatus.className = 'companion-hunt-status';
+            huntStatus.style.cssText = `
+                display: none;
+                color: #4fc3f7;
+                font-size: 10px;
+                font-weight: bold;
+                text-align: center;
+                text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+                width: 100%;
+                background: rgba(79, 195, 247, 0.2);
+                padding: 2px 4px;
+                border-radius: 3px;
+                margin-top: 2px;
+            `;
+            huntStatus.textContent = 'Starting...';
+            panel.appendChild(huntStatus);
+        }
 
         // Power bar (for spear charge - hidden by default, only shows for player)
         if (type === 'player') {
@@ -258,6 +303,34 @@ export class PlayerCompanionUI {
             emptyHeart.textContent = '💜';
             emptyHeart.style.opacity = '0.6';
             container.appendChild(emptyHeart);
+        }
+    }
+
+    /**
+     * Update companion hunt status display
+     * Called by CompanionHuntSystem to show timer
+     */
+    updateHuntStatus(statusText) {
+        const huntStatus = this.companionPanel?.querySelector('.companion-hunt-status');
+        if (huntStatus) {
+            if (statusText) {
+                huntStatus.textContent = statusText;
+                huntStatus.style.display = 'block';
+                
+                // Add visual feedback when hunting
+                if (this.companionPanel) {
+                    this.companionPanel.style.border = '3px solid #4fc3f7';
+                    this.companionPanel.style.boxShadow = '0 4px 8px rgba(79, 195, 247, 0.6), inset 0 0 10px rgba(79, 195, 247, 0.3)';
+                }
+            } else {
+                huntStatus.style.display = 'none';
+                
+                // Reset visual feedback
+                if (this.companionPanel) {
+                    this.companionPanel.style.border = '3px solid #8B7355';
+                    this.companionPanel.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.5)';
+                }
+            }
         }
     }
 
@@ -397,5 +470,313 @@ export class PlayerCompanionUI {
         if (this.companionPanel && this.companionPanel.parentNode) {
             this.companionPanel.parentNode.removeChild(this.companionPanel);
         }
+    }
+
+    /**
+     * Open companion menu modal
+     */
+    openCompanionMenu() {
+        // Get companion data
+        const playerData = JSON.parse(localStorage.getItem('NebulaWorld_playerData') || '{}');
+        const companionId = playerData.activeCompanion || playerData.starterMonster;
+        
+        if (!companionId) {
+            console.warn('⚠️ No companion found');
+            return;
+        }
+
+        // Close existing menu if open
+        this.closeCompanionMenu();
+
+        // Disable controls and pause game
+        this.voxelWorld.controlsEnabled = false;
+        this.voxelWorld.isPaused = true;
+
+        // Create menu modal
+        const menu = document.createElement('div');
+        menu.id = 'companion-menu-modal';
+        menu.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 50000;
+            animation: fadeIn 0.3s ease;
+        `;
+
+        // Menu container
+        const container = document.createElement('div');
+        container.style.cssText = `
+            background: linear-gradient(135deg, #8B7355 0%, #A0826D 50%, #8B7355 100%);
+            border: 6px solid #4A3728;
+            border-radius: 16px;
+            padding: 30px;
+            min-width: 400px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+            font-family: 'Georgia', serif;
+        `;
+
+        // Parse companion ID
+        const parts = companionId.split('_');
+        const race = parts[0] || 'human';
+        const companionName = race.charAt(0).toUpperCase() + race.slice(1);
+
+        // Title
+        const title = document.createElement('h2');
+        title.textContent = `${companionName} 🐕`;
+        title.style.cssText = `
+            margin: 0 0 20px 0;
+            color: #2C1810;
+            text-align: center;
+            font-size: 24px;
+            text-shadow: 1px 1px 2px rgba(212, 175, 55, 0.3);
+        `;
+
+        // HP Display (load from playerData)
+        const companionHP = playerData.companionHP?.[companionId] || 10;
+        const hpDisplay = document.createElement('div');
+        hpDisplay.textContent = `❤️ HP: ${companionHP}`;
+        hpDisplay.style.cssText = `
+            text-align: center;
+            font-size: 16px;
+            color: #2C1810;
+            margin-bottom: 20px;
+        `;
+
+        // Check if companion is currently exploring
+        const isExploring = this.voxelWorld.companionHuntSystem?.isActive;
+
+        // Button container
+        const buttonContainer = document.createElement('div');
+        buttonContainer.style.cssText = `
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        `;
+
+        // SEND TO HUNT button (or RECALL if exploring)
+        if (isExploring) {
+            const itemsFound = this.voxelWorld.companionHuntSystem.discoveries?.length || 0;
+            const recallBtn = this.createMenuButton(
+                `📢 Recall Companion (${itemsFound} items found)`, 
+                '#F44336'
+            );
+            recallBtn.addEventListener('click', () => {
+                this.voxelWorld.companionHuntSystem.cancelHunt();
+                this.closeCompanionMenu();
+            });
+            buttonContainer.appendChild(recallBtn);
+        } else {
+            const huntBtn = this.createMenuButton('🎯 Send to Hunt', '#4CAF50');
+            huntBtn.addEventListener('click', () => {
+                this.closeCompanionMenu();
+                this.openHuntDurationPicker(companionId, companionName);
+            });
+            buttonContainer.appendChild(huntBtn);
+        }
+
+        // CODEX button
+        const codexBtn = this.createMenuButton('📖 Open Codex', '#2196F3');
+        codexBtn.addEventListener('click', () => {
+            this.closeCompanionMenu();
+            if (this.voxelWorld.companionCodex) {
+                this.voxelWorld.companionCodex.show();
+            }
+        });
+        buttonContainer.appendChild(codexBtn);
+
+        // CLOSE button
+        const closeBtn = this.createMenuButton('✕ Close', '#757575');
+        closeBtn.addEventListener('click', () => {
+            this.closeCompanionMenu();
+        });
+        buttonContainer.appendChild(closeBtn);
+
+        // Assemble menu
+        container.appendChild(title);
+        container.appendChild(hpDisplay);
+        container.appendChild(buttonContainer);
+        menu.appendChild(container);
+        document.body.appendChild(menu);
+
+        // ESC key to close
+        const escHandler = (e) => {
+            if (e.key === 'Escape') {
+                this.closeCompanionMenu();
+                document.removeEventListener('keydown', escHandler);
+            }
+        };
+        document.addEventListener('keydown', escHandler);
+
+        console.log('🐕 Companion menu opened');
+    }
+
+    /**
+     * Close companion menu
+     */
+    closeCompanionMenu() {
+        const menu = document.getElementById('companion-menu-modal');
+        if (menu) {
+            menu.remove();
+        }
+
+        // Re-enable controls and unpause game
+        this.voxelWorld.controlsEnabled = true;
+        this.voxelWorld.isPaused = false;
+
+        // Re-request pointer lock
+        setTimeout(() => {
+            if (this.voxelWorld.controlsEnabled && this.voxelWorld.renderer?.domElement) {
+                this.voxelWorld.renderer.domElement.requestPointerLock();
+            }
+        }, 100);
+    }
+
+    /**
+     * Create a menu button
+     */
+    createMenuButton(text, bgColor) {
+        const btn = document.createElement('button');
+        btn.textContent = text;
+        btn.style.cssText = `
+            background: ${bgColor};
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-family: 'Georgia', serif;
+            transition: opacity 0.2s, transform 0.1s;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        `;
+        btn.addEventListener('mouseover', () => {
+            btn.style.opacity = '0.8';
+            btn.style.transform = 'translateY(-2px)';
+        });
+        btn.addEventListener('mouseout', () => {
+            btn.style.opacity = '1';
+            btn.style.transform = 'translateY(0)';
+        });
+        return btn;
+    }
+
+    /**
+     * Open hunt duration picker
+     */
+    openHuntDurationPicker(companionId, companionName) {
+        // Create picker modal
+        const picker = document.createElement('div');
+        picker.id = 'hunt-duration-picker';
+        picker.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 50001;
+        `;
+
+        const container = document.createElement('div');
+        container.style.cssText = `
+            background: linear-gradient(135deg, #8B7355 0%, #A0826D 50%, #8B7355 100%);
+            border: 6px solid #4A3728;
+            border-radius: 16px;
+            padding: 30px;
+            min-width: 400px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+            font-family: 'Georgia', serif;
+        `;
+
+        const title = document.createElement('h2');
+        title.textContent = `🎯 Hunt Duration`;
+        title.style.cssText = `
+            margin: 0 0 20px 0;
+            color: #2C1810;
+            text-align: center;
+            font-size: 24px;
+        `;
+
+        const description = document.createElement('p');
+        description.textContent = `How long should ${companionName} explore?`;
+        description.style.cssText = `
+            color: #2C1810;
+            text-align: center;
+            margin-bottom: 20px;
+        `;
+
+        const buttonContainer = document.createElement('div');
+        buttonContainer.style.cssText = `
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        `;
+
+        // Duration options
+        const durations = [
+            { days: 0.5, label: '½ Day (10 min)', color: '#4CAF50' },
+            { days: 1, label: '1 Day (20 min)', color: '#2196F3' },
+            { days: 2, label: '2 Days (40 min)', color: '#FF9800' }
+        ];
+
+        durations.forEach(({ days, label, color }) => {
+            const btn = this.createMenuButton(label, color);
+            btn.addEventListener('click', () => {
+                this.startHunt(companionId, companionName, days);
+                picker.remove();
+            });
+            buttonContainer.appendChild(btn);
+        });
+
+        // Cancel button
+        const cancelBtn = this.createMenuButton('✕ Cancel', '#757575');
+        cancelBtn.addEventListener('click', () => {
+            picker.remove();
+            // Re-open companion menu
+            this.openCompanionMenu();
+        });
+        buttonContainer.appendChild(cancelBtn);
+
+        container.appendChild(title);
+        container.appendChild(description);
+        container.appendChild(buttonContainer);
+        picker.appendChild(container);
+        document.body.appendChild(picker);
+    }
+
+    /**
+     * Start companion hunt
+     */
+    startHunt(companionId, companionName, durationDays) {
+        // Load full companion data
+        this.loadCompanionData(companionId).then(entityData => {
+            const companion = {
+                id: companionId,
+                name: companionName,
+                hp: entityData?.hp || 10,
+                maxHP: entityData?.hp || 10
+            };
+
+            if (this.voxelWorld.companionHuntSystem) {
+                const success = this.voxelWorld.companionHuntSystem.startHunt(companion, durationDays);
+                
+                if (success) {
+                    console.log(`🐕 ${companionName} started ${durationDays}-day hunt`);
+                } else {
+                    console.warn('⚠️ Failed to start hunt');
+                }
+            } else {
+                console.error('❌ CompanionHuntSystem not available');
+            }
+        });
     }
 }

@@ -232,7 +232,19 @@ export class RandyMStructureDesigner {
             font-family: 'Courier New', monospace;
             margin-bottom: 20px;
             box-sizing: border-box;
+            pointer-events: auto;
+            position: relative;
+            z-index: 10;
         `;
+        
+        // Ensure input can receive focus and clicks
+        input.onclick = (e) => {
+            e.stopPropagation();
+            input.focus();
+        };
+        input.onfocus = (e) => {
+            e.stopPropagation();
+        };
         
         // Material count display
         const materialStats = this.calculateMaterialCost();
@@ -3273,6 +3285,26 @@ export class RandyMStructureDesigner {
      * Handle keyboard shortcuts
      */
     handleKeyDown(event) {
+        // Don't process if designer is not open
+        if (!this.isOpen) return;
+        
+        // Check if user is typing in an input field
+        const activeElement = document.activeElement;
+        const isTyping = activeElement && (
+            activeElement.tagName === 'INPUT' ||
+            activeElement.tagName === 'TEXTAREA' ||
+            activeElement.isContentEditable
+        );
+        
+        if (isTyping) {
+            // Allow typing in inputs but stop propagation to game
+            event.stopPropagation();
+            return;
+        }
+        
+        // Stop all key events from reaching the game when RandyM is open
+        event.stopPropagation();
+        
         // ESC: Cancel shape selection
         if (event.key === 'Escape') {
             if (this.shapeStart) {
@@ -3280,6 +3312,7 @@ export class RandyMStructureDesigner {
                 this.cancelShape();
                 event.preventDefault();
             }
+            return;
         }
         
         // Camera Pan: WASD or Arrow Keys (unless Z-axis is locked)

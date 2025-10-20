@@ -300,7 +300,18 @@ export class SargemQuestEditor {
             border-left: 1px solid #3e3e42;
             padding: 20px;
             overflow-y: auto;
+            pointer-events: auto;
+            position: relative;
+            z-index: 100;
         `;
+        
+        // Prevent canvas panning when interacting with properties panel
+        panel.onmousedown = (e) => {
+            e.stopPropagation();
+        };
+        panel.onclick = (e) => {
+            e.stopPropagation();
+        };
 
         const title = document.createElement('h3');
         title.textContent = '⚙️ Properties';
@@ -464,12 +475,16 @@ export class SargemQuestEditor {
                     e.stopPropagation(); // Prevent game from getting Escape
                     return;
                 }
-                // Let input/textarea handle all other keys normally
+                // Stop propagation for ALL keys when typing to prevent game hotkeys
+                e.stopPropagation();
                 return;
             }
             
             // NOT typing - prevent ALL keys from reaching the game
             e.stopPropagation();
+            e.preventDefault();
+            
+            if (e.key === 'Escape') this.close();
             
             if (e.key === 'Escape') this.close();
             if (e.ctrlKey && e.key === 's') {
@@ -1109,8 +1124,20 @@ export class SargemQuestEditor {
             border-radius: 4px;
             color: #cccccc;
             font-size: 13px;
+            pointer-events: auto;
+            position: relative;
+            z-index: 10;
         `;
         input.oninput = (e) => onChange(e.target.value);
+        
+        // Ensure input can receive focus and clicks
+        input.onclick = (e) => {
+            e.stopPropagation();
+            input.focus();
+        };
+        input.onfocus = (e) => {
+            e.stopPropagation();
+        };
 
         group.appendChild(labelEl);
         group.appendChild(input);
@@ -1141,8 +1168,20 @@ export class SargemQuestEditor {
             font-size: 13px;
             font-family: 'Consolas', 'Monaco', monospace;
             resize: vertical;
+            pointer-events: auto;
+            position: relative;
+            z-index: 10;
         `;
         textarea.oninput = (e) => onChange(e.target.value);
+        
+        // Ensure textarea can receive focus and clicks
+        textarea.onclick = (e) => {
+            e.stopPropagation();
+            textarea.focus();
+        };
+        textarea.onfocus = (e) => {
+            e.stopPropagation();
+        };
 
         group.appendChild(labelEl);
         group.appendChild(textarea);
@@ -1169,6 +1208,9 @@ export class SargemQuestEditor {
             border-radius: 4px;
             color: #cccccc;
             font-size: 13px;
+            pointer-events: auto;
+            position: relative;
+            z-index: 10;
         `;
 
         options.forEach(opt => {
@@ -1180,6 +1222,15 @@ export class SargemQuestEditor {
         });
 
         select.onchange = (e) => onChange(e.target.value);
+        
+        // Ensure select can receive focus and clicks
+        select.onclick = (e) => {
+            e.stopPropagation();
+            select.focus();
+        };
+        select.onfocus = (e) => {
+            e.stopPropagation();
+        };
 
         group.appendChild(labelEl);
         group.appendChild(select);

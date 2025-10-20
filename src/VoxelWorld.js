@@ -2531,10 +2531,15 @@ class NebulaVoxelApp {
                 this.spearSystem.removeSpear(sprite);
             }
 
-            // �🐕 Notify companion hunt system if this was a discovery item
-            if (isCompanionDiscovery && discoveryId && this.companionHuntSystem) {
-                this.companionHuntSystem.onItemCollected(discoveryId);
-                console.log(`🐕 Companion discovery collected: ${discoveryId}`);
+            // �🐕 Notify companion hunt system if this was a discovery item (pass coordinates)
+            if (isCompanionDiscovery && this.companionHuntSystem) {
+                const itemPos = sprite.position;
+                this.companionHuntSystem.onItemCollected(
+                    Math.floor(itemPos.x),
+                    Math.floor(itemPos.y),
+                    Math.floor(itemPos.z)
+                );
+                console.log(`🐕 Companion discovery collected at (${Math.floor(itemPos.x)}, ${Math.floor(itemPos.y)}, ${Math.floor(itemPos.z)})`);
             }
 
             // Remove from scene and world
@@ -4611,6 +4616,104 @@ class NebulaVoxelApp {
                 });
             }
 
+            // 🐕 Draw companion hunt discoveries (purple markers) on world map
+            if (this.companionHuntSystem && this.companionHuntSystem.discoveries && this.companionHuntSystem.discoveries.length > 0) {
+                this.companionHuntSystem.discoveries.forEach(discovery => {
+                    const discChunkX = Math.floor(discovery.position.x / chunkSize);
+                    const discChunkZ = Math.floor(discovery.position.z / chunkSize);
+                    const relativeX = discChunkX - playerChunkX;
+                    const relativeZ = discChunkZ - playerChunkZ;
+                    const screenX = centerX + (relativeX * pixelsPerChunk);
+                    const screenY = centerY + (relativeZ * pixelsPerChunk);
+
+                    if (screenX >= 30 && screenX < canvas.width - 30 &&
+                        screenY >= 30 && screenY < canvas.height - 30) {
+
+                        // Draw discovery marker (purple with item emoji)
+                        ctx.fillStyle = '#a855f7'; // Purple
+                        ctx.strokeStyle = '#2F1B14';
+                        ctx.lineWidth = 2;
+
+                        // Circle background
+                        ctx.beginPath();
+                        ctx.arc(screenX + pixelsPerChunk/2, screenY + pixelsPerChunk/2, 8, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.stroke();
+
+                        // Item emoji overlay
+                        const itemEmojis = {
+                            'fish': '🐟',
+                            'egg': '🥚',
+                            'honey': '🍯',
+                            'apple': '🍎'
+                        };
+                        const emoji = itemEmojis[discovery.item] || '❓';
+                        ctx.font = '10px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.fillText(emoji, screenX + pixelsPerChunk/2, screenY + pixelsPerChunk/2 + 3);
+
+                        // Item label below marker
+                        ctx.font = 'bold 9px Georgia';
+                        ctx.fillStyle = '#a855f7';
+                        ctx.textAlign = 'center';
+                        ctx.fillText(discovery.item.toUpperCase(), screenX + pixelsPerChunk/2, screenY + pixelsPerChunk + 8);
+                    }
+                });
+            }
+
+            // 🐕 Draw companion current position (cyan dot) if hunting
+            if (this.companionHuntSystem && this.companionHuntSystem.isActive) {
+                const compPos = this.companionHuntSystem.getCompanionMapPosition();
+                if (compPos) {
+                    const compChunkX = Math.floor(compPos.x / chunkSize);
+                    const compChunkZ = Math.floor(compPos.z / chunkSize);
+                    const relativeX = compChunkX - playerChunkX;
+                    const relativeZ = compChunkZ - playerChunkZ;
+                    const screenX = centerX + (relativeX * pixelsPerChunk);
+                    const screenY = centerY + (relativeZ * pixelsPerChunk);
+
+                    if (screenX >= 30 && screenX < canvas.width - 30 &&
+                        screenY >= 30 && screenY < canvas.height - 30) {
+
+                        // Draw companion marker with pulsing effect
+                        const pulseRadius = 6 + Math.sin(Date.now() / 200) * 2;
+                        ctx.fillStyle = '#06b6d4'; // Cyan
+                        ctx.strokeStyle = '#2F1B14';
+                        ctx.lineWidth = 2;
+
+                        ctx.beginPath();
+                        ctx.arc(screenX + pixelsPerChunk/2, screenY + pixelsPerChunk/2, pulseRadius, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.stroke();
+
+                        // Companion emoji
+                        ctx.font = '10px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.fillText('🐕', screenX + pixelsPerChunk/2, screenY + pixelsPerChunk/2 + 3);
+
+                        // Direction arrow if returning
+                        if (compPos.isReturning) {
+                            const angle = Math.atan2(
+                                this.player.position.x - compPos.x,
+                                this.player.position.z - compPos.z
+                            );
+                            
+                            ctx.fillStyle = '#06b6d4';
+                            ctx.save();
+                            ctx.translate(screenX + pixelsPerChunk/2, screenY + pixelsPerChunk/2);
+                            ctx.rotate(angle);
+                            ctx.beginPath();
+                            ctx.moveTo(10, 0);
+                            ctx.lineTo(-5, -4);
+                            ctx.lineTo(-5, 4);
+                            ctx.closePath();
+                            ctx.fill();
+                            ctx.restore();
+                        }
+                    }
+                }
+            }
+
             // Draw player position as explorer marker
             ctx.fillStyle = '#B22222';
             ctx.strokeStyle = '#8B4513';
@@ -4658,7 +4761,7 @@ class NebulaVoxelApp {
             ctx.textAlign = 'right';
             ctx.font = 'italic 11px Georgia';
             ctx.fillStyle = '#654321';
-            ctx.fillText('🌲 Forests  ⚔️ Treasure  🧭 Explorer', canvas.width - 30, canvas.height - 30);
+            ctx.fillText('🌲 Forests  ⚔️ Treasure  🐕 Companion  🍎 Discoveries', canvas.width - 30, canvas.height - 30);
             ctx.fillText('🗺️ Press M to close journal', canvas.width - 30, canvas.height - 10);
 
             // Reset text alignment

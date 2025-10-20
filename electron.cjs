@@ -563,8 +563,10 @@ function createWindow() {
           accelerator: 'CmdOrCtrl+S',
           click: () => {
             mainWindow.webContents.executeJavaScript(`
-              if (window.voxelWorld && window.voxelWorld.sargemQuestEditor) {
-                window.voxelWorld.sargemQuestEditor.open();
+              if (window.voxelWorld && window.voxelWorld.sargemEditor) {
+                window.voxelWorld.sargemEditor.open();
+              } else {
+                console.error('❌ Sargem Quest Editor not initialized');
               }
             `);
           }
@@ -574,8 +576,10 @@ function createWindow() {
           accelerator: 'CmdOrCtrl+M',
           click: () => {
             mainWindow.webContents.executeJavaScript(`
-              if (window.voxelWorld && window.voxelWorld.randyMStructureDesigner) {
-                window.voxelWorld.randyMStructureDesigner.open();
+              if (window.voxelWorld && window.voxelWorld.randyMDesigner) {
+                window.voxelWorld.randyMDesigner.open();
+              } else {
+                console.error('❌ RandyM Structure Designer not initialized');
               }
             `);
           }

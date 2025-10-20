@@ -628,8 +628,18 @@ export class QuestRunner {
                 break;
         }
         
-        // Continue to next node immediately (triggers are non-blocking)
-        this.goToNext(node);
+        // Check if there's a next node
+        const hasNextNode = this.getNextNode(node) !== null;
+        
+        if (hasNextNode) {
+            // Continue to next node (triggers are non-blocking)
+            this.goToNext(node);
+        } else {
+            // No next node - trigger is terminal, just keep quest running
+            // Don't call stopQuest() - let spawned NPCs persist
+            console.log('🔚 Trigger node is terminal - quest paused (NPCs remain active)');
+            this.isRunning = false; // Mark as not actively running, but don't cleanup
+        }
     }
 
     // ========================================
@@ -792,19 +802,35 @@ export class QuestRunner {
         }
         
         if (this.voxelWorld?.npcManager) {
+            const npcFullId = `quest_npc_${npcId}_${Date.now()}`;
+            
             const npc = this.voxelWorld.npcManager.spawn({
-                id: `quest_npc_${npcId}_${Date.now()}`,
+                id: npcFullId,
                 name: name,
                 emoji: params.emoji || '👤',
                 position: new THREE.Vector3(x, y, z),
                 scale: scale,
-                onInteract: params.onInteract || null
+                onInteract: params.onInteract || ((clickedNpc) => {
+                    // Default behavior: Remove NPC after being clicked
+                    console.log(`👋 ${name} was clicked - removing NPC`);
+                    if (this.voxelWorld?.npcManager) {
+                        this.voxelWorld.npcManager.remove(clickedNpc.id);
+                        this.voxelWorld.updateStatus(`👋 ${name} left!`, 'info');
+                        
+                        // Remove from quest NPCs tracking
+                        const index = this.questNPCs.findIndex(n => n.id === clickedNpc.id);
+                        if (index !== -1) {
+                            this.questNPCs.splice(index, 1);
+                        }
+                    }
+                })
             });
             
             // Track quest NPCs for cleanup
             this.questNPCs.push(npc);
             
             console.log(`   ✅ NPC spawned with ID: ${npc.id}`);
+            console.log(`   💡 Click on ${name} to interact and remove`);
             this.voxelWorld.updateStatus(`👤 ${name} appeared!`, 'discovery');
         } else {
             console.warn('⚠️ NPCManager not available');
