@@ -1,8 +1,11 @@
-const { contextBridge } = require('electron');
+const { contextBridge, ipcRenderer } = require('electron');
 const fs = require('fs');
 
 contextBridge.exposeInMainWorld('electronAPI', {
   platform: process.platform,
+
+  // 💾 Get user data path from main process (for writable save location)
+  getUserDataPath: () => ipcRenderer.invoke('save-system:get-user-data-path'),
 
   // List files in a directory (for asset discovery)
   listAssetFiles: async (category) => {
@@ -89,10 +92,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     try {
       const path = require('path');
       
-      // In preload, __dirname points to the app location
-      // For Electron, we'll save in a 'saves' folder next to the app
-      const appPath = __dirname;
-      const userDataPath = path.join(appPath, 'user-data');
+      // Get proper user data path from main process (writable on all platforms)
+      const userDataPath = await ipcRenderer.invoke('save-system:get-user-data-path');
       const filePath = path.join(userDataPath, relativePath);
       const dirPath = path.dirname(filePath);
       
@@ -116,9 +117,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     try {
       const path = require('path');
       
-      // In preload, __dirname points to the app location
-      const appPath = __dirname;
-      const userDataPath = path.join(appPath, 'user-data');
+      // Get proper user data path from main process
+      const userDataPath = await ipcRenderer.invoke('save-system:get-user-data-path');
       const filePath = path.join(userDataPath, relativePath);
       
       if (!fs.existsSync(filePath)) {
@@ -140,9 +140,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     try {
       const path = require('path');
       
-      // In preload, __dirname points to the app location
-      const appPath = __dirname;
-      const userDataPath = path.join(appPath, 'user-data');
+      // Get proper user data path from main process
+      const userDataPath = await ipcRenderer.invoke('save-system:get-user-data-path');
       const filePath = path.join(userDataPath, relativePath);
       
       if (fs.existsSync(filePath)) {

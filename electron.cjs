@@ -40,6 +40,20 @@ console.log('   - ignore-gpu-blacklist: true');
 console.log('   - enable-gpu-rasterization: true');
 
 // ========================================
+// 💾 SAVE SYSTEM IPC HANDLERS
+// ========================================
+
+/**
+ * Get the user data path for saves
+ * This ensures saves go to a writable location on all platforms
+ */
+ipcMain.handle('save-system:get-user-data-path', async () => {
+  const userDataPath = app.getPath('userData');
+  console.log(`📁 User data path: ${userDataPath}`);
+  return userDataPath;
+});
+
+// ========================================
 // 🎓 TUTORIAL EDITOR IPC HANDLERS
 // ========================================
 
