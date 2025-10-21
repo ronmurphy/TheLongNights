@@ -24,6 +24,7 @@ import { BloodMoonSystem } from './BloodMoonSystem.js';
 import { SpectralHuntSystem } from './SpectralHuntSystem.js';
 import { DayNightCycleUI } from './DayNightCycleUI.js';
 import { ChunkLoadingSpinner } from './ChunkLoadingSpinner.js';
+import { BlockOutlineSystem } from './BlockOutlineSystem.js';
 import { AtmosphericFog } from './AtmosphericFog.js';
 import { WeatherSystem } from './WeatherSystem.js';
 import { WeatherCycleSystem } from './WeatherCycleSystem.js';
@@ -7948,73 +7949,23 @@ class NebulaVoxelApp {
             if (!this.raycaster) return; // Only update if raycaster exists
 
             this.raycaster.setFromCamera(new THREE.Vector2(0, 0), this.camera);
-            const intersects = this.raycaster.intersectObjects(this.scene.children.filter(obj => obj.isMesh && obj !== this.targetHighlight));
+            // Include both meshes AND sprites (for entities and crafted objects)
+            const intersects = this.raycaster.intersectObjects(
+                this.scene.children.filter(obj => 
+                    (obj.isMesh || obj.isSprite) && obj !== this.targetHighlight
+                )
+            );
 
             if (intersects.length > 0) {
                 const hit = intersects[0];
+                const pos = hit.object.position;
+                const key = `${pos.x},${pos.y},${pos.z}`;
+                const blockData = this.world[key];
 
-                // Regular mesh - use object position
-                this.targetHighlight.position.copy(hit.object.position);
-
-                // 🏠 Check if simple_house is selected in hotbar to show footprint
-                const selectedSlot = this.hotbarSystem?.getSelectedSlot();
-                const isHouseSelected = selectedSlot && selectedSlot.itemType && selectedSlot.itemType.includes('simple_house');
-                
-                // Track last selection to avoid recreating geometry every frame
-                if (!this.lastReticleState) {
-                    this.lastReticleState = { isHouse: false, length: 0, width: 0 };
-                }
-                
-                if (isHouseSelected) {
-                    // Get house dimensions from workbench or use defaults
-                    const interiorLength = this.workbenchSystem?.selectedShape === 'simple_house' 
-                        ? (this.workbenchSystem.shapeLength || 4)
-                        : 4;
-                    const interiorWidth = this.workbenchSystem?.selectedShape === 'simple_house' 
-                        ? (this.workbenchSystem.shapeWidth || 4)
-                        : 4;
-                    
-                    // Calculate FULL exterior dimensions (interior + 2 walls)
-                    const exteriorLength = interiorLength + 2;  // +1 wall each side
-                    const exteriorWidth = interiorWidth + 2;    // +1 wall each side
-                    
-                    // Only recreate geometry if dimensions changed
-                    if (!this.lastReticleState.isHouse || 
-                        this.lastReticleState.length !== exteriorLength || 
-                        this.lastReticleState.width !== exteriorWidth) {
-                        
-                        // Resize reticle to show FULL house footprint (exterior × exterior × 1 block tall)
-                        this.targetHighlight.geometry.dispose(); // Clean up old geometry
-                        this.targetHighlight.geometry = new THREE.BoxGeometry(
-                            exteriorLength + 0.02,  // Length (X) - FULL exterior
-                            1.02,                   // Height (Y) - 1 block tall footprint
-                            exteriorWidth + 0.02    // Width (Z) - FULL exterior
-                        );
-                        
-                        // Update state to prevent recreation next frame
-                        this.lastReticleState.isHouse = true;
-                        this.lastReticleState.length = exteriorLength;
-                        this.lastReticleState.width = exteriorWidth;
-                        
-                        console.log(`🏠 Reticle footprint: ${exteriorLength}×${exteriorWidth}×1 (${interiorLength}×${interiorWidth} interior + walls)`);
-                    }
-                } else {
-                    // Normal 1×1×1 reticle for regular blocks
-                    // Only reset if currently showing house-sized reticle
-                    if (this.lastReticleState.isHouse) {
-                        this.targetHighlight.geometry.dispose();
-                        this.targetHighlight.geometry = new THREE.BoxGeometry(1.02, 1.02, 1.02);
-                        this.lastReticleState.isHouse = false;
-                        this.lastReticleState.length = 0;
-                        this.lastReticleState.width = 0;
-                    }
-                }
-
-                // Default to green (placement mode)
-                this.targetHighlight.material.color.setHex(0x00ff00);
-                this.targetHighlight.visible = true;
+                // Use new colored outline system (handles blocks, entities, and crafted objects)
+                this.blockOutlineSystem.update(hit, blockData);
             } else {
-                this.targetHighlight.visible = false;
+                this.blockOutlineSystem.hide();
             }
         };
         this.controlsEnabled = true;
@@ -8849,18 +8800,10 @@ class NebulaVoxelApp {
             overflow: hidden;
         `;
 
-        // Block targeting highlight (shows which block will be affected)
-        this.targetHighlight = new THREE.Mesh(
-            new THREE.BoxGeometry(1.02, 1.02, 1.02),
-            new THREE.MeshBasicMaterial({ 
-                color: 0x00ff00, 
-                wireframe: true, 
-                transparent: true, 
-                opacity: 0.8 
-            })
-        );
-        this.targetHighlight.visible = false;
-        this.scene.add(this.targetHighlight);
+        // 🎨 Block targeting with colored edge outlines
+        this.blockOutlineSystem = new BlockOutlineSystem(this.scene, this);
+        // Keep reference for compatibility
+        this.targetHighlight = this.blockOutlineSystem.outlineMesh;
 
         // Lighting
         const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
@@ -12122,12 +12065,8 @@ class NebulaVoxelApp {
                 }
             }
             
-            // Change highlight color based on button
-            if (e.button === 0) { // Left click - red for removal
-                this.targetHighlight.material.color.setHex(0xff0000);
-            } else if (e.button === 2) { // Right click - green for placement
-                this.targetHighlight.material.color.setHex(0x00ff00);
-            }
+            // Note: Color is now automatically determined by BlockOutlineSystem based on block type
+            // No manual color override needed - system handles context-aware colors
             
             // Update raycaster - include both meshes and sprites for world items
             this.raycaster.setFromCamera(new THREE.Vector2(0, 0), this.camera);
@@ -12373,8 +12312,8 @@ class NebulaVoxelApp {
         };
         
         const mouseupHandler = (e) => {
-            // Reset highlight color to default (green for placement)
-            this.targetHighlight.material.color.setHex(0x00ff00);
+            // Reset highlight - let BlockOutlineSystem determine color based on block type
+            // (No manual color reset needed - system handles it automatically)
 
             // 🗡️ SPEAR RELEASE: Release charged throw on right-click up
             if (e.button === 2 && this.spearSystem.isCharging) {
