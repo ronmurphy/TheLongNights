@@ -109,6 +109,9 @@ export class AtmosphericFog {
         
         const mesh = new THREE.Mesh(geometry, material);
         
+        // Prevent raycast from hitting fog layers (player can't select them with reticle)
+        mesh.raycast = function() {}; // Override raycast to do nothing
+        
         // Position layer in a circle around player at varying depths
         const angle = (index / config.layerCount) * Math.PI * 2;
         const radius = config.distance + (Math.random() - 0.5) * 10;

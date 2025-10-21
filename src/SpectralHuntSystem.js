@@ -424,10 +424,10 @@ export class SpectralHuntSystem {
         
         console.log(`👻 Spawning big ghost: Size=${size}, Black=${isBlackGhost}, Halloween=${isHalloween}`);
         
-        // Create big ghost entity
+        // Create big ghost entity (pass voxelWorld.camera directly to ensure it's defined)
         this.bigGhost = new BigGhostEntity(
             this.scene,
-            this.camera,
+            this.voxelWorld.camera, // Use voxelWorld.camera directly, not this.camera
             this.voxelWorld,
             {
                 size: size,
@@ -722,6 +722,7 @@ export class SpectralHuntSystem {
             }
             
             if (action === 'test_big') {
+                this.isActive = true; // Activate system so update() runs
                 this.spawnBigGhost(false);
                 console.log('👻 Big ghost spawned for testing');
                 return 'Big ghost spawned for testing';
