@@ -123,6 +123,8 @@ export class TutorialScriptSystem {
      * @param {object} context - Optional context data (e.g., {item: 'workbench'})
      */
     async showTutorial(tutorialId, context = {}) {
+        console.log(`🔍 [TUTORIAL DEBUG] showTutorial() called with ID: "${tutorialId}", context:`, context);
+        
         // Wait for scripts to load
         while (this.loading) {
             await new Promise(resolve => setTimeout(resolve, 100));
@@ -142,15 +144,18 @@ export class TutorialScriptSystem {
 
         // Check item context if specified
         if (tutorial.item && context.item !== tutorial.item) {
+            console.log(`🔍 [TUTORIAL DEBUG] Tutorial "${tutorialId}" skipped - item mismatch (need: ${tutorial.item}, got: ${context.item})`);
             return false;
         }
 
         // Check animal context if specified
         if (tutorial.animal && context.animal !== tutorial.animal) {
+            console.log(`🔍 [TUTORIAL DEBUG] Tutorial "${tutorialId}" skipped - animal mismatch (need: ${tutorial.animal}, got: ${context.animal})`);
             return false;
         }
 
         console.log(`🎓 Showing tutorial: ${tutorialId}`);
+        console.log(`🔍 [TUTORIAL DEBUG] Tutorial messages:`, tutorial.messages);
 
         // Show message sequence
         await this.showMessageSequence(tutorial.messages);
@@ -227,6 +232,8 @@ export class TutorialScriptSystem {
      * 🎮 Called when game starts (first time)
      */
     onGameStart() {
+        console.log('🔍 [TUTORIAL DEBUG] onGameStart() called');
+        console.trace('🔍 [TUTORIAL DEBUG] Call stack:');
         this.showTutorial('game_start');
     }
 
@@ -234,6 +241,8 @@ export class TutorialScriptSystem {
      * 🔪 Called when machete is first selected in hotbar
      */
     onMacheteSelected() {
+        console.log('🔍 [TUTORIAL DEBUG] onMacheteSelected() called');
+        console.trace('🔍 [TUTORIAL DEBUG] Call stack:');
         this.showTutorial('machete_selected');
     }
 
@@ -241,6 +250,8 @@ export class TutorialScriptSystem {
      * 🎒 Called when backpack is first opened (E key)
      */
     onBackpackOpened() {
+        console.log('🔍 [TUTORIAL DEBUG] onBackpackOpened() called');
+        console.trace('🔍 [TUTORIAL DEBUG] Call stack:');
         this.showTutorial('backpack_opened');
     }
 
@@ -309,6 +320,8 @@ export class TutorialScriptSystem {
      * 🌙 Called when night falls (first time)
      */
     onNightfall() {
+        console.log('🔍 [TUTORIAL DEBUG] onNightfall() called');
+        console.trace('🔍 [TUTORIAL DEBUG] Call stack:');
         this.showTutorial('nightfall');
     }
 
@@ -316,6 +329,8 @@ export class TutorialScriptSystem {
      * 👻 Called when a ghost spawns (first time)
      */
     onGhostSpawn() {
+        console.log('🔍 [TUTORIAL DEBUG] onGhostSpawn() called');
+        console.trace('🔍 [TUTORIAL DEBUG] Call stack:');
         this.showTutorial('first_ghost');
     }
 
@@ -324,6 +339,8 @@ export class TutorialScriptSystem {
      * @param {string} animalType - The animal type (e.g., 'rabbit')
      */
     onAnimalSpawn(animalType) {
+        console.log(`🔍 [TUTORIAL DEBUG] onAnimalSpawn() called with type: ${animalType}`);
+        console.trace('🔍 [TUTORIAL DEBUG] Call stack:');
         if (animalType === 'rabbit') {
             this.showTutorial('first_rabbit', { animal: 'rabbit' });
         }

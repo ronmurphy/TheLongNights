@@ -56,11 +56,12 @@ export class SpectralHuntSystem {
             MAX_CHANCE: 0.9,             // Cap at 90%
             
             // Big ghost
-            BIG_GHOST_RADIUS: 400,       // Distance from player
+            BIG_GHOST_RADIUS: 400,       // Distance from player (400 blocks for spectral hunt)
+            BIG_GHOST_HALLOWEEN_RADIUS: 50, // Halloween: closer and MUCH bigger (50 blocks)
             BIG_GHOST_ROTATION_SPEED: 0.02, // Radians per second
             BIG_GHOST_BASE_SIZE: 10,     // Base size (Day 1)
             BIG_GHOST_MAX_SIZE: 40,      // Max size (Day 7)
-            BIG_GHOST_HALLOWEEN_SIZE: 60, // Halloween mega ghost
+            BIG_GHOST_HALLOWEEN_SIZE: 120, // Halloween: 50 blocks away, 120 tall = MASSIVE presence
             
             // Colored ghosts
             MAX_GHOSTS: 7,               // Max ghosts (Day 7)
@@ -415,14 +416,18 @@ export class SpectralHuntSystem {
                    (this.currentDay - 1) * 
                    ((this.config.BIG_GHOST_MAX_SIZE - this.config.BIG_GHOST_BASE_SIZE) / 6);
         
+        // Halloween: MUCH closer (50 blocks) and MUCH bigger (120 blocks tall) for massive presence
+        let radius = this.config.BIG_GHOST_RADIUS;
         if (isHalloween) {
-            size = this.config.BIG_GHOST_HALLOWEEN_SIZE;
+            size = this.config.BIG_GHOST_HALLOWEEN_SIZE; // 120 blocks tall
+            radius = this.config.BIG_GHOST_HALLOWEEN_RADIUS; // 50 blocks away
+            console.log('🎃 HALLOWEEN MEGA GHOST: 120 blocks tall at 50 block distance!');
         }
         
         // Determine if black ghost (Day 7)
         const isBlackGhost = this.currentDay === 7;
         
-        console.log(`👻 Spawning big ghost: Size=${size}, Black=${isBlackGhost}, Halloween=${isHalloween}`);
+        console.log(`👻 Spawning big ghost: Size=${size}, Radius=${radius}, Black=${isBlackGhost}, Halloween=${isHalloween}`);
         
         // Create big ghost entity (pass voxelWorld.camera directly to ensure it's defined)
         this.bigGhost = new BigGhostEntity(
@@ -431,7 +436,7 @@ export class SpectralHuntSystem {
             this.voxelWorld,
             {
                 size: size,
-                radius: this.config.BIG_GHOST_RADIUS,
+                radius: radius, // Use calculated radius (400 normal, 50 Halloween)
                 rotationSpeed: this.config.BIG_GHOST_ROTATION_SPEED,
                 isBlackGhost: isBlackGhost,
                 isHalloween: isHalloween

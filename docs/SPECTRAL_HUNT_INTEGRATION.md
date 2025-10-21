@@ -82,6 +82,11 @@ if (this.voxelWorld.spectralHuntSystem?.isActive) {
 
 ---
 
+-- ## BRAD NOTE: THESE COMMANDS ARE THE WRONG FORMAT, we went to this format...
+
+'Usage: spectral_hunt("start"), spectral_hunt("stop"), spectral_hunt("test_big"), spectral_hunt("test_colored", "red"), spectral_hunt("test_demolition"), spectral_hunt("set_combo", 6)'
+
+
 ## Testing Console Commands
 
 Once integrated, use these commands:

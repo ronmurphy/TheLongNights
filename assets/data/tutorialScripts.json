@@ -4,7 +4,7 @@
   "tutorials": {
     "game_start": {
       "id": "game_start",
-      "title": "Welcome to VoxelWorld",
+      "title": "Welcome to The Long Nights",
       "trigger": "onGameStart",
       "once": true,
       "messages": [

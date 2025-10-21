@@ -105,9 +105,9 @@ export class MainMenu {
 
         this.menuElement.appendChild(buttonContainer);
 
-        // Version info
+        // Version info (loaded dynamically from version.json)
         const versionInfo = document.createElement('div');
-        versionInfo.textContent = 'v0.7.5';
+        versionInfo.textContent = 'Loading...';
         versionInfo.style.cssText = `
             position: absolute;
             bottom: 20px;
@@ -117,8 +117,51 @@ export class MainMenu {
         `;
         this.menuElement.appendChild(versionInfo);
 
+        // Load version from version.json
+        this.loadVersion(versionInfo);
+
         document.body.appendChild(this.menuElement);
         console.log('🎮 Main Menu displayed');
+    }
+
+    /**
+     * Load version from version.json and display it
+     */
+    async loadVersion(versionElement) {
+        try {
+            const response = await fetch('./version.json');
+            if (response.ok) {
+                const versionData = await response.json();
+                let versionString = `v${versionData.major}.${versionData.minor}.${versionData.revision}`;
+                
+                // Add seasonal emoji based on real-world date
+                const now = new Date();
+                const month = now.getMonth() + 1; // 1-12
+                const day = now.getDate();
+                
+                // 🎃 Halloween - October 31st
+                if (month === 10 && day === 31) {
+                    versionString = `👻🎃 ${versionString}`;
+                    console.log('🎃 Halloween version display active!');
+                }
+                // 🎄 Christmas Eve & Christmas Day - December 24-25
+                else if (month === 12 && (day === 24 || day === 25)) {
+                    versionString = `🎁🎄 ${versionString}`;
+                    console.log('🎄 Christmas version display active!');
+                }
+                
+                versionElement.textContent = versionString;
+                console.log(`📦 Version loaded: ${versionString}`);
+            } else {
+                // Fallback if version.json not found
+                versionElement.textContent = 'v0.8.1';
+                console.warn('⚠️ Could not load version.json, using fallback');
+            }
+        } catch (error) {
+            // Fallback on error
+            versionElement.textContent = 'v0.8.1';
+            console.error('❌ Error loading version:', error);
+        }
     }
 
     /**

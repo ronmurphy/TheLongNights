@@ -167,9 +167,17 @@ export class GhostSystem {
 
         console.log(`👻 Ghost spawned at (${x.toFixed(1)}, ${y.toFixed(1)}, ${z.toFixed(1)}) - ${spawnType} - ID: ${ghostId}`);
 
-        // Tutorial hook - first ghost spawn (only if tutorialSystem is initialized)
-        if (this.voxelWorld && this.voxelWorld.tutorialSystem) {
-            this.voxelWorld.tutorialSystem.onGhostSpawn();
+        // Tutorial hook - first ghost spawn (only at night, not during world generation)
+        if (this.voxelWorld && this.voxelWorld.tutorialSystem && this.voxelWorld.dayNightCycle) {
+            const currentTime = this.voxelWorld.dayNightCycle.currentTime;
+            const isNight = currentTime >= 21 || currentTime < 6; // Night is 9pm-6am
+            
+            if (isNight) {
+                console.log('👻 Ghost spawned at night - triggering tutorial');
+                this.voxelWorld.tutorialSystem.onGhostSpawn();
+            } else {
+                console.log('👻 Ghost spawned during day (world gen) - skipping tutorial');
+            }
         }
 
         return ghostId;

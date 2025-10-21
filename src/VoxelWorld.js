@@ -340,6 +340,10 @@ class NebulaVoxelApp {
         // 🎓 Initialize Tutorial Script System
         this.tutorialSystem = new TutorialScriptSystem(this);
         console.log('🎓 TutorialScriptSystem initialized');
+        
+        // 🎓 Tutorial tracking flags
+        this.nightfallTutorialShownThisNight = false; // Reset each dawn
+        this.halloweenBigGhostSpawned = false; // Halloween big ghost (once per session)
 
         // 🎮 Initialize Quest Runner (for personality quiz + quests)
         this.questRunner = new QuestRunner(this);
@@ -10589,6 +10593,20 @@ class NebulaVoxelApp {
                     if (!this.spectralHuntSystem.huntCheckedToday) {
                         this.spectralHuntSystem.checkForSpectralHunt();
                     }
+                }
+            }
+            
+            // 🎃 HALLOWEEN SPECIAL: Big ghost floats around player all day on October 31st
+            if (this.spectralHuntSystem && !this.halloweenBigGhostSpawned) {
+                const date = new Date();
+                const isHalloween = date.getMonth() === 9 && date.getDate() === 31; // Month 9 = October
+                
+                if (isHalloween && !this.spectralHuntSystem.bigGhost) {
+                    console.log('🎃👻 HALLOWEEN! Spawning big ghost to haunt you all day...');
+                    this.spectralHuntSystem.isActive = true; // Activate so update() runs
+                    this.spectralHuntSystem.spawnBigGhost(true); // true = Halloween mode
+                    this.halloweenBigGhostSpawned = true;
+                    this.updateStatus('🎃👻 A GIANT GHOST is watching you...', 'discovery');
                 }
             }
 
