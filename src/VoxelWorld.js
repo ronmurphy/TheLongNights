@@ -23,6 +23,7 @@ import { AngryGhostSystem } from './AngryGhostSystem.js';
 import { BloodMoonSystem } from './BloodMoonSystem.js';
 import { SpectralHuntSystem } from './SpectralHuntSystem.js';
 import { DayNightCycleUI } from './DayNightCycleUI.js';
+import { ChunkLoadingSpinner } from './ChunkLoadingSpinner.js';
 import { AtmosphericFog } from './AtmosphericFog.js';
 import { WeatherSystem } from './WeatherSystem.js';
 import { WeatherCycleSystem } from './WeatherCycleSystem.js';
@@ -9030,7 +9031,12 @@ class NebulaVoxelApp {
                 return;
             }
 
-            // 👷 Use Web Worker if initialized, otherwise fall back to BiomeWorldGen
+            // � Show loading spinner
+            if (this.chunkLoadingSpinner) {
+                this.chunkLoadingSpinner.addChunk(chunkKey);
+            }
+
+            // �👷 Use Web Worker if initialized, otherwise fall back to BiomeWorldGen
             if (this.workerInitialized) {
                 this.workerManager.requestChunk(chunkX, chunkZ, this.chunkSize, (chunkData) => {
                     this.handleWorkerChunkData(chunkX, chunkZ, chunkData);
@@ -9045,6 +9051,11 @@ class NebulaVoxelApp {
                     this.loadedChunks,
                     this.chunkSize
                 );
+
+                // 🔄 Hide loading spinner for this chunk (synchronous generation)
+                if (this.chunkLoadingSpinner) {
+                    this.chunkLoadingSpinner.removeChunk(chunkKey);
+                }
 
                 // 🌳 DISABLED: Tree generation now handled by BiomeWorldGen.js during chunk generation
                 // setTimeout(() => {
@@ -9199,6 +9210,11 @@ class NebulaVoxelApp {
 
             // Silent chunk loading - only log on errors
             // console.log(`✅ Worker chunk (${chunkX}, ${chunkZ}) loaded: ${blockCount} blocks`);
+            
+            // 🔄 Hide loading spinner for this chunk
+            if (this.chunkLoadingSpinner) {
+                this.chunkLoadingSpinner.removeChunk(chunkKey);
+            }
         };
 
         // 🔍 HELPER: Find actual solid ground below a position (for detecting gaps)
@@ -12492,6 +12508,9 @@ class NebulaVoxelApp {
         // Day/Night Cycle UI (animated time indicator)
         this.dayNightCycleUI = new DayNightCycleUI(contentArea, this);
         this.timeIndicator = this.dayNightCycleUI.element; // For legacy click handler compatibility
+
+        // Chunk Loading Spinner
+        this.chunkLoadingSpinner = new ChunkLoadingSpinner(contentArea);
 
         // Vertical tool menu below time indicator
         this.toolMenu = document.createElement('div');

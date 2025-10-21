@@ -92,6 +92,7 @@ export class PlayerCompanionUI {
             object-fit: contain;
             background: rgba(0, 0, 0, 0.3);
             border-radius: 4px;
+            margin: 0 auto;
         `;
         // Don't set src here - wait for update() to load actual sprite
         // This prevents loading errors for avatars that don't exist yet
