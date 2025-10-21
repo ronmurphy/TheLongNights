@@ -555,8 +555,11 @@ export class CraftedTools {
                         const isMegaFir = this.voxelWorld.christmasSystem &&
                                          this.voxelWorld.christmasSystem.isMegaFirBlock(blockX, blockY, blockZ);
 
-                        // Skip bedrock, empty blocks, and Christmas tree
-                        if (blockType && blockType !== 'bedrock' && !isMegaFir) {
+                        // 🪨 PROTECT BEDROCK LAYER (Y = 0)
+                        const isBedrockLayer = blockY === 0;
+
+                        // Skip bedrock layer, bedrock blocks, empty blocks, and Christmas tree
+                        if (blockType && blockType !== 'bedrock' && !isMegaFir && !isBedrockLayer) {
                             blocksDestroyed.push({ x: blockX, y: blockY, z: blockZ, type: blockType });
 
                             // Give resource to player's inventory FIRST

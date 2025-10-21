@@ -21,6 +21,7 @@ import { ModificationTracker } from './serialization/ModificationTracker.js';
 import { GhostSystem } from './GhostSystem.js';
 import { AngryGhostSystem } from './AngryGhostSystem.js';
 import { BloodMoonSystem } from './BloodMoonSystem.js';
+import { SpectralHuntSystem } from './SpectralHuntSystem.js';
 import { AtmosphericFog } from './AtmosphericFog.js';
 import { WeatherSystem } from './WeatherSystem.js';
 import { WeatherCycleSystem } from './WeatherCycleSystem.js';
@@ -8621,6 +8622,8 @@ class NebulaVoxelApp {
         // 🩸 Initialize Blood Moon System now that scene is ready
         this.bloodMoonSystem = new BloodMoonSystem(this);
 
+        // 👻 Initialize Spectral Hunt System (v0.8.2+)
+        this.spectralHuntSystem = new SpectralHuntSystem(this);
 
         // �🎄 Initialize Christmas System now that scene is ready
         this.christmasSystem = new ChristmasSystem(this);
@@ -10544,6 +10547,11 @@ class NebulaVoxelApp {
                 color = new THREE.Color(0xffffff);
                 ambientIntensity = 0.5;
                 skyColor = new THREE.Color(0x87ceeb); // Sky blue
+
+                // 👻 Reset spectral hunt daily check at 8am (v0.8.2+)
+                if (this.spectralHuntSystem && this.dayNightCycle.currentTime >= 8 && this.dayNightCycle.currentTime < 8.5) {
+                    this.spectralHuntSystem.resetDailyCheck();
+                }
                 
                 // Reset nightfall tutorial flag for next night
                 this.nightfallTutorialShownThisNight = false;
@@ -10573,6 +10581,13 @@ class NebulaVoxelApp {
                     if (!this.nightfallTutorialShownThisNight) {
                         this.tutorialSystem.onNightfall();
                         this.nightfallTutorialShownThisNight = true;
+                    }
+                }
+
+                // 👻 Check for spectral hunt at 9pm (v0.8.2+)
+                if (this.spectralHuntSystem && this.dayNightCycle.currentTime >= 21 && this.dayNightCycle.currentTime < 21.5) {
+                    if (!this.spectralHuntSystem.huntCheckedToday) {
+                        this.spectralHuntSystem.checkForSpectralHunt();
                     }
                 }
             }
@@ -11201,6 +11216,11 @@ class NebulaVoxelApp {
             // 💀 Update angry ghost system - battle triggers
             if (this.angryGhostSystem) {
                 this.angryGhostSystem.update(deltaTime, this.player.position);
+            }
+
+            // 👻 Update spectral hunt system (v0.8.2+)
+            if (this.spectralHuntSystem) {
+                this.spectralHuntSystem.update(deltaTime);
             }
 
             // 🏟️ Update battle arena - 3D combat animations

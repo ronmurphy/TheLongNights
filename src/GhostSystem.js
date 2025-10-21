@@ -221,6 +221,7 @@ export class GhostSystem {
 
             // 3. AI BEHAVIOR - Priority: Pumpkin > Player > Wander
             const dx = playerPosition.x - ghost.sprite.position.x;
+            const dy = playerPosition.y - ghost.baseY; // Y distance for vertical movement
             const dz = playerPosition.z - ghost.sprite.position.z;
             const distanceToPlayer = Math.sqrt(dx * dx + dz * dz);
 
@@ -237,6 +238,11 @@ export class GhostSystem {
 
                     ghost.sprite.position.x += dirX * this.config.pumpkinSpeed;
                     ghost.sprite.position.z += dirZ * this.config.pumpkinSpeed;
+                    
+                    // Move toward pumpkin Y (ground level)
+                    const pumpkinY = nearestPumpkin.y || 0;
+                    const dyToPumpkin = pumpkinY - ghost.baseY;
+                    ghost.baseY += dyToPumpkin * 0.02; // Slow vertical movement
 
                     ghost.targetPumpkin = nearestPumpkin;
                     ghost.pumpkinLingerTime = 0; // Reset linger time
@@ -262,9 +268,12 @@ export class GhostSystem {
                 const speedFactor = Math.min(distanceToPlayer / this.config.followRange, 1);
                 const followSpeed = this.config.followSpeed + (this.config.maxFollowSpeed - this.config.followSpeed) * speedFactor;
 
-                // Move toward player
+                // Move toward player (X/Z)
                 ghost.sprite.position.x += dirX * followSpeed;
                 ghost.sprite.position.z += dirZ * followSpeed;
+                
+                // Move toward player Y (slower vertical movement)
+                ghost.baseY += dy * 0.02; // Gentle vertical adjustment
 
             } else if (distanceToPlayer <= this.config.personalSpace) {
                 // TOO CLOSE - Back away slowly
