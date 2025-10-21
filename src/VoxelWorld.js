@@ -22,6 +22,7 @@ import { GhostSystem } from './GhostSystem.js';
 import { AngryGhostSystem } from './AngryGhostSystem.js';
 import { BloodMoonSystem } from './BloodMoonSystem.js';
 import { SpectralHuntSystem } from './SpectralHuntSystem.js';
+import { DayNightCycleUI } from './DayNightCycleUI.js';
 import { AtmosphericFog } from './AtmosphericFog.js';
 import { WeatherSystem } from './WeatherSystem.js';
 import { WeatherCycleSystem } from './WeatherCycleSystem.js';
@@ -70,8 +71,8 @@ class NebulaVoxelApp {
         this.stats = new Stats();
         this.stats.showPanel(0); // 0: fps, 1: ms, 2: mb
         this.stats.dom.style.position = 'absolute';
-        this.stats.dom.style.top = '0px';
-        this.stats.dom.style.left = '0px';
+        this.stats.dom.style.top = '16px';
+        this.stats.dom.style.left = '96px'; // 16px + 64px (day/night width) + 16px gap
         this.stats.dom.style.display = 'none'; // Hidden by default
         this.statsEnabled = false;
         document.body.appendChild(this.stats.dom);
@@ -10645,63 +10646,12 @@ class NebulaVoxelApp {
 
         // Update time indicator based on current time
         this.updateTimeIndicator = () => {
-            if (!this.timeIndicator) return;
+            if (!this.dayNightCycleUI) return;
 
             const time = this.dayNightCycle.currentTime;
-            let icon, color, title;
-
-            let timePeriod;
-            if (time >= 6 && time < 8) {
-                // Dawn - sunrise
-                icon = 'wb_twilight';
-                color = '#FF8C00'; // Orange
-                title = 'Dawn - Click for menu';
-                timePeriod = 'dawn';
-            } else if (time >= 8 && time < 17) {
-                // Day - sun
-                icon = 'wb_sunny';
-                color = '#FFD700'; // Gold
-                title = 'Daytime - Click for menu';
-                timePeriod = 'sun';
-            } else if (time >= 17 && time < 19) {
-                // Dusk - sunset
-                icon = 'wb_twighlight';
-                color = '#FF6347'; // Tomato red
-                title = 'Sunset - Click for menu';
-                timePeriod = 'dusk';
-            } else if (time >= 19 && time < 21) {
-                // Evening - moon rise
-                icon = 'brightness_2';
-                color = '#9370DB'; // Medium purple
-                title = 'Evening - Click for menu';
-                timePeriod = 'moon';
-            } else {
-                // Night - full moon
-                icon = 'brightness_3';
-                color = '#C0C0C0'; // Silver
-                title = 'Nighttime - Click for menu';
-                timePeriod = 'night';
-            }
-
-            // Try to get enhanced icon
-            const enhancedIcon = this.enhancedGraphics.getTimeIndicatorIcon(timePeriod, icon);
-
-            if (enhancedIcon.type === 'image') {
-                // Use enhanced image
-                this.timeIndicator.innerHTML = `<img src="${enhancedIcon.content}" style="${enhancedIcon.style} pointer-events: none;" alt="${enhancedIcon.alt}">`;
-                // Reset text color for image mode
-                this.timeIndicator.style.color = '';
-                // Ensure pointer events work on the container
-                this.timeIndicator.style.pointerEvents = 'auto';
-            } else {
-                // Use material icon fallback
-                this.timeIndicator.innerHTML = '';
-                this.timeIndicator.textContent = enhancedIcon.content;
-                this.timeIndicator.style.color = color;
-                this.timeIndicator.style.pointerEvents = 'auto';
-            }
-
-            this.timeIndicator.title = title;
+            
+            // Update animated day/night cycle UI
+            this.dayNightCycleUI.update(time);
 
             // Update tool hotkey label colors for day/night contrast
             this.updateToolHotkeyColors(time);
@@ -12539,24 +12489,9 @@ class NebulaVoxelApp {
         const contentArea = this.createContentArea();
         const statusBar = this.createStatusBar();
 
-        // Time indicator icon (replaces menu button)
-        this.timeIndicator = document.createElement('i');
-        this.timeIndicator.className = 'material-icons';
-        this.timeIndicator.textContent = 'wb_sunny'; // Default to sun
-        this.timeIndicator.style.cssText = `
-            position: absolute;
-            top: 48px;
-            left: 16px;
-            z-index: 2000;
-            font-size: 32px;
-            color: #FFD700;
-            cursor: pointer;
-            pointer-events: auto;
-            text-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
-            transition: all 0.3s ease;
-        `;
-        this.timeIndicator.title = 'Click to open menu';
-        contentArea.appendChild(this.timeIndicator);
+        // Day/Night Cycle UI (animated time indicator)
+        this.dayNightCycleUI = new DayNightCycleUI(contentArea, this);
+        this.timeIndicator = this.dayNightCycleUI.element; // For legacy click handler compatibility
 
         // Vertical tool menu below time indicator
         this.toolMenu = document.createElement('div');
