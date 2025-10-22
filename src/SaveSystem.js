@@ -130,6 +130,9 @@ export class SaveSystem {
             }
         }
 
+        // 🐾 Get companion data from localStorage (for now - will migrate to voxelWorld properties)
+        const playerData = JSON.parse(localStorage.getItem('NebulaWorld_playerData') || '{}');
+
         return {
             // Player state
             player: {
@@ -147,6 +150,15 @@ export class SaveSystem {
                 backpackSlots: vw.backpackSlots,
                 selectedSlot: vw.selectedSlot,
                 metadata: vw.inventoryMetadata
+            },
+
+            // 🐾 Companion data (CRITICAL: Must be per-save, not global!)
+            companions: {
+                activeCompanion: playerData.activeCompanion || null,
+                starterMonster: playerData.starterMonster || null,
+                companionHP: playerData.companionHP || {},
+                companionEquipment: playerData.companionEquipment || {},
+                monsterCollection: playerData.monsterCollection || []
             },
 
             // World modifications
@@ -398,6 +410,19 @@ export class SaveSystem {
         // Restore navigation
         vw.explorerPins = data.explorerPins || [];
         vw.activeNavigation = data.activeNavigation;
+
+        // 🐾 Restore companion data to localStorage (per-save-file now!)
+        if (data.companions) {
+            const playerData = {
+                activeCompanion: data.companions.activeCompanion || null,
+                starterMonster: data.companions.starterMonster || null,
+                companionHP: data.companions.companionHP || {},
+                companionEquipment: data.companions.companionEquipment || {},
+                monsterCollection: data.companions.monsterCollection || []
+            };
+            localStorage.setItem('NebulaWorld_playerData', JSON.stringify(playerData));
+            console.log(`✅ Restored companion data: ${playerData.activeCompanion || 'none'}`);
+        }
         vw.respawnCampfire = data.respawnCampfire;
 
         // Restore world seed (for consistency)

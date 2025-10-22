@@ -188,10 +188,13 @@ export class PlayerHP {
                 this.voxelWorld.playerCompanionUI.updatePlayer(this.voxelWorld.playerCharacter);
                 console.log(`💚 UI updated with HP: ${this.voxelWorld.playerCharacter?.currentHP}/${this.voxelWorld.playerCharacter?.maxHP}`);
             }, 10);
+            
+            // Show green heart animation over player panel (colorblind friendly)
+            this.voxelWorld.playerCompanionUI.showHealingHeart();
+        } else {
+            // Fallback: Flash green healing indicator if no UI
+            this.flashHeal();
         }
-
-        // Flash green healing indicator
-        this.flashHeal();
 
         // Pulse healed heart
         const healedHeart = this.hearts[oldHP];
@@ -239,9 +242,10 @@ export class PlayerHP {
 
     /**
      * Flash green healing indicator
+     * Using fade-in-out instead of full screen flash (better for colorblind users)
      */
     flashHeal() {
-        // Create green overlay
+        // Create green overlay with fade animation
         const overlay = document.createElement('div');
         overlay.style.cssText = `
             position: fixed;
@@ -249,16 +253,28 @@ export class PlayerHP {
             left: 0;
             width: 100vw;
             height: 100vh;
-            background: rgba(0, 255, 0, 0.2);
+            background: rgba(0, 255, 0, 0);
             pointer-events: none;
             z-index: 999;
-            animation: healFlash 0.5s ease;
+            transition: background 0.3s ease;
         `;
 
         document.body.appendChild(overlay);
+        
+        // Fade in
+        requestAnimationFrame(() => {
+            overlay.style.background = 'rgba(0, 255, 0, 0.15)';
+        });
+        
+        // Fade out and remove
         setTimeout(() => {
-            document.body.removeChild(overlay);
-        }, 500);
+            overlay.style.background = 'rgba(0, 255, 0, 0)';
+            setTimeout(() => {
+                if (overlay.parentNode) {
+                    document.body.removeChild(overlay);
+                }
+            }, 300);
+        }, 200);
         
         console.log('💚 Green heal flash displayed');
     }

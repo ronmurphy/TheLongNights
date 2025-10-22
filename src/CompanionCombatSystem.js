@@ -25,6 +25,9 @@ export class CompanionCombatSystem {
         this.companionPose = 'default'; // 'default', 'attack', 'ready'
         this.supportCooldown = 0;
         
+        // Track active buff timeouts for cleanup (prevent memory leaks)
+        this.activeBuffTimeouts = [];
+        
         // Debug logging throttle
         this.lastDebugLog = 0;
         this.debugLogInterval = 2000; // Log every 2 seconds
@@ -429,7 +432,7 @@ export class CompanionCombatSystem {
             return;
         }
         
-        // PRIORITY: Check if support ability should trigger (replaces attack this turn)
+        // PRIORITY 1: Check if player needs healing (support ability)
         if (this.shouldTriggerSupportAbility()) {
             const companionId = this.getActiveCompanionId();
             const race = companionId.split('_')[0];
@@ -438,9 +441,16 @@ export class CompanionCombatSystem {
             return; // Skip attacking this turn - support ability used instead
         }
         
-        // Attack cooldown based on race speed
+        // PRIORITY 2: Companion self-preservation healing (if low HP)
         const companionId = this.getActiveCompanionId();
         if (!companionId) return;
+        
+        if (this.shouldCompanionHealSelf(companionId)) {
+            this.companionHealSelf(companionId);
+            return; // Skip attacking this turn - healing instead
+        }
+        
+        // Attack cooldown based on race speed
         
         const race = companionId.split('_')[0];
         const attackSpeed = this.raceAttackSpeed[race] || 1.0;
@@ -838,20 +848,26 @@ export class CompanionCombatSystem {
             this.voxelWorld.defenseBoost = (this.voxelWorld.defenseBoost || 0) + ability.amount;
             this.voxelWorld.updateStatus(`🛡️ ${ability.name}: Defense +${ability.amount}!`, 'discovery');
             
-            // Remove buff after duration
-            setTimeout(() => {
+            // Remove buff after duration (track for cleanup)
+            const timeoutId = setTimeout(() => {
                 this.voxelWorld.defenseBoost = Math.max(0, (this.voxelWorld.defenseBoost || 0) - ability.amount);
+                // Remove from active timeouts
+                this.activeBuffTimeouts = this.activeBuffTimeouts.filter(id => id !== timeoutId);
             }, ability.duration);
+            this.activeBuffTimeouts.push(timeoutId);
             
         } else if (ability.effect === 'attack_buff') {
             // Temporary attack boost
             this.voxelWorld.attackBoost = (this.voxelWorld.attackBoost || 0) + ability.amount;
             this.voxelWorld.updateStatus(`⚔️ ${ability.name}: Attack +${ability.amount}!`, 'discovery');
             
-            // Remove buff after duration
-            setTimeout(() => {
+            // Remove buff after duration (track for cleanup)
+            const timeoutId = setTimeout(() => {
                 this.voxelWorld.attackBoost = Math.max(0, (this.voxelWorld.attackBoost || 0) - ability.amount);
+                // Remove from active timeouts
+                this.activeBuffTimeouts = this.activeBuffTimeouts.filter(id => id !== timeoutId);
             }, ability.duration);
+            this.activeBuffTimeouts.push(timeoutId);
             
         } else if (ability.effect === 'enemy_debuff') {
             // Weaken all nearby enemies
@@ -864,18 +880,103 @@ export class CompanionCombatSystem {
             
             this.voxelWorld.updateStatus(`💀 ${ability.name}: Enemies weakened!`, 'discovery');
             
-            // Remove debuff after duration
-            setTimeout(() => {
+            // Remove debuff after duration (track for cleanup)
+            const timeoutId = setTimeout(() => {
                 enemies.forEach(enemy => {
                     if (enemy.userData) {
                         enemy.userData.attackDebuff = Math.max(0, (enemy.userData.attackDebuff || 0) - Math.abs(ability.amount));
                     }
                 });
+                // Remove from active timeouts
+                this.activeBuffTimeouts = this.activeBuffTimeouts.filter(id => id !== timeoutId);
             }, ability.duration);
+            this.activeBuffTimeouts.push(timeoutId);
         }
         
         // Set cooldown
         this.supportCooldown = ability.cooldown;
+    }
+    
+    /**
+     * Check if companion should heal themselves (≤2 HP = 1 heart)
+     * @param {string} companionId - Companion ID
+     * @returns {boolean}
+     */
+    shouldCompanionHealSelf(companionId) {
+        // Only check once per second to avoid spam (performance)
+        const now = Date.now();
+        if (!this.lastCompanionHealCheck) this.lastCompanionHealCheck = 0;
+        if (now - this.lastCompanionHealCheck < 1000) return false;
+        this.lastCompanionHealCheck = now;
+        
+        // Get companion HP from save data
+        const playerData = JSON.parse(localStorage.getItem('NebulaWorld_playerData') || '{}');
+        const companionHP = playerData.companionHP?.[companionId];
+        
+        if (!companionHP) return false;
+        
+        const currentHP = companionHP.currentHP || 0;
+        const maxHP = companionHP.maxHP || 10;
+        
+        // Heal if at or below 2 HP (1 heart)
+        return currentHP <= 2 && currentHP > 0;
+    }
+    
+    /**
+     * Companion heals themselves using shared inventory
+     * @param {string} companionId - Companion ID
+     */
+    companionHealSelf(companionId) {
+        console.log(`🩹 Companion at low HP - healing themselves!`);
+        
+        // Find food/potion
+        const slot = this.consumeFoodOrPotion();
+        if (!slot) {
+            console.log(`❌ Companion can't heal - no food/potions!`);
+            return;
+        }
+        
+        // Get companion HP
+        const playerData = JSON.parse(localStorage.getItem('NebulaWorld_playerData') || '{}');
+        const companionHP = playerData.companionHP?.[companionId];
+        if (!companionHP) return;
+        
+        const oldHP = companionHP.currentHP;
+        
+        // Get healing amount from food
+        const baseType = slot.itemType.replace('crafted_', '');
+        const foodHealing = this.voxelWorld.foodSystem?.foodData?.[baseType]?.healing || 1;
+        
+        // Apply healing to companion
+        companionHP.currentHP = Math.min(companionHP.maxHP, companionHP.currentHP + foodHealing);
+        
+        // Save
+        playerData.companionHP = playerData.companionHP || {};
+        playerData.companionHP[companionId] = companionHP;
+        localStorage.setItem('NebulaWorld_playerData', JSON.stringify(playerData));
+        
+        // Update UI
+        if (this.voxelWorld.playerCompanionUI) {
+            const companionData = this.voxelWorld.companionCodex?.getCompanionData(companionId);
+            if (companionData) {
+                companionData.currentHP = companionHP.currentHP;
+                companionData.maxHP = companionHP.maxHP;
+                this.voxelWorld.playerCompanionUI.updateCompanion(companionData);
+            }
+        }
+        
+        const race = companionId.split('_')[0];
+        this.voxelWorld.updateStatus(`🩹 ${this.capitalize(race)} used ${slot.itemType} (+${foodHealing} HP)`, 'discovery');
+        console.log(`🩹 Companion healed: ${oldHP} → ${companionHP.currentHP} HP`);
+        
+        // Consume the item
+        slot.quantity--;
+        if (slot.quantity === 0) {
+            slot.itemType = '';
+        }
+        
+        this.voxelWorld.updateHotbarCounts?.();
+        this.voxelWorld.updateBackpackInventoryDisplay?.();
     }
     
     /**
@@ -940,12 +1041,35 @@ export class CompanionCombatSystem {
                 console.log(`🧪 Elf used healing potion: +${healAmount} HP`);
             }
         } else {
-            // Food items: Heal 1 HP per food item
-            // (Most food heals stamina too, but we focus on HP for healing ability)
+            // Food items: Use actual food healing values from FoodSystem
             if (this.voxelWorld.playerHP && this.voxelWorld.playerHP.currentHP < this.voxelWorld.playerHP.maxHP) {
-                this.voxelWorld.playerHP.heal(1);
-                this.voxelWorld.updateStatus(`💚 Elf used ${itemType} to heal!`, 'discovery');
-                console.log(`🍖 Elf used food (${itemType}): +1 HP`);
+                // Get food healing value from FoodSystem
+                const baseType = itemType.replace('crafted_', '');
+                const foodHealing = this.voxelWorld.foodSystem?.foodData?.[baseType]?.healing || 1;
+                
+                // Smart healing: prioritize completing broken hearts
+                const isOddHP = (this.voxelWorld.playerHP.currentHP % 2) === 1;
+                let healAmount = foodHealing;
+                
+                if (isOddHP && healAmount % 2 === 0 && healAmount > 0) {
+                    // Has broken heart and healing is even - complete broken heart first
+                    this.voxelWorld.playerHP.heal(1);
+                    healAmount -= 1;
+                }
+                
+                // Apply remaining healing
+                if (healAmount > 0) {
+                    this.voxelWorld.playerHP.heal(healAmount);
+                }
+                
+                const totalHealed = foodHealing;
+                this.voxelWorld.updateStatus(`💚 Companion used ${itemType} (+${totalHealed} HP)!`, 'discovery');
+                console.log(`🍖 Companion used food (${itemType}): +${totalHealed} HP`);
+                
+                // Show green heart animation over player panel (colorblind friendly)
+                if (this.voxelWorld.playerCompanionUI) {
+                    this.voxelWorld.playerCompanionUI.showHealingHeart();
+                }
             }
         }
         
@@ -1253,6 +1377,17 @@ export class CompanionCombatSystem {
                 }
             }
         }
+    }
+    
+    /**
+     * Cleanup - clear all active buff timeouts (prevents memory leaks)
+     * Call this when changing scenes or destroying the combat system
+     */
+    cleanup() {
+        // Clear all active buff/debuff timeouts
+        this.activeBuffTimeouts.forEach(timeoutId => clearTimeout(timeoutId));
+        this.activeBuffTimeouts = [];
+        console.log('🧹 CompanionCombatSystem cleanup complete');
     }
     
     /**

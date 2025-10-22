@@ -994,6 +994,21 @@ export class CompanionCodex {
         // Save to localStorage
         const playerData = JSON.parse(localStorage.getItem('NebulaWorld_playerData') || '{}');
         playerData.activeCompanion = companionId;
+        
+        // Initialize companion HP if not already set
+        if (!playerData.companionHP) {
+            playerData.companionHP = {};
+        }
+        
+        if (!playerData.companionHP[companionId]) {
+            const stats = this.calculateStats(companionId);
+            playerData.companionHP[companionId] = {
+                currentHP: stats.hp,
+                maxHP: stats.hp
+            };
+            console.log(`💚 Initialized companion HP: ${stats.hp}/${stats.hp}`);
+        }
+        
         localStorage.setItem('NebulaWorld_playerData', JSON.stringify(playerData));
 
         console.log(`⭐ Set active companion: ${companionId}`);

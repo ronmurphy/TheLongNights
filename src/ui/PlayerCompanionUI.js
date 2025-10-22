@@ -687,6 +687,49 @@ export class PlayerCompanionUI {
     }
 
     /**
+     * Show green heart healing animation over player panel
+     * Better for colorblind users than full-screen green flash
+     */
+    showHealingHeart() {
+        // Create green heart element
+        const heart = document.createElement('div');
+        heart.textContent = '💚';
+        heart.style.cssText = `
+            position: absolute;
+            font-size: 48px;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%) scale(0.5);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 1000;
+            transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        `;
+        
+        this.playerPanel.style.position = 'relative';
+        this.playerPanel.appendChild(heart);
+        
+        // Animate: fade in + scale up + float up
+        requestAnimationFrame(() => {
+            heart.style.transform = 'translate(-50%, -150%) scale(1.2)';
+            heart.style.opacity = '1';
+        });
+        
+        // Fade out and remove
+        setTimeout(() => {
+            heart.style.opacity = '0';
+            heart.style.transform = 'translate(-50%, -200%) scale(0.8)';
+            setTimeout(() => {
+                if (heart.parentNode) {
+                    this.playerPanel.removeChild(heart);
+                }
+            }, 600);
+        }, 400);
+        
+        console.log('💚 Healing heart animation displayed');
+    }
+
+    /**
      * Open companion menu modal
      */
     openCompanionMenu() {
