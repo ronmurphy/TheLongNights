@@ -178,6 +178,9 @@ window.addEventListener('DOMContentLoaded', () => {
             // which shows tutorial chat with template variables ({{companion_id}}, etc.)
             // and spawns the starter backpack
             console.log('📜 Quiz will link to companion_introduction.json...');
+
+            // 🎵 Start music now that the game is beginning
+            app.startMusic();
           });
         })
         .catch(error => {
@@ -206,6 +209,9 @@ window.addEventListener('DOMContentLoaded', () => {
           });
         }
         
+        // 🎵 Start music now that the game is loaded
+        app.startMusic();
+        
         // TODO: Load world state, inventory, quest progress, etc.
         console.log('🌍 Game loaded - ready to play!');
       } else {
@@ -221,6 +227,9 @@ window.addEventListener('DOMContentLoaded', () => {
       
       // Set dev mode flag (separate from player data)
       localStorage.setItem('NebulaWorld_devMode', 'true');
+      
+      // 🎵 Start music in dev mode too
+      app.startMusic();
       
       // Call unlockUI() to set up test environment
       if (window.unlockUI) {

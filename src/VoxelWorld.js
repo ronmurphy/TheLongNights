@@ -298,26 +298,11 @@ class NebulaVoxelApp {
         this.animalSystem = new AnimalSystem(this);
         console.log('🐰 Animal System initialized');
 
-        // Initialize Day/Night music system (async, will complete in background)
+        // 🎵 Music system ready flag (will be started manually when game begins)
         this.musicSystemReady = false;
-        if (this.musicSystem.autoplayEnabled) {
-            this.musicSystem.initDayNightMusic(
-                '/music/forestDay.ogg',
-                '/music/forestNight.ogg'
-            ).then(() => {
-                this.musicSystemReady = true;
-                // Start with appropriate music for current time
-                const currentTime = this.dayNightCycle ? this.dayNightCycle.currentTime : 12;
-                this.musicSystem.updateTimeOfDay(currentTime);
-                console.log('🎵 Day/Night music system started');
-            }).catch(error => {
-                console.error('🎵 Failed to initialize music:', error);
-            });
-        } else {
-            console.log('🎵 Autoplay disabled - music not started');
-        }
+        console.log('🎵 Music system initialized but not started (waiting for game start)');
 
-        // � Preload sound effects
+        // 🔊 Preload sound effects
         this.sfxSystem.preloadBatch({
             'zombie': 'sfx/Zombie.ogg',
             'cat': 'sfx/CatMeow.ogg',
@@ -10538,6 +10523,11 @@ class NebulaVoxelApp {
                     this.dayNightCycle.bloodMoonActive = true;
                     console.log(`🩸🌕 BLOOD MOON RISES! Week ${this.dayNightCycle.currentWeek}, Night 7`);
                     
+                    // 🎵 Start blood moon music
+                    if (this.musicSystem && this.musicSystemReady) {
+                        this.musicSystem.startBloodMoon();
+                    }
+                    
                     // Show dramatic notification
                     this.updateStatus('🩸 THE BLOOD MOON RISES! Prepare for battle...', 'danger');
                 } else if (!isBloodMoonTime && this.dayNightCycle.bloodMoonActive) {
@@ -10545,6 +10535,7 @@ class NebulaVoxelApp {
                     // Enemies persist until the entire Day 7 ends (handled in day rollover)
                     this.dayNightCycle.bloodMoonActive = false;
                     console.log(`🌅 Blood moon sky has ended (2am), but enemies remain...`);
+                    // NOTE: Keep blood moon music playing until Day 7 actually ends!
                 }
             } else if (this.dayNightCycle.dayOfWeek !== 7 && this.bloodMoonSystem && this.bloodMoonSystem.activeEnemies.size > 0) {
                 // 🌅 Day 7 has ended - NOW clean up remaining enemies
@@ -10552,6 +10543,16 @@ class NebulaVoxelApp {
                 this.updateStatus(`You survived the blood moon! Week ${this.dayNightCycle.currentWeek - 1} complete. +10 XP`, 'success');
                 this.dayNightCycle.totalBloodMoonsSurvived++;
                 this.bloodMoonSystem.cleanup();
+                
+                // 🎵 Stop blood moon music when Day 7 ends and return to appropriate day/night music
+                if (this.musicSystem && this.musicSystemReady && this.musicSystem.isBloodMoonActive) {
+                    // Determine what time it is now (should be early morning of Day 1)
+                    const currentTime = this.dayNightCycle.currentTime;
+                    const isDaytime = currentTime >= 8 && currentTime < 19;
+                    const targetMode = isDaytime ? 'day' : 'night';
+                    console.log(`🎵 Day 7 ended at ${currentTime.toFixed(1)}h, returning to ${targetMode} music`);
+                    this.musicSystem.stopBloodMoon(targetMode);
+                }
             }
 
             // Calculate sun position based on time of day
@@ -14774,7 +14775,37 @@ class NebulaVoxelApp {
         }
     }
 
-    // �🐰 ANIMAL SYSTEM - Helper methods
+    /**
+     * 🎵 Start the background music system
+     * Called when the player actually starts/loads a game (not on menu screen)
+     */
+    startMusic() {
+        if (this.musicSystemReady) {
+            console.log('🎵 Music already running');
+            return;
+        }
+
+        if (!this.musicSystem.autoplayEnabled) {
+            console.log('🎵 Autoplay disabled - music not started');
+            return;
+        }
+
+        console.log('🎵 Starting Day/Night music system...');
+        this.musicSystem.initDayNightMusic(
+            '/music/forestDay.ogg',
+            '/music/forestNight.ogg'
+        ).then(() => {
+            this.musicSystemReady = true;
+            // Start with appropriate music for current time
+            const currentTime = this.dayNightCycle ? this.dayNightCycle.currentTime : 12;
+            this.musicSystem.updateTimeOfDay(currentTime);
+            console.log('🎵 Day/Night music system started');
+        }).catch(error => {
+            console.error('🎵 Failed to initialize music:', error);
+        });
+    }
+
+    // 🐰 ANIMAL SYSTEM - Helper methods
     getTimeOfDay() {
         if (!this.gameTime) return 'day';
         

@@ -18,7 +18,9 @@ export class MusicSystem {
         // Day/Night track management
         this.dayTrack = null;      // Howler instance for day music
         this.nightTrack = null;    // Howler instance for night music
-        this.currentMode = null;   // 'day' or 'night'
+        this.bloodMoonTrack = null; // Howler instance for blood moon music
+        this.currentMode = null;   // 'day', 'night', or 'bloodmoon'
+        this.isBloodMoonActive = false; // Track blood moon state
         
         // Legacy single track support (for backward compatibility)
         this.howl = null;
@@ -43,7 +45,7 @@ export class MusicSystem {
         // Set global Howler volume
         Howler.volume(this.volume);
 
-        console.log('🎵 MusicSystem initialized (Howler.js with Day/Night support)');
+        console.log('🎵 MusicSystem initialized (Howler.js with Day/Night + Blood Moon support)');
     }
 
     /**
@@ -96,9 +98,10 @@ export class MusicSystem {
      * Initialize day/night music system with two tracks
      * @param {string} dayTrackPath - Path to day music (e.g., 'music/forestDay.ogg')
      * @param {string} nightTrackPath - Path to night music (e.g., 'music/forestNight.ogg')
+     * @param {string} bloodMoonTrackPath - Path to blood moon music (e.g., 'music/bloodMoon.ogg')
      */
-    async initDayNightMusic(dayTrackPath, nightTrackPath) {
-        console.log('🎵 Initializing Day/Night music system...');
+    async initDayNightMusic(dayTrackPath, nightTrackPath, bloodMoonTrackPath = 'music/bloodMoon.ogg') {
+        console.log('🎵 Initializing Day/Night + Blood Moon music system...');
         console.log(`🎵 Electron detected: ${!!window.isElectron?.platform}`);
         console.log(`🎵 Autoplay enabled: ${this.autoplayEnabled}`);
 
@@ -111,9 +114,13 @@ export class MusicSystem {
         const fixedNightPath = isElectron && nightTrackPath.startsWith('/')
             ? nightTrackPath.substring(1)
             : nightTrackPath;
+        const fixedBloodMoonPath = isElectron && bloodMoonTrackPath.startsWith('/')
+            ? bloodMoonTrackPath.substring(1)
+            : bloodMoonTrackPath;
 
         console.log(`🎵 Day track path: "${fixedDayPath}"`);
         console.log(`🎵 Night track path: "${fixedNightPath}"`);
+        console.log(`🩸 Blood Moon track path: "${fixedBloodMoonPath}"`);
 
         // Create day track (preload but don't play yet)
         // Use html5: false for Web Audio API (faster loading, better for Electron)
@@ -150,7 +157,24 @@ export class MusicSystem {
             }
         });
 
-        // Wait for both tracks to load (with timeout)
+        // Create blood moon track (preload but don't play yet)
+        this.bloodMoonTrack = new Howl({
+            src: [fixedBloodMoonPath],
+            loop: true, // Loop blood moon music
+            volume: 0, // Start silent
+            html5: false,
+            preload: true,
+            onload: () => {
+                console.log('🩸 ✅ Blood Moon track LOADED successfully');
+                console.log(`🩸 State: ${this.bloodMoonTrack.state()}, Duration: ${this.bloodMoonTrack.duration()}s`);
+            },
+            onloaderror: (id, error) => {
+                console.error('🩸 ❌ Blood Moon track load ERROR:', error);
+                console.error('🩸 Failed path:', fixedBloodMoonPath);
+            }
+        });
+
+        // Wait for all tracks to load (with timeout)
         console.log('🎵 Waiting for tracks to load...');
         const loadTimeout = 10000; // 10 second timeout
         const startTime = Date.now();
@@ -158,9 +182,10 @@ export class MusicSystem {
         while (Date.now() - startTime < loadTimeout) {
             const dayReady = this.dayTrack.state() === 'loaded';
             const nightReady = this.nightTrack.state() === 'loaded';
+            const bloodMoonReady = this.bloodMoonTrack.state() === 'loaded';
 
-            if (dayReady && nightReady) {
-                console.log('🎵 ✅ Both tracks loaded successfully!');
+            if (dayReady && nightReady && bloodMoonReady) {
+                console.log('🎵 ✅ All tracks loaded successfully!');
                 break;
             }
 
@@ -169,13 +194,14 @@ export class MusicSystem {
 
         const finalDayState = this.dayTrack.state();
         const finalNightState = this.nightTrack.state();
-        console.log(`🎵 Final states: Day=${finalDayState}, Night=${finalNightState}`);
+        const finalBloodMoonState = this.bloodMoonTrack.state();
+        console.log(`🎵 Final states: Day=${finalDayState}, Night=${finalNightState}, BloodMoon=${finalBloodMoonState}`);
 
-        if (finalDayState !== 'loaded' || finalNightState !== 'loaded') {
-            console.warn('⚠️ Music tracks did not load within timeout!');
+        if (finalDayState !== 'loaded' || finalNightState !== 'loaded' || finalBloodMoonState !== 'loaded') {
+            console.warn('⚠️ Some music tracks did not load within timeout!');
         }
 
-        console.log('🎵 Day/Night music system initialization complete!');
+        console.log('🎵 Day/Night + Blood Moon music system initialization complete!');
     }
 
     /**
@@ -318,6 +344,108 @@ export class MusicSystem {
             toTrack.fade(currentVol, targetVolume, this.crossfadeDuration);
         }
         
+        this.isPlaying = true;
+    }
+
+    /**
+     * 🩸 Start Blood Moon music (crossfade from current track)
+     */
+    startBloodMoon() {
+        if (this.isBloodMoonActive || !this.bloodMoonTrack) {
+            return; // Already playing or track not loaded
+        }
+
+        console.log('🩸 BLOOD MOON MUSIC STARTING...');
+        this.isBloodMoonActive = true;
+
+        // Determine which track is currently playing
+        const currentTrack = this.currentMode === 'day' ? this.dayTrack : this.nightTrack;
+        const currentEmoji = this.currentMode === 'day' ? '🌅' : '🌙';
+
+        if (!currentTrack) return;
+
+        const targetVolume = this.isMuted ? 0 : this.volume;
+
+        // Fade out current track
+        const currentVolume = currentTrack.volume();
+        console.log(`${currentEmoji} Fading out ${this.currentMode} music from ${Math.round(currentVolume * 100)}% to 0%`);
+        currentTrack.fade(currentVolume, 0, this.crossfadeDuration);
+
+        // Stop current track after fade
+        setTimeout(() => {
+            if (currentTrack.playing()) {
+                console.log(`${currentEmoji} Stopping ${this.currentMode} track for blood moon`);
+                currentTrack.stop();
+            }
+        }, this.crossfadeDuration + 100);
+
+        // Start blood moon track
+        if (!this.bloodMoonTrack.playing()) {
+            console.log('🩸 Starting Blood Moon track...');
+            this.bloodMoonTrack.volume(0);
+            const soundId = this.bloodMoonTrack.play();
+            
+            // Fade in blood moon music
+            setTimeout(() => {
+                console.log(`🩸 Fading in Blood Moon music to ${Math.round(targetVolume * 100)}%`);
+                this.bloodMoonTrack.fade(0, targetVolume, this.crossfadeDuration);
+            }, 50);
+
+            console.log(`🩸 Blood Moon music playing (soundId: ${soundId})`);
+        }
+
+        this.isPlaying = true;
+    }
+
+    /**
+     * 🩸 Stop Blood Moon music (crossfade back to day/night)
+     */
+    stopBloodMoon(returnToMode = null) {
+        if (!this.isBloodMoonActive || !this.bloodMoonTrack) {
+            return; // Not playing
+        }
+
+        console.log('🩸 BLOOD MOON MUSIC ENDING...');
+        this.isBloodMoonActive = false;
+
+        // Determine which track to return to (default to night if not specified)
+        const targetMode = returnToMode || 'night';
+        const targetTrack = targetMode === 'day' ? this.dayTrack : this.nightTrack;
+        const targetEmoji = targetMode === 'day' ? '🌅' : '🌙';
+
+        if (!targetTrack) return;
+
+        const targetVolume = this.isMuted ? 0 : this.volume;
+
+        // Fade out blood moon track
+        const currentVolume = this.bloodMoonTrack.volume();
+        console.log(`🩸 Fading out Blood Moon music from ${Math.round(currentVolume * 100)}% to 0%`);
+        this.bloodMoonTrack.fade(currentVolume, 0, this.crossfadeDuration);
+
+        // Stop blood moon track after fade
+        setTimeout(() => {
+            if (this.bloodMoonTrack.playing()) {
+                console.log('🩸 Stopping Blood Moon track');
+                this.bloodMoonTrack.stop();
+            }
+        }, this.crossfadeDuration + 100);
+
+        // Start target track (day or night)
+        this.currentMode = targetMode;
+        if (!targetTrack.playing()) {
+            console.log(`${targetEmoji} Starting ${targetMode} music after blood moon...`);
+            targetTrack.volume(0);
+            const soundId = targetTrack.play();
+            
+            // Fade in
+            setTimeout(() => {
+                console.log(`${targetEmoji} Fading in to ${Math.round(targetVolume * 100)}%`);
+                targetTrack.fade(0, targetVolume, this.crossfadeDuration);
+            }, 50);
+
+            console.log(`${targetEmoji} ${targetMode} music resuming (soundId: ${soundId})`);
+        }
+
         this.isPlaying = true;
     }
 
