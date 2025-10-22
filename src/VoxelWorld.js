@@ -7470,14 +7470,23 @@ class NebulaVoxelApp {
                 'grappling_hook', 'speed_boots', 'combat_sword', 'mining_pick',
                 'magic_amulet', 'club', 'stone_spear', 'torch', 'wood_shield',
 
-                // � Farming items
+                // 🌾 Farming items
                 'hoe', 'watering_can', 'wheat_seeds', 'carrot_seeds', 'pumpkin_seeds', 'berry_seeds',
-                'carrot', 'rice', 'corn_ear',
+                'carrot', 'rice', 'corn_ear', 'potato',
 
                 // 🍖 Companion Hunt ingredients (rare)
                 'egg', 'fish', 'honey', 'apple',
 
-                // �🏗️ Workbench/ToolBench items
+                // 🍞 Food items (raw and cooked)
+                'berry', 'mushroom', 'apple', 'carrot', 'potato', 'egg', 'fish',
+                'bread', 'cookie', 'pumpkin_pie',
+                'cooked_egg', 'grilled_fish', 'baked_potato',
+                'berry_bread', 'honey_bread', 'berry_honey_snack', 'berry_snack',
+                'carrot_stew', 'mushroom_soup', 'super_stew', 'veggie_medley',
+                'corn_chips', 'potato_chips', 'roasted_corn', 'roasted_wheat',
+                'rice_bowl', 'fish_rice', 'mushroom_bites', 'energy_bar',
+
+                // 🏗️ Workbench/ToolBench items
                 'workbench', 'backpack', 'tool_bench',
 
                 // 🎨 Crafted items (with crafted_ prefix) - allow any starting with 'crafted_'
@@ -7499,12 +7508,19 @@ class NebulaVoxelApp {
                 console.log('  stone, stick, iron, gold, coal, machete, stone_hammer, compass');
                 console.log('  grappling_hook, speed_boots, combat_sword, mining_pick, magic_amulet');
                 console.log('  club, stone_spear, torch, wood_shield');
-                console.log('%c� Valid Farming Items:', 'font-weight: bold; color: #8BC34A;');
-                console.log('  hoe, wheat_seeds, carrot_seeds, pumpkin_seeds, berry_seeds');
-                console.log('  carrot, rice, corn_ear');
+                console.log('%c🌾 Valid Farming Items:', 'font-weight: bold; color: #8BC34A;');
+                console.log('  hoe, watering_can, wheat_seeds, carrot_seeds, pumpkin_seeds, berry_seeds');
+                console.log('  carrot, rice, corn_ear, potato');
                 console.log('%c🍖 Companion Hunt Items:', 'font-weight: bold; color: #FF5722;');
                 console.log('  egg, fish, honey, apple');
-                console.log('%c�🎨 Valid Crafted Items:', 'font-weight: bold; color: #9C27B0;');
+                console.log('%c🍞 Valid Food Items:', 'font-weight: bold; color: #FFC107;');
+                console.log('  Raw: berry, mushroom, apple, carrot, potato, egg, fish');
+                console.log('  Bread: bread, cookie, berry_bread, honey_bread');
+                console.log('  Cooked: cooked_egg, grilled_fish, baked_potato, roasted_corn, roasted_wheat');
+                console.log('  Meals: carrot_stew, mushroom_soup, super_stew, veggie_medley, rice_bowl, fish_rice');
+                console.log('  Snacks: berry_snack, berry_honey_snack, mushroom_bites, energy_bar, corn_chips, potato_chips');
+                console.log('  Desserts: pumpkin_pie, cookie');
+                console.log('%c🎨 Valid Crafted Items:', 'font-weight: bold; color: #9C27B0;');
                 console.log('  Any tool with "crafted_" prefix (e.g., crafted_grappling_hook)');
                 console.log('  Or use the tools list above with crafted_ prefix');
                 return;
@@ -7552,7 +7568,7 @@ class NebulaVoxelApp {
         // 📋 LIST ITEMS UTILITY: Show all available items organized by category
         // Can be called from browser console: listItems()
         window.listItems = () => {
-            console.log('%c� All Available Items for giveItem() Command', 'font-size: 16px; font-weight: bold; color: #4CAF50;');
+            console.log('%c📋 All Available Items for giveItem() Command', 'font-size: 16px; font-weight: bold; color: #4CAF50;');
             console.log('');
             
             console.log('%c🌍 Discovery Items (Find in the world):', 'font-weight: bold; color: #FF9800;');
@@ -7578,10 +7594,10 @@ class NebulaVoxelApp {
             console.log('  workbench, tool_bench, backpack');
             console.log('');
             
-            console.log('%c� Farming Items:', 'font-weight: bold; color: #8BC34A;');
+            console.log('%c🌾 Farming Items:', 'font-weight: bold; color: #8BC34A;');
             console.log('  Tools: hoe, watering_can');
             console.log('  Seeds: wheat_seeds, carrot_seeds, pumpkin_seeds, berry_seeds');
-            console.log('  Harvested: carrot, rice, corn_ear');
+            console.log('  Harvested: carrot, rice, corn_ear, potato');
             console.log('');
             
             console.log('%c🍖 Companion Hunt Items (Rare):', 'font-weight: bold; color: #FF5722;');
@@ -7589,7 +7605,17 @@ class NebulaVoxelApp {
             console.log('  (Companions find these during hunts)');
             console.log('');
             
-            console.log('%c�🎨 Crafted Items (use crafted_ prefix):', 'font-weight: bold; color: #9C27B0;');
+            console.log('%c🍞 Food Items:', 'font-weight: bold; color: #FFC107;');
+            console.log('  Raw Ingredients: berry, mushroom, apple, carrot, potato, egg, fish');
+            console.log('  Bread Products: bread, cookie, berry_bread, honey_bread');
+            console.log('  Cooked Foods: cooked_egg, grilled_fish, baked_potato, roasted_corn, roasted_wheat');
+            console.log('  Meals & Stews: carrot_stew, mushroom_soup, super_stew, veggie_medley, rice_bowl, fish_rice');
+            console.log('  Snacks: berry_snack, berry_honey_snack, mushroom_bites, energy_bar, corn_chips, potato_chips');
+            console.log('  Desserts: pumpkin_pie, cookie');
+            console.log('  💡 Use these for companion healing! Elf needs food to cast Nature\'s Blessing');
+            console.log('');
+            
+            console.log('%c🎨 Crafted Items (use crafted_ prefix):', 'font-weight: bold; color: #9C27B0;');
             console.log('  crafted_grappling_hook, crafted_speed_boots');
             console.log('  crafted_combat_sword, crafted_mining_pick, crafted_stone_hammer');
             console.log('  crafted_magic_amulet, crafted_compass, crafted_compass_upgrade');
@@ -7602,6 +7628,8 @@ class NebulaVoxelApp {
             
             console.log('%c💡 Usage Examples:', 'font-weight: bold; color: #FFC107;');
             console.log('  giveItem("crystal", 5)          - Give 5 crystals');
+            console.log('  giveItem("bread", 10)           - Give 10 bread (for elf healing)');
+            console.log('  giveItem("grilled_fish", 5)     - Give 5 grilled fish');
             console.log('  giveItem("crafted_grappling_hook", 1) - Give grappling hook');
             console.log('  giveItem("rustySword", 1)       - Give rusty sword');
             console.log('');

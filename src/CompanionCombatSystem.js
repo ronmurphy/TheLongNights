@@ -86,11 +86,14 @@ export class CompanionCombatSystem {
             },
             goblin: {
                 name: 'Dirty Tricks',
-                description: 'Weakens enemies when player deals damage',
+                description: 'Throws bombs at distant enemies (5+ blocks), debuffs close enemies',
                 trigger: 'player_attack',
-                effect: 'enemy_debuff',
+                effect: 'enemy_debuff_or_bomb',
                 amount: -1,
                 duration: 8000,
+                bombDamage: 8,
+                bombRadius: 4,
+                bombMinDistance: 5,
                 cooldown: 12000
             },
             human: {
@@ -194,6 +197,38 @@ export class CompanionCombatSystem {
             
             console.log(`🎬 Companion (${companionId}) entering combat - starting attack sequence`);
             
+            // PRIORITY: Check if support ability should trigger when joining combat
+            // Different races have different triggers:
+            // - Elf: Heals if HP ≤ 60% (takes priority over attacking)
+            // - Dwarf: Defense buff if recently hit (already handled by onPlayerHit)
+            // - Goblin: Enemy debuff on attack (handled by onPlayerAttack)
+            // - Human: Attack buff if outnumbered (check here)
+            
+            const ability = this.supportAbilities[race];
+            if (ability && this.supportCooldown <= 0) {
+                // Elf: Check low HP and heal immediately
+                if (race === 'elf' && this.shouldTriggerSupportAbility()) {
+                    this.activateSupportAbility(ability, race);
+                    // Don't start attack sequence - healing takes priority
+                    return;
+                }
+                
+                // Human: Check if outnumbered (3+ enemies) and apply buff
+                if (race === 'human' && ability.trigger === 'outnumbered') {
+                    const lastEnemyHit = this.voxelWorld.unifiedCombat?.lastEnemyHit;
+                    if (lastEnemyHit?.target) {
+                        // Count nearby enemies (simple check: if there's an enemy and more might be around)
+                        // In future, could expand this to actual enemy counting
+                        const enemies = this.getNearbyEnemies();
+                        if (enemies.length >= 3) {
+                            console.log(`👥 Human sees ${enemies.length} enemies - activating Rally!`);
+                            this.activateSupportAbility(ability, race);
+                            // Continue to attack sequence after buff
+                        }
+                    }
+                }
+            }
+            
             // Start cinematic attack sequence immediately when entering combat
             this.updateCompanionSprite('attack', true); // true = start full sequence
         }
@@ -218,6 +253,10 @@ export class CompanionCombatSystem {
      * @param {number} deltaTime - Time since last frame
      */
     updateCompanionCombat(deltaTime) {
+        // Tick down cooldowns
+        this.companionAttackCooldown -= deltaTime;
+        this.supportCooldown = Math.max(0, this.supportCooldown - deltaTime);
+        
         // Get the last enemy player hit
         const lastEnemyHit = this.voxelWorld.unifiedCombat?.lastEnemyHit;
         
@@ -229,11 +268,30 @@ export class CompanionCombatSystem {
         
         const timeSinceHit = Date.now() - lastEnemyHit.timestamp;
         const enemyAlive = (lastEnemyHit.target.userData?.hp || 0) > 0;
+        const enemyHP = lastEnemyHit.target.userData?.hp || 0;
         
-        // Leave combat if enemy died or too much time passed (2 seconds)
-        if (timeSinceHit > 2000 || !enemyAlive) {
+        // Leave combat if enemy died or too much time passed (10 seconds)
+        // Companion stays in fight longer, but still event-driven (doesn't scan)
+        if (!enemyAlive) {
+            console.log(`💀 Enemy defeated! HP: ${enemyHP} - Companion leaving combat`);
             this.leaveCombat();
             return;
+        }
+        
+        // Also leave if player hasn't attacked in 10 seconds (prevents stuck in combat)
+        if (timeSinceHit > 10000) {
+            console.log(`⏱️ Combat timeout (10s) - Companion leaving combat`);
+            this.leaveCombat();
+            return;
+        }
+        
+        // PRIORITY: Check if support ability should trigger (replaces attack this turn)
+        if (this.shouldTriggerSupportAbility()) {
+            const companionId = this.getActiveCompanionId();
+            const race = companionId.split('_')[0];
+            const ability = this.supportAbilities[race];
+            this.activateSupportAbility(ability, race);
+            return; // Skip attacking this turn - support ability used instead
         }
         
         // Attack cooldown based on race speed
@@ -500,7 +558,65 @@ export class CompanionCombatSystem {
     }
     
     /**
-     * Check support ability triggers
+     * Check if companion should use support ability instead of attacking
+     * @returns {boolean} True if support ability should trigger
+     */
+    shouldTriggerSupportAbility() {
+        // Early exit: Check cooldown FIRST to avoid expensive HP checks every frame
+        if (this.supportCooldown > 0) return false;
+        if (!this.companionInCombat) return false;
+        
+        const companionId = this.getActiveCompanionId();
+        if (!companionId) return false;
+        
+        const race = companionId.split('_')[0];
+        const ability = this.supportAbilities[race];
+        if (!ability) return false;
+        
+        // Check trigger conditions based on ability type
+        switch (ability.trigger) {
+            case 'low_hp':
+                // Elf: Heal when player HP ≤ 60% (low but not critical)
+                // Heart system: 2 HP = 1 ❤️, but damage can be fractional
+                // Examples: 3.5 HP = 1.75 hearts, 2 HP = 1 heart, 1 HP = 0.5 heart
+                
+                // Check multiple sources for HP
+                const playerHPSystem = this.voxelWorld.playerHP?.currentHP;
+                const playerCharacter = this.voxelWorld.playerCharacter?.currentHP;
+                
+                const currentHP = playerHPSystem || playerCharacter || 6;
+                const maxHP = this.voxelWorld.playerHP?.maxHP || this.voxelWorld.playerCharacter?.maxHP || 6;
+                const healThreshold = maxHP * 0.6; // 60% of max HP (3.6 for 6 max)
+                const isLowHP = currentHP <= healThreshold;
+                
+                if (isLowHP) {
+                    console.log(`🧝 Elf sees low HP: ${currentHP}/${maxHP} HP (≤60% = ${healThreshold.toFixed(1)}) - HEALING NOW!`);
+                }
+                
+                return isLowHP;
+                
+            case 'outnumbered':
+                // Human: Buff when 3+ enemies nearby
+                const lastEnemyHit = this.voxelWorld.unifiedCombat?.lastEnemyHit;
+                if (!lastEnemyHit) return false;
+                // For now, just check if enemy exists (can expand later)
+                return false; // Disabled for now - hard to count enemies in new system
+                
+            case 'player_hit':
+                // Dwarf: Triggered by onPlayerHit() method (not here)
+                return false;
+                
+            case 'player_attack':
+                // Goblin: Triggered by onPlayerAttack() method (not here)
+                return false;
+                
+            default:
+                return false;
+        }
+    }
+    
+    /**
+     * Check support ability triggers (legacy - mostly handled by shouldTriggerSupportAbility now)
      */
     checkSupportTriggers() {
         if (this.supportCooldown > 0) return;
@@ -541,7 +657,15 @@ export class CompanionCombatSystem {
      * @param {string} race - Companion race
      */
     activateSupportAbility(ability, race) {
+        // Check cooldown to prevent spamming
+        if (this.supportCooldown > 0) {
+            return; // Still on cooldown
+        }
+        
         console.log(`✨ ${this.capitalize(race)} companion activates ${ability.name}!`);
+        
+        // Set cooldown (5 seconds)
+        this.supportCooldown = 5000;
         
         // Apply effect
         if (ability.effect === 'heal') {
@@ -550,18 +674,22 @@ export class CompanionCombatSystem {
                 const food = this.consumeFood();
                 if (!food) {
                     this.voxelWorld.updateStatus(`❌ No food for healing!`, 'warning');
+                    this.supportCooldown = 1000; // Retry sooner if no food
                     return;
                 }
             }
             
+            // Use PlayerHP system for healing (2 HP = 1 heart)
             const healAmount = ability.amount || 3;
-            this.voxelWorld.playerHp = Math.min(
-                (this.voxelWorld.playerHp || 10) + healAmount,
-                this.voxelWorld.maxHp || 10
-            );
             
-            this.voxelWorld.updateStatus(`💚 ${ability.name}: Healed ${healAmount} HP!`, 'discovery');
-            this.voxelWorld.updateHpDisplay?.();
+            if (this.voxelWorld.playerHP) {
+                const oldHP = this.voxelWorld.playerHP.currentHP;
+                this.voxelWorld.playerHP.heal(healAmount);
+                const actualHeal = this.voxelWorld.playerHP.currentHP - oldHP;
+                
+                this.voxelWorld.updateStatus(`💚 ${ability.name}: Healed ${actualHeal} HP!`, 'discovery');
+                console.log(`💚 Elf healed player: ${oldHP} → ${this.voxelWorld.playerHP.currentHP} HP (+${actualHeal})`);
+            }
             
         } else if (ability.effect === 'defense_buff') {
             // Temporary defense boost
@@ -868,59 +996,74 @@ export class CompanionCombatSystem {
     }
     
     /**
+     * Goblin throws a bomb at distant enemy
+     * @param {object} target - Enemy target
+     * @param {object} position - Enemy position {x, y, z}
+     * @param {object} ability - Goblin ability data
+     */
+    throwGoblinBomb(target, position, ability) {
+        console.log(`💣 Goblin throws bomb at distant enemy! (${ability.bombMinDistance}+ blocks away)`);
+        this.voxelWorld.updateStatus(`💣 Goblin: "Catch this!"`, 'combat');
+        
+        // Create explosion at enemy position
+        if (this.voxelWorld.createExplosionEffect) {
+            this.voxelWorld.createExplosionEffect(position.x, position.y, position.z, 'demolition');
+        }
+        
+        // Deal damage to target
+        if (target.userData && this.voxelWorld.unifiedCombat) {
+            const damage = ability.bombDamage || 8;
+            this.voxelWorld.unifiedCombat.applyDamage(target, damage, 'explosion');
+            console.log(`💥 Goblin bomb dealt ${damage} damage!`);
+        }
+        
+        // Set cooldown
+        this.supportCooldown = ability.cooldown;
+    }
+    
+    /**
      * Called when player deals damage to enemy
      * @param {object} enemy - Enemy damaged
      * @param {number} damage - Damage dealt
      */
     onPlayerAttack(enemy, damage) {
-        console.log('⚔️ onPlayerAttack called - enemy:', enemy, 'damage:', damage);
-        
-        // Trigger companion to join combat if not already
+        // Trigger companion to join combat if not already in combat
         if (!this.companionInCombat && this.shouldCompanionJoinCombat()) {
             this.joinCombat();
+            // Note: updateCompanionCombat() will handle actual attacking
         }
+        // If already in combat, just continue with existing combat loop
+        // (updateCompanionCombat handles attacks based on cooldowns)
         
-        // Make companion react with pose animation and delayed attack
-        if (this.companionInCombat && enemy) {
-            const companionId = this.getActiveCompanionId();
-            if (companionId) {
-                const race = companionId.split('_')[0];
-                const weapon = this.getCompanionWeapon(companionId);
-                const isRanged = this.isRangedWeapon(weapon);
-                
-                // Calculate attack delay based on race and weapon type
-                // Elf: 300ms (fast), Human/Goblin: 500ms, Dwarf: 700ms (slow)
-                // Ranged weapons add 200ms (draw/aim time)
-                let baseDelay = 500; // Default for human
-                if (race === 'elf') baseDelay = 300;
-                else if (race === 'goblin') baseDelay = 400;
-                else if (race === 'dwarf') baseDelay = 700;
-                
-                const totalDelay = isRanged ? baseDelay + 200 : baseDelay;
-                
-                console.log(`⚔️ ${race} companion reacting - attack in ${totalDelay}ms (${isRanged ? 'ranged' : 'melee'})`);
-                
-                // Start attack sequence immediately when entering combat
-                this.companionPose = 'attack';
-                this.updateCompanionSprite('attack', true); // Start full cinematic sequence
-                
-                // Delayed attack execution (actual damage happens during sequence)
-                setTimeout(() => {
-                    // Only attack if companion still in combat and enemy still exists
-                    if (this.companionInCombat) {
-                        this.companionAttack([enemy]);
-                    }
-                }, totalDelay);
-            }
-        }
-        
-        // Trigger goblin support ability (enemy debuff)
+        // Trigger goblin support ability - only if cooldown ready
         const companionId = this.getActiveCompanionId();
         if (companionId) {
             const race = companionId.split('_')[0];
             if (race === 'goblin' && this.supportCooldown <= 0) {
                 const ability = this.supportAbilities.goblin;
-                this.activateSupportAbility(ability, race);
+                
+                // Check enemy distance to decide: bomb or debuff?
+                const lastEnemyHit = this.voxelWorld.unifiedCombat?.lastEnemyHit;
+                if (lastEnemyHit?.target && lastEnemyHit?.position) {
+                    const playerPos = this.voxelWorld.player.position;
+                    const enemyPos = lastEnemyHit.position;
+                    const distance = Math.sqrt(
+                        Math.pow(playerPos.x - enemyPos.x, 2) +
+                        Math.pow(playerPos.y - enemyPos.y, 2) +
+                        Math.pow(playerPos.z - enemyPos.z, 2)
+                    );
+                    
+                    // If enemy is 5+ blocks away, throw a bomb!
+                    if (distance >= ability.bombMinDistance) {
+                        this.throwGoblinBomb(lastEnemyHit.target, enemyPos, ability);
+                    } else {
+                        // Close range - use normal debuff
+                        this.activateSupportAbility(ability, race);
+                    }
+                } else {
+                    // Fallback to normal debuff if no position data
+                    this.activateSupportAbility(ability, race);
+                }
             }
         }
     }

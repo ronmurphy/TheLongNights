@@ -134,14 +134,19 @@ export class PlayerHP {
             this.invulnerable = false;
         }, this.invulnerabilityDuration);
 
-        // Pulse damaged heart
+        // Pulse damaged heart (DISABLED - using PlayerCompanionUI now)
+        // The old heart HUD is no longer used, hearts are in PlayerCompanionUI
+        /*
         if (this.currentHP < this.maxHP) {
             const damagedHeart = this.hearts[this.currentHP];
-            damagedHeart.style.animation = 'heartPulse 0.5s ease';
-            setTimeout(() => {
-                damagedHeart.style.animation = '';
-            }, 500);
+            if (damagedHeart) {
+                damagedHeart.style.animation = 'heartPulse 0.5s ease';
+                setTimeout(() => {
+                    damagedHeart.style.animation = '';
+                }, 500);
+            }
         }
+        */
 
         // Check for death
         if (this.currentHP <= 0) {
@@ -451,3 +456,37 @@ style.textContent = `
     }
 `;
 document.head.appendChild(style);
+
+// 🎮 Console commands for testing healing
+window.damage_player = (amount = 3) => {
+    if (window.voxelWorld?.playerHP) {
+        window.voxelWorld.playerHP.takeDamage(amount);
+        console.log(`💔 Player damaged: -${amount} HP (${window.voxelWorld.playerHP.currentHP}/${window.voxelWorld.playerHP.maxHP})`);
+        return `Damaged player for ${amount} HP (now at ${window.voxelWorld.playerHP.currentHP}/${window.voxelWorld.playerHP.maxHP})`;
+    }
+    return 'Game not initialized yet';
+};
+
+window.heal_player = (amount = 3) => {
+    if (window.voxelWorld?.playerHP) {
+        window.voxelWorld.playerHP.heal(amount);
+        console.log(`💚 Player healed: +${amount} HP (${window.voxelWorld.playerHP.currentHP}/${window.voxelWorld.playerHP.maxHP})`);
+        return `Healed player for ${amount} HP (now at ${window.voxelWorld.playerHP.currentHP}/${window.voxelWorld.playerHP.maxHP})`;
+    }
+    return 'Game not initialized yet';
+};
+
+window.check_hp = () => {
+    if (window.voxelWorld?.playerHP) {
+        const hp = window.voxelWorld.playerHP.currentHP;
+        const maxHP = window.voxelWorld.playerHP.maxHP;
+        const percent = ((hp / maxHP) * 100).toFixed(0);
+        console.log(`❤️ Player HP: ${hp}/${maxHP} (${percent}%)`);
+        return `${hp}/${maxHP} HP (${percent}%)`;
+    }
+    return 'Game not initialized yet';
+};
+
+console.log('❤️ PlayerHP console commands: damage_player(3), heal_player(3), check_hp()');
+
+
