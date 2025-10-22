@@ -32,9 +32,10 @@ export class ChunkLoadingSpinner {
         this.element.className = 'chunk-loading-spinner';
         this.element.style.cssText = `
             position: absolute;
-            bottom: 270px;
-            right: 24px;
-            z-index: 1500;
+            top: 16px;
+            left: -2px;
+
+            z-index: 900;
             display: none;
             pointer-events: none;
         `;
@@ -70,12 +71,12 @@ export class ChunkLoadingSpinner {
                 display: flex;
                 flex-direction: column;
                 align-items: center;
-                gap: 8px;
+                gap: 0px;
             }
             
             .spinner-ring {
-                width: 40px;
-                height: 40px;
+                width: 60px;
+                height: 60px;
                 border: 4px solid rgba(255, 255, 255, 0.2);
                 border-top-color: #4FB3D9;
                 border-radius: 50%;
@@ -188,9 +189,9 @@ export class ChunkLoadingSpinner {
      */
     updateLabel(text) {
         const label = this.element.querySelector('.spinner-label');
-        if (label) {
-            label.textContent = text;
-        }
+        // if (label) {
+        //     label.textContent = text;
+        // }
     }
     
     /**
