@@ -218,11 +218,17 @@ export class RoamingEnemySystem {
         // Deal damage to player
         const damage = Math.max(1, enemy.attack - (this.voxelWorld.playerDefense || 0));
         
-        if (this.voxelWorld.playerHP) {
-            this.voxelWorld.playerHP.takeDamage(damage);
+        // ⚔️ Use Rule of 3rds damage distribution
+        if (this.voxelWorld.companionCombatSystem) {
+            const result = this.voxelWorld.companionCombatSystem.distributeEnemyDamage(damage, enemy.type);
+            console.log(`👹 ${enemy.type} attacked → ${result.target} (${result.actualDamage} damage)`);
+        } else {
+            // Fallback: Direct damage to player
+            if (this.voxelWorld.playerHP) {
+                this.voxelWorld.playerHP.takeDamage(damage);
+            }
+            console.log(`👹 ${enemy.type} attacked player for ${damage} damage!`);
         }
-        
-        console.log(`👹 ${enemy.type} attacked player for ${damage} damage!`);
         
         // Play attack sound
         if (this.voxelWorld.sfxSystem) {

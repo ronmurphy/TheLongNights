@@ -392,13 +392,26 @@ export class SpectralHuntSystem {
             }
         }
         
-        // Damage player if close
+        // Damage player or companion if close
         const distToPlayer = explodePos.distanceTo(playerPos);
         if (distToPlayer < radius + 1) {
             const damage = Math.ceil(3 * (1 - distToPlayer / (radius + 1)));
-            console.log(`💥 Demolition charge hit player for ${damage} damage!`);
-            if (this.voxelWorld.takeDamage) {
-                this.voxelWorld.takeDamage(damage);
+            console.log(`💥 Demolition charge explosion! Damage: ${damage}`);
+            
+            // ⚔️ Use Rule of 3rds damage distribution
+            if (this.voxelWorld.companionCombatSystem) {
+                const result = this.voxelWorld.companionCombatSystem.distributeEnemyDamage(
+                    damage,
+                    'Demolition Goblin Charge'
+                );
+                console.log(`💥 Charge hit → ${result.target} (${result.actualDamage} damage)`);
+            } else {
+                // Fallback: Direct player damage
+                if (this.voxelWorld.takeDamage) {
+                    this.voxelWorld.takeDamage(damage);
+                } else if (this.voxelWorld.playerHP) {
+                    this.voxelWorld.playerHP.takeDamage(damage);
+                }
             }
         }
     }

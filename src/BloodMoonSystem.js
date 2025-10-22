@@ -428,12 +428,23 @@ export class BloodMoonSystem {
             // this.voxelWorld.damageBlock(nearestBlock.x, nearestBlock.y, nearestBlock.z, enemy.attack);
             
         } else {
-            // No fortifications nearby - attack player
-            console.log(`🩸 ${enemy.entityType} attacking player!`);
+            // No fortifications nearby - attack player or companion
+            console.log(`🩸 ${enemy.entityType} attacking!`);
             
-            // TODO: Implement player damage system
-            // For now, just show a warning
-            this.voxelWorld.updateStatus(`🩸 ${enemy.entityType} hits you for ${enemy.attack} damage!`, 'danger');
+            // ⚔️ Use Rule of 3rds damage distribution
+            if (this.voxelWorld.companionCombatSystem) {
+                const result = this.voxelWorld.companionCombatSystem.distributeEnemyDamage(
+                    enemy.attack,
+                    enemy.entityType
+                );
+                console.log(`🩸 ${enemy.entityType} attacked → ${result.target} (${result.actualDamage} damage)`);
+            } else {
+                // Fallback: Direct player damage
+                if (this.voxelWorld.playerHP) {
+                    this.voxelWorld.playerHP.takeDamage(enemy.attack);
+                }
+                this.voxelWorld.updateStatus(`🩸 ${enemy.entityType} hits you for ${enemy.attack} damage!`, 'danger');
+            }
         }
     }
     

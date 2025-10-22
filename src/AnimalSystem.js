@@ -63,11 +63,20 @@ export class AnimalSystem {
             if (animal.config.aggressive && animal.state === 'attack' && animal.stateTimer < 0.1) {
                 // Only deal damage once per attack
                 if (distance < 2) {
-                    // Use PlayerHP system to deal damage
-                    if (this.voxelWorld.playerHP) {
-                        this.voxelWorld.playerHP.takeDamage(animal.config.damage);
+                    // ⚔️ Use Rule of 3rds damage distribution
+                    if (this.voxelWorld.companionCombatSystem) {
+                        const result = this.voxelWorld.companionCombatSystem.distributeEnemyDamage(
+                            animal.config.damage,
+                            animal.config.name
+                        );
+                        console.log(`🐺 ${animal.config.name} attacked → ${result.target} (${result.actualDamage} damage)`);
+                    } else {
+                        // Fallback: Direct damage
+                        if (this.voxelWorld.playerHP) {
+                            this.voxelWorld.playerHP.takeDamage(animal.config.damage);
+                        }
+                        this.voxelWorld.updateStatus(`💥 ${animal.config.name} attacked you! -${animal.config.damage} HP`, 'error');
                     }
-                    this.voxelWorld.updateStatus(`💥 ${animal.config.name} attacked you! -${animal.config.damage} HP`, 'error');
                 }
             }
         }

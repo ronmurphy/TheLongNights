@@ -111,6 +111,150 @@ export class CompanionCombatSystem {
     }
     
     /**
+     * ⚔️ RULE OF 3RDS: Enemy Attack Distribution
+     * When enemy attacks, randomly choose:
+     * - 1/3 chance: Player takes damage
+     * - 1/3 chance: Companion takes damage (if active)
+     * - 1/3 chance: Enemy misses
+     * 
+     * @param {number} damage - Base damage amount
+     * @param {string} source - Damage source (for logging)
+     * @returns {object} - {target: 'player'|'companion'|'miss', actualDamage: number}
+     */
+    distributeEnemyDamage(damage, source = 'enemy') {
+        // Check if companion is active and with player
+        const companionId = this.getActiveCompanionId();
+        const companionStatus = this.voxelWorld.companionPortrait?.companionStatus;
+        const hasCompanion = companionId && companionStatus !== 'exploring';
+        
+        // Roll 1-3
+        const roll = Math.floor(Math.random() * 3) + 1;
+        
+        if (roll === 1) {
+            // Player takes damage
+            console.log(`🎲 Roll=${roll}: Player takes ${damage} damage from ${source}`);
+            
+            if (this.voxelWorld.playerHP) {
+                const wasDamaged = this.voxelWorld.playerHP.takeDamage(damage);
+                return { target: 'player', actualDamage: wasDamaged ? damage : 0 };
+            }
+            return { target: 'player', actualDamage: 0 };
+            
+        } else if (roll === 2 && hasCompanion) {
+            // Companion takes damage
+            console.log(`🎲 Roll=${roll}: Companion takes ${damage} damage from ${source}`);
+            
+            return this.companionTakeDamage(damage, source);
+            
+        } else {
+            // Miss or companion not available (redirect to player if no companion)
+            if (!hasCompanion && roll === 2) {
+                // No companion - player takes hit instead
+                console.log(`🎲 Roll=${roll}: No companion, player takes ${damage} damage instead`);
+                if (this.voxelWorld.playerHP) {
+                    const wasDamaged = this.voxelWorld.playerHP.takeDamage(damage);
+                    return { target: 'player', actualDamage: wasDamaged ? damage : 0 };
+                }
+                return { target: 'player', actualDamage: 0 };
+            } else {
+                // Enemy missed!
+                console.log(`🎲 Roll=${roll}: ${source} MISSED!`);
+                this.voxelWorld.updateStatus(`💨 ${source} missed!`, 'info');
+                return { target: 'miss', actualDamage: 0 };
+            }
+        }
+    }
+    
+    /**
+     * Companion takes damage
+     * @param {number} damage - Damage amount
+     * @param {string} source - Damage source
+     * @returns {object} - {target: 'companion', actualDamage: number}
+     */
+    companionTakeDamage(damage, source = 'enemy') {
+        const companionId = this.getActiveCompanionId();
+        if (!companionId) return { target: 'companion', actualDamage: 0 };
+        
+        // Get companion stats from Codex
+        const stats = this.voxelWorld.companionCodex?.calculateStats(companionId);
+        if (!stats) {
+            console.error(`❌ Could not find stats for ${companionId}`);
+            return { target: 'companion', actualDamage: 0 };
+        }
+        
+        // Get current HP from playerData (companions share player's save data)
+        const playerData = JSON.parse(localStorage.getItem('NebulaWorld_playerData') || '{}');
+        const companionHP = playerData.companionHP || {};
+        
+        if (!companionHP[companionId]) {
+            companionHP[companionId] = {
+                currentHP: stats.hp,
+                maxHP: stats.hp
+            };
+        }
+        
+        const currentHP = companionHP[companionId].currentHP;
+        const maxHP = companionHP[companionId].maxHP;
+        
+        // Calculate damage reduction from defense (defense reduces damage)
+        const defense = stats.defense || 10;
+        const damageReduction = Math.max(0, defense - 10); // Base defense is 10
+        const actualDamage = Math.max(1, damage - damageReduction);
+        
+        // Apply damage
+        companionHP[companionId].currentHP = Math.max(0, currentHP - actualDamage);
+        
+        const newHP = companionHP[companionId].currentHP;
+        
+        console.log(`💔 Companion took ${actualDamage} damage! HP: ${newHP}/${maxHP} (Defense reduced ${damageReduction})`);
+        
+        // Save to localStorage
+        playerData.companionHP = companionHP;
+        localStorage.setItem('NebulaWorld_playerData', JSON.stringify(playerData));
+        
+        // Update UI
+        if (this.voxelWorld.playerCompanionUI) {
+            // Get companion data for UI update
+            const companionData = this.voxelWorld.companionCodex?.getCompanionData(companionId);
+            if (companionData) {
+                companionData.currentHP = newHP;
+                companionData.maxHP = maxHP;
+                this.voxelWorld.playerCompanionUI.updateCompanion(companionData);
+            }
+        }
+        
+        // Show status message
+        const race = companionId.split('_')[0];
+        this.voxelWorld.updateStatus(`💔 ${this.capitalize(race)} took ${actualDamage} damage from ${source}!`, 'combat');
+        
+        // Check if companion was defeated
+        if (newHP <= 0) {
+            this.onCompanionDefeated(companionId);
+        }
+        
+        return { target: 'companion', actualDamage };
+    }
+    
+    /**
+     * Handle companion defeat
+     * @param {string} companionId - Defeated companion ID
+     */
+    onCompanionDefeated(companionId) {
+        const race = companionId.split('_')[0];
+        console.log(`💀 ${race} companion defeated!`);
+        
+        this.voxelWorld.updateStatus(`💀 ${this.capitalize(race)} was defeated! They'll recover after resting.`, 'danger');
+        
+        // Companion automatically "explores" until player rests/sleeps
+        if (this.voxelWorld.companionPortrait) {
+            this.voxelWorld.companionPortrait.setCompanionStatus('exploring');
+        }
+        
+        // Leave combat
+        this.leaveCombat();
+    }
+    
+    /**
      * Get active companion ID from playerData
      * @returns {string|null} Companion ID (e.g., "elf_female") or null
      */
@@ -671,24 +815,22 @@ export class CompanionCombatSystem {
         if (ability.effect === 'heal') {
             // Consume food from player inventory for healing
             if (ability.consumesFood) {
-                const food = this.consumeFood();
-                if (!food) {
-                    this.voxelWorld.updateStatus(`❌ No food for healing!`, 'warning');
+                const foodOrPotion = this.consumeFoodOrPotion();
+                if (!foodOrPotion) {
+                    this.voxelWorld.updateStatus(`❌ No food or potions for healing!`, 'warning');
                     this.supportCooldown = 1000; // Retry sooner if no food
                     return;
                 }
-            }
-            
-            // Use PlayerHP system for healing (2 HP = 1 heart)
-            const healAmount = ability.amount || 3;
-            
-            if (this.voxelWorld.playerHP) {
-                const oldHP = this.voxelWorld.playerHP.currentHP;
-                this.voxelWorld.playerHP.heal(healAmount);
-                const actualHeal = this.voxelWorld.playerHP.currentHP - oldHP;
                 
-                this.voxelWorld.updateStatus(`💚 ${ability.name}: Healed ${actualHeal} HP!`, 'discovery');
-                console.log(`💚 Elf healed player: ${oldHP} → ${this.voxelWorld.playerHP.currentHP} HP (+${actualHeal})`);
+                console.log(`🍖 Elf found healing item: ${foodOrPotion.itemType}`);
+                
+                // USE the food/potion item (triggers its healing effect)
+                this.useFoodOrPotion(foodOrPotion);
+                
+                this.voxelWorld.updateStatus(`💚 ${ability.name}: Used ${foodOrPotion.itemType}!`, 'discovery');
+                console.log(`💚 Elf used ${foodOrPotion.itemType} to heal player`);
+            } else {
+                console.error(`❌ Elf healing ability requires consumesFood=true`);
             }
             
         } else if (ability.effect === 'defense_buff') {
@@ -737,42 +879,87 @@ export class CompanionCombatSystem {
     }
     
     /**
-     * Consume food from player inventory for healing
-     * @returns {string|null} Food item type consumed, or null if no food
+     * Find and consume food or potion from player inventory for healing
+     * @returns {object|null} Slot object with itemType, or null if no food/potion
      */
-    consumeFood() {
+    consumeFoodOrPotion() {
         if (!this.voxelWorld.inventory) return null;
         
-        const foodTypes = [
-            'cooked_meat', 'cooked_fish', 'bread', 'berry', 'apple',
-            'mushroom', 'pumpkin_pie', 'carrot', 'potato'
+        // Priority order: Healing potions first, then food
+        const healingItems = [
+            'healing_potion', 'crafted_healing_potion',  // Potions (best)
+            'cooked_meat', 'grilled_fish', 'bread',      // Cooked food (good)
+            'berry', 'apple', 'mushroom', 'carrot'       // Raw food (ok)
         ];
         
-        // Check hotbar and backpack for food
+        // Check hotbar and backpack for healing items
         const allSlots = [
             ...(this.voxelWorld.inventory.hotbarSlots || []),
             ...(this.voxelWorld.inventory.backpackSlots || [])
         ];
         
-        for (const slot of allSlots) {
-            if (slot && slot.itemType && foodTypes.includes(slot.itemType) && slot.quantity > 0) {
-                // Consume one food item
-                slot.quantity--;
-                
-                // Clear slot if empty
-                if (slot.quantity === 0) {
-                    slot.itemType = '';
+        for (const itemType of healingItems) {
+            for (const slot of allSlots) {
+                if (slot && slot.itemType === itemType && slot.quantity > 0) {
+                    console.log(`🍖 Found healing item: ${itemType} (${slot.quantity} remaining)`);
+                    return slot; // Return the slot (don't consume yet - let useFoodOrPotion do that)
                 }
-                
-                this.voxelWorld.updateHotbarCounts?.();
-                this.voxelWorld.updateBackpackInventoryDisplay?.();
-                
-                console.log(`🍖 Companion consumed ${slot.itemType} for healing`);
-                return slot.itemType;
             }
         }
         
+        console.log(`❌ No healing items found in inventory`);
         return null;
+    }
+    
+    /**
+     * Use a food or potion item (triggers its healing effect)
+     * @param {object} slot - Inventory slot with the item
+     */
+    useFoodOrPotion(slot) {
+        if (!slot || !slot.itemType) return;
+        
+        const itemType = slot.itemType;
+        
+        // Check if it's a healing potion
+        const isPotion = itemType === 'healing_potion' || itemType === 'crafted_healing_potion';
+        
+        if (isPotion) {
+            // Use healing potion logic (smart healing: 1 HP for broken heart, 2 HP for full heart)
+            if (this.voxelWorld.playerHP && this.voxelWorld.playerHP.currentHP < this.voxelWorld.playerHP.maxHP) {
+                const isOddHP = (this.voxelWorld.playerHP.currentHP % 2) === 1;
+                const healAmount = isOddHP ? 1 : 2;
+                
+                this.voxelWorld.playerHP.heal(healAmount);
+                
+                if (isOddHP) {
+                    this.voxelWorld.updateStatus('💚 Elf used potion to complete broken heart! 💔 → ❤️', 'discovery');
+                } else {
+                    this.voxelWorld.updateStatus('💚 Elf used potion to restore 1 heart! ❤️', 'discovery');
+                }
+                
+                console.log(`🧪 Elf used healing potion: +${healAmount} HP`);
+            }
+        } else {
+            // Food items: Heal 1 HP per food item
+            // (Most food heals stamina too, but we focus on HP for healing ability)
+            if (this.voxelWorld.playerHP && this.voxelWorld.playerHP.currentHP < this.voxelWorld.playerHP.maxHP) {
+                this.voxelWorld.playerHP.heal(1);
+                this.voxelWorld.updateStatus(`💚 Elf used ${itemType} to heal!`, 'discovery');
+                console.log(`🍖 Elf used food (${itemType}): +1 HP`);
+            }
+        }
+        
+        // Consume one item from slot
+        slot.quantity--;
+        
+        // Clear slot if empty
+        if (slot.quantity === 0) {
+            slot.itemType = '';
+        }
+        
+        // Update UI
+        this.voxelWorld.updateHotbarCounts?.();
+        this.voxelWorld.updateBackpackInventoryDisplay?.();
     }
     
     /**

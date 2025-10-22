@@ -504,9 +504,14 @@ export class ColoredGhostSystem {
                 const finalDist = arrow.position.distanceTo(this.voxelWorld.camera.position);
                 if (finalDist < 2) {
                     console.log(`❄️ Ice projectile hit player!`);
-                    // Apply damage to player
-                    if (this.voxelWorld.playerHP) {
-                        this.voxelWorld.playerHP.takeDamage(1); // 1 damage
+                    // ⚔️ Use Rule of 3rds damage distribution
+                    if (this.voxelWorld.companionCombatSystem) {
+                        this.voxelWorld.companionCombatSystem.distributeEnemyDamage(1, 'Ice Ghost');
+                    } else {
+                        // Fallback: Direct damage
+                        if (this.voxelWorld.playerHP) {
+                            this.voxelWorld.playerHP.takeDamage(1);
+                        }
                     }
                     // Ice impact effect
                     if (this.voxelWorld.createExplosionEffect) {

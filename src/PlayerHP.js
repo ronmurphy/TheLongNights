@@ -163,16 +163,19 @@ export class PlayerHP {
     heal(amount = 1) {
         if (this.currentHP >= this.maxHP) {
             console.log('❤️ Player already at full health');
-            return;
+            return 0; // Return 0 HP healed
         }
 
         const oldHP = this.currentHP;
         this.currentHP = Math.min(this.maxHP, this.currentHP + amount);
-        console.log(`💚 Player healed ${this.currentHP - oldHP} HP! HP: ${this.currentHP}/${this.maxHP}`);
+        const actualHealed = this.currentHP - oldHP;
+        
+        console.log(`💚 Player healed ${actualHealed} HP! HP: ${this.currentHP}/${this.maxHP}`);
 
         // Update PlayerCharacter HP to stay in sync
         if (this.voxelWorld.playerCharacter) {
             this.voxelWorld.playerCharacter.currentHP = this.currentHP;
+            console.log(`💚 Synced PlayerCharacter HP to ${this.voxelWorld.playerCharacter.currentHP}`);
         }
 
         // Update display (old heart system - disabled)
@@ -180,8 +183,15 @@ export class PlayerHP {
 
         // 🔄 Update PlayerCompanionUI to show heart changes
         if (this.voxelWorld.playerCompanionUI) {
-            this.voxelWorld.playerCompanionUI.updatePlayer(this.voxelWorld.playerCharacter);
+            // Small delay to ensure sync completes
+            setTimeout(() => {
+                this.voxelWorld.playerCompanionUI.updatePlayer(this.voxelWorld.playerCharacter);
+                console.log(`💚 UI updated with HP: ${this.voxelWorld.playerCharacter?.currentHP}/${this.voxelWorld.playerCharacter?.maxHP}`);
+            }, 10);
         }
+
+        // Flash green healing indicator
+        this.flashHeal();
 
         // Pulse healed heart
         const healedHeart = this.hearts[oldHP];
@@ -199,6 +209,8 @@ export class PlayerHP {
                 console.log('❤️ Fully healed - hearts hidden');
             }, 1000); // Wait 1 second so player sees the full heal
         }
+        
+        return actualHealed; // Return amount actually healed
     }
 
     /**
@@ -223,6 +235,32 @@ export class PlayerHP {
         setTimeout(() => {
             document.body.removeChild(overlay);
         }, 300);
+    }
+
+    /**
+     * Flash green healing indicator
+     */
+    flashHeal() {
+        // Create green overlay
+        const overlay = document.createElement('div');
+        overlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 255, 0, 0.2);
+            pointer-events: none;
+            z-index: 999;
+            animation: healFlash 0.5s ease;
+        `;
+
+        document.body.appendChild(overlay);
+        setTimeout(() => {
+            document.body.removeChild(overlay);
+        }, 500);
+        
+        console.log('💚 Green heal flash displayed');
     }
 
     /**
