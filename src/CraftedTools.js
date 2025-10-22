@@ -502,8 +502,17 @@ export class CraftedTools {
                     const damage = Math.max(1, Math.ceil(baseDamage * damagePercent));
 
                     console.log(`💥 Explosion hit ${enemy.entityType}! Distance: ${distance.toFixed(1)}, Damage: ${damage}`);
-                    this.voxelWorld.bloodMoonSystem.hitEnemy(enemyId, damage);
-                    enemiesHit++;
+                    
+                    // NOW USING UNIFIED COMBAT SYSTEM
+                    const result = this.voxelWorld.unifiedCombat.applyDamage(
+                        enemy.sprite, 
+                        damage, 
+                        'player'
+                    );
+                    
+                    if (result.hit) {
+                        enemiesHit++;
+                    }
                 }
             }
 
@@ -849,6 +858,7 @@ export class CraftedTools {
                 }
 
                 // Check for enemy collision (Blood Moon enemies)
+                // NOW USING UNIFIED COMBAT SYSTEM
                 if (this.voxelWorld.bloodMoonSystem && progress > 0.1) {
                     const projectilePos = new THREE.Vector3(currentPos.x, currentPos.y, currentPos.z);
                     const enemies = this.voxelWorld.bloodMoonSystem.activeEnemies;
@@ -860,35 +870,38 @@ export class CraftedTools {
                         const distance = projectilePos.distanceTo(enemyPos);
 
                         if (distance < 1.5) {
-                            // HIT!
+                            // HIT! Use unified combat system
                             console.log(`🎯 ${weaponType} hit ${enemy.entityType}! Damage: ${damage}`);
-                            this.voxelWorld.bloodMoonSystem.hitEnemy(enemyId, damage);
+                            
+                            const result = this.voxelWorld.unifiedCombat.applyDamage(
+                                enemy.sprite, 
+                                damage, 
+                                'player'
+                            );
 
-                            // ⚔️ Show player attack pose
-                            if (this.voxelWorld.playerCompanionUI) {
-                                this.voxelWorld.playerCompanionUI.updatePlayerPose('attack');
-                                setTimeout(() => {
-                                    this.voxelWorld.playerCompanionUI.updatePlayerPose('default');
-                                }, 300);
+                            if (result.hit) {
+                                // Trigger player attack animation
+                                this.voxelWorld.unifiedCombat.triggerPlayerAttackPose();
+
+                                // Trigger companion combat response if enemy still alive
+                                if (!result.killed) {
+                                    this.voxelWorld.unifiedCombat.triggerCompanionResponse(enemy.sprite, damage);
+                                }
+
+                                // Apply special weapon effects (fire, ice, etc.)
+                                this.applyWeaponEffect(effectType, enemyPos, enemyId);
+
+                                // Remove projectile and flame particles
+                                this.cleanupProjectile(projectileMesh);
+
+                                return true; // Stop animation
                             }
-
-                            // ⚔️ Trigger companion combat system (player attacked enemy with ranged weapon)
-                            if (this.voxelWorld.companionCombatSystem) {
-                                this.voxelWorld.companionCombatSystem.onPlayerAttack(enemy, damage);
-                            }
-
-                            // Apply special effects
-                            this.applyWeaponEffect(effectType, enemyPos, enemyId);
-
-                            // Remove projectile and flame particles
-                            this.cleanupProjectile(projectileMesh);
-
-                            return true; // Stop animation
                         }
                     }
                 }
                 
                 // Check for colored ghost collision
+                // NOW USING UNIFIED COMBAT SYSTEM
                 if (this.voxelWorld.spectralHuntSystem?.coloredGhostSystem && progress > 0.1) {
                     const projectilePos = new THREE.Vector3(currentPos.x, currentPos.y, currentPos.z);
                     const coloredGhostSystem = this.voxelWorld.spectralHuntSystem.coloredGhostSystem;
@@ -900,38 +913,29 @@ export class CraftedTools {
                         const distance = projectilePos.distanceTo(ghostPos);
 
                         if (distance < 1.5) {
-                            // HIT GHOST!
+                            // HIT GHOST! Use unified combat system
                             console.log(`🎯 ${weaponType} hit ${ghostData.color.name} ghost! Damage: ${damage}`);
                             
-                            // ⚔️ Show player attack pose
-                            if (this.voxelWorld.playerCompanionUI) {
-                                this.voxelWorld.playerCompanionUI.updatePlayerPose('attack');
-                                setTimeout(() => {
-                                    this.voxelWorld.playerCompanionUI.updatePlayerPose('default');
-                                }, 300);
+                            const result = this.voxelWorld.unifiedCombat.applyDamage(
+                                ghostData.sprite, 
+                                damage, 
+                                'player'
+                            );
+
+                            if (result.hit) {
+                                // Trigger player attack animation
+                                this.voxelWorld.unifiedCombat.triggerPlayerAttackPose();
+
+                                // Trigger companion combat response if ghost still alive
+                                if (!result.killed) {
+                                    this.voxelWorld.unifiedCombat.triggerCompanionResponse(ghostData.sprite, damage);
+                                }
+
+                                // Remove projectile
+                                this.cleanupProjectile(projectileMesh);
+
+                                return true; // Stop animation
                             }
-
-                            // Apply damage
-                            ghostData.hp = (ghostData.hp || 5) - damage;
-                            this.voxelWorld.createExplosionEffect(ghostPos.x, ghostPos.y, ghostPos.z, 'hit');
-
-                            if (ghostData.hp <= 0) {
-                                this.voxelWorld.updateStatus(`👻 Defeated ${ghostData.color.name} ghost!`, 'combat');
-                                ghostData.isDead = true;
-                                coloredGhostSystem.removeGhost(ghostId);
-                            } else {
-                                this.voxelWorld.updateStatus(`👻 Hit ${ghostData.color.name} ghost for ${damage} damage! (${ghostData.hp}/5 HP)`, 'combat');
-                            }
-
-                            // ⚔️ Trigger companion combat system
-                            if (this.voxelWorld.companionCombatSystem && !ghostData.isDead) {
-                                this.voxelWorld.companionCombatSystem.onPlayerAttack({ position: ghostPos, userData: { hp: ghostData.hp, maxHp: 5 } }, damage);
-                            }
-
-                            // Remove projectile
-                            this.cleanupProjectile(projectileMesh);
-
-                            return true; // Stop animation
                         }
                     }
                 }
@@ -1137,30 +1141,29 @@ export class CraftedTools {
             const distance = attackPos.distanceTo(enemyPos);
 
             if (distance < range) {
-                // HIT!
+                // HIT! NOW USING UNIFIED COMBAT SYSTEM
                 console.log(`⚔️ Melee hit ${enemy.entityType}! Damage: ${damage}, Range: ${range}`);
-                this.voxelWorld.bloodMoonSystem.hitEnemy(enemyId, damage);
+                
+                const result = this.voxelWorld.unifiedCombat.applyDamage(
+                    enemy.sprite, 
+                    damage, 
+                    'player'
+                );
 
-                // Create impact effect at enemy position
-                this.voxelWorld.createExplosionEffect(enemyPos.x, enemyPos.y, enemyPos.z, 'hit');
+                if (result.hit) {
+                    // Trigger player attack animation
+                    this.voxelWorld.unifiedCombat.triggerPlayerAttackPose();
 
-                // ⚔️ Show player attack pose
-                if (this.voxelWorld.playerCompanionUI) {
-                    this.voxelWorld.playerCompanionUI.updatePlayerPose('attack');
-                    setTimeout(() => {
-                        this.voxelWorld.playerCompanionUI.updatePlayerPose('default');
-                    }, 300);
+                    // Trigger companion combat response if enemy still alive
+                    if (!result.killed) {
+                        this.voxelWorld.unifiedCombat.triggerCompanionResponse(enemy.sprite, damage);
+                    }
+
+                    hitAny = true;
+
+                    // For single-target attacks, only hit one enemy
+                    if (range < 2) break;
                 }
-
-                // ⚔️ Trigger companion combat system (player attacked enemy)
-                if (this.voxelWorld.companionCombatSystem) {
-                    this.voxelWorld.companionCombatSystem.onPlayerAttack(enemy, damage);
-                }
-
-                hitAny = true;
-
-                // For single-target attacks, only hit one enemy
-                if (range < 2) break;
             }
         }
 

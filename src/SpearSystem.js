@@ -210,6 +210,7 @@ export class SpearSystem {
                 }
                 
                 // 🩸 Check for blood moon enemy collision during flight
+                // NOW USING UNIFIED COMBAT SYSTEM
                 if (this.voxelWorld.bloodMoonSystem && progress > 0.1) {
                     const spearPos = new THREE.Vector3(currentPos.x, currentPos.y, currentPos.z);
                     const enemies = this.voxelWorld.bloodMoonSystem.activeEnemies;
@@ -220,9 +221,25 @@ export class SpearSystem {
                         const enemyPos = enemy.sprite.position;
                         const distance = spearPos.distanceTo(enemyPos);
                         if (distance < 1.5) { // Hit detection range
-                            // HIT!
+                            // HIT! Use unified combat system
                             console.log(`🎯 Spear hit ${enemy.entityType}!`);
-                            this.voxelWorld.bloodMoonSystem.hitEnemy(enemyId, 1);
+                            
+                            const damage = this.voxelWorld.unifiedCombat.getWeaponDamage('spear');
+                            const result = this.voxelWorld.unifiedCombat.applyDamage(
+                                enemy.sprite, 
+                                damage, 
+                                'player'
+                            );
+                            
+                            if (result.hit) {
+                                // Trigger player attack animation
+                                this.voxelWorld.unifiedCombat.triggerPlayerAttackPose();
+
+                                // Trigger companion combat response if enemy still alive
+                                if (!result.killed) {
+                                    this.voxelWorld.unifiedCombat.triggerCompanionResponse(enemy.sprite, damage);
+                                }
+                            }
                             
                             // Stop animation early, spear lands where enemy was
                             this.stickSpearInGround(spearMesh, {

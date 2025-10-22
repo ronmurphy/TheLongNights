@@ -28,9 +28,8 @@ import { BlockOutlineSystem } from './BlockOutlineSystem.js';
 import { AtmosphericFog } from './AtmosphericFog.js';
 import { WeatherSystem } from './WeatherSystem.js';
 import { WeatherCycleSystem } from './WeatherCycleSystem.js';
-// import { BattleSystem } from './BattleSystem.js'; // DISABLED: Replaced with CompanionCombatSystem
-// import { BattleArena } from './BattleArena.js'; // DISABLED: Replaced with CompanionCombatSystem
 import { CompanionCombatSystem } from './CompanionCombatSystem.js';
+import { UnifiedCombatSystem } from './UnifiedCombatSystem.js';
 import { RPGIntegration } from './rpg/RPGIntegration.js';
 import { CompanionCodex } from './ui/CompanionCodex.js';
 import { CompanionPortrait } from './ui/CompanionPortrait.js';
@@ -199,6 +198,20 @@ class NebulaVoxelApp {
         };
 
         // ⚔️ Get attack damage based on equipped weapon or bare hands
+        // NOW USING UNIFIED COMBAT SYSTEM
+        this.getAttackDamage = (selectedSlot) => {
+            if (!this.unifiedCombat) {
+                // Fallback during initialization
+                return 1;
+            }
+            
+            const weaponType = selectedSlot?.itemType || 'bare_hands';
+            return this.unifiedCombat.getWeaponDamage(weaponType);
+        };
+        
+        // Keep old implementation commented for reference
+        /*
+        OLD IMPLEMENTATION - REPLACED BY UNIFIED COMBAT SYSTEM
         this.getAttackDamage = (selectedSlot) => {
             if (!selectedSlot || !selectedSlot.itemType) {
                 return 1; // Bare-handed punch = 1 damage
@@ -215,38 +228,12 @@ class NebulaVoxelApp {
                 'crafted_tree_feller': 4,
                 'machete': 2,
                 'crafted_machete': 2,
-                'combat_sword': 4,
-                'crafted_combat_sword': 4,
-                'war_hammer': 5,
-                'crafted_war_hammer': 5,
-                'battle_axe': 4,
-                'crafted_battle_axe': 4,
-                'stone_spear': 4,
-                'crafted_stone_spear': 4,
-                'club': 3,
-                'crafted_club': 3,
-                
-                // Ranged weapons
-                'crossbow': 2,
-                'crafted_crossbow': 2,
-                'ice_bow': 2,
-                'crafted_ice_bow': 2,
-                'fire_staff': 3,
-                'crafted_fire_staff': 3,
-                'throwing_knives': 1,
-                'crafted_throwing_knives': 1,
-                
-                // Tools that can be used as weapons
-                'pickaxe': 2,
-                'crafted_pickaxe': 2,
-                'mining_pick': 2,
-                'crafted_mining_pick': 2,
-                'torch': 1,
-                'crafted_torch': 1,
+                // ... (other weapons omitted for brevity)
             };
             
             return weaponDamage[weapon] || 1; // Default to 1 damage if not a weapon
         };
+        */
 
         this.container = container;
         this.controlsEnabled = true;
@@ -466,11 +453,8 @@ class NebulaVoxelApp {
         // 🌫️ Initialize Atmospheric Fog System (volumetric fog during night/blood moon)
         this.atmosphericFog = null;
 
-        // ⚔️ Initialize Battle System (Pokemon-style auto-battler) - DISABLED
-        this.battleSystem = null; // Kept for compatibility with AngryGhostSystem
-
-        // 🏟️ Initialize Battle Arena (3D arena combat) - DISABLED
-        this.battleArena = null; // Replaced with CompanionCombatSystem
+        // ⚔️ Initialize Unified Combat System (centralized damage handling for all weapons/enemies)
+        this.unifiedCombat = null;
 
         // ⚔️ Initialize Companion Combat System (player-driven combat with companion support)
         this.companionCombatSystem = null;
@@ -8623,16 +8607,14 @@ class NebulaVoxelApp {
 
         // ⚔️ Initialize Battle System now that scene is ready - DISABLED (kept for AngryGhostSystem compatibility)
         // this.battleSystem = new BattleSystem(this);
-        this.battleSystem = { startBattle: () => console.log('⚠️ Old battle system disabled, use companion combat') }; // Stub for compatibility
+        // ⚔️ Initialize Unified Combat System (centralized damage for all weapons/enemies)
+        this.unifiedCombat = new UnifiedCombatSystem(this);
 
-        // 🏟️ Initialize Battle Arena now that scene is ready - DISABLED
-        // this.battleArena = new BattleArena(this);
-
-        // ⚔️ Initialize Companion Combat System (new active combat system)
+        // ⚔️ Initialize Companion Combat System (companion behavior and abilities)
         this.companionCombatSystem = new CompanionCombatSystem(this);
 
         // 💀 Initialize Angry Ghost System now that scene is ready
-        this.angryGhostSystem = new AngryGhostSystem(this.scene, this.enhancedGraphics, this.battleSystem, this);
+        this.angryGhostSystem = new AngryGhostSystem(this.scene, this.enhancedGraphics, null, this);
 
         // 🩸 Initialize Blood Moon System now that scene is ready
         this.bloodMoonSystem = new BloodMoonSystem(this);
@@ -12194,6 +12176,7 @@ class NebulaVoxelApp {
 
                 if (e.button === 0) { // Left click - harvesting (blocks or crafted objects)
                     // ⚔️ UNIVERSAL ENEMY ATTACK: Check if clicking on any enemy/ghost (works even bare-handed)
+                    // NOW USING UNIFIED COMBAT SYSTEM
                     // Check for BOTH sprites AND meshes (hitboxes have userData too)
                     if (hit.object && (hit.object.isSprite || (hit.object.isMesh && (hit.object.userData.isEnemy || hit.object.userData.isGhost)))) {
                         // Check for Blood Moon enemies
@@ -12202,28 +12185,26 @@ class NebulaVoxelApp {
                                 if (enemy.sprite === hit.object && enemy.health > 0) {
                                     // Clicked on a Blood Moon enemy!
                                     const damage = this.getAttackDamage(this.hotbarSystem.getSelectedSlot());
-                                    this.bloodMoonSystem.hitEnemy(enemyId, damage);
-                                    this.createExplosionEffect(enemy.sprite.position.x, enemy.sprite.position.y, enemy.sprite.position.z, 'hit');
-                                    this.updateStatus(`⚔️ Hit enemy for ${damage} damage!`, 'combat');
                                     
-                                    // Show player attack pose
-                                    if (this.playerCompanionUI) {
-                                        this.playerCompanionUI.updatePlayerPose('attack');
-                                        setTimeout(() => {
-                                            this.playerCompanionUI.updatePlayerPose('default');
-                                        }, 300);
+                                    // Use unified combat system to apply damage
+                                    const result = this.unifiedCombat.applyDamage(enemy.sprite, damage, 'player');
+                                    
+                                    if (result.hit) {
+                                        // Trigger animations and companion response
+                                        this.unifiedCombat.triggerPlayerAttackPose();
+                                        
+                                        if (!result.killed) {
+                                            this.unifiedCombat.triggerCompanionResponse(enemy.sprite, damage);
+                                        }
                                     }
                                     
-                                    // Trigger companion combat
-                                    if (this.companionCombatSystem) {
-                                        this.companionCombatSystem.onPlayerAttack(enemy, damage);
-                                    }
                                     return; // Don't continue to block harvesting
                                 }
                             }
                         }
                         
                         // Check for colored ghosts (SpectralHuntSystem -> ColoredGhostSystem)
+                        // NOW USING UNIFIED COMBAT SYSTEM
                         if (this.spectralHuntSystem && this.spectralHuntSystem.coloredGhostSystem) {
                             const coloredGhostSystem = this.spectralHuntSystem.coloredGhostSystem;
                             for (const [ghostId, ghostData] of coloredGhostSystem.ghosts) {
@@ -12233,37 +12214,18 @@ class NebulaVoxelApp {
                                     // Clicked on a colored ghost (sprite or hitbox)!
                                     const damage = this.getAttackDamage(this.hotbarSystem.getSelectedSlot());
                                     
-                                    // Show player attack pose
-                                    if (this.playerCompanionUI) {
-                                        this.playerCompanionUI.updatePlayerPose('attack');
-                                        setTimeout(() => {
-                                            this.playerCompanionUI.updatePlayerPose('default');
-                                        }, 300);
-                                    }
+                                    // Use unified combat system to apply damage
+                                    const result = this.unifiedCombat.applyDamage(ghostData.sprite, damage, 'player');
                                     
-                                    // Colored ghosts have HP in SpectralHuntSystem
-                                    // Find matching ghost in spectralHuntSystem
-                                    let defeated = false;
-                                    coloredGhostSystem.ghosts.forEach((ghost, id) => {
-                                        if (id === ghostId) {
-                                            ghost.hp = (ghost.hp || ghost.maxHp || 5) - damage;
-                                            this.createExplosionEffect(ghost.sprite.position.x, ghost.sprite.position.y, ghost.sprite.position.z, 'hit');
-                                            
-                                            if (ghost.hp <= 0) {
-                                                this.updateStatus(`👻 Defeated ${ghost.color.name} ghost!`, 'combat');
-                                                ghost.isDead = true;
-                                                coloredGhostSystem.removeGhost(ghostId);
-                                                defeated = true;
-                                            } else {
-                                                this.updateStatus(`👻 Hit ${ghost.color.name} ghost for ${damage} damage! (${ghost.hp}/${ghost.maxHp || 5} HP)`, 'combat');
-                                            }
+                                    if (result.hit) {
+                                        // Trigger animations and companion response
+                                        this.unifiedCombat.triggerPlayerAttackPose();
+                                        
+                                        if (!result.killed) {
+                                            this.unifiedCombat.triggerCompanionResponse(ghostData.sprite, damage);
                                         }
-                                    });
-                                    
-                                    // Trigger companion combat
-                                    if (this.companionCombatSystem && !defeated) {
-                                        this.companionCombatSystem.onPlayerAttack({ position: ghostData.sprite.position, userData: { hp: ghostData.hp, maxHp: ghostData.maxHp || 5 } }, damage);
                                     }
+                                    
                                     return; // Don't continue to block harvesting
                                 }
                             }
@@ -12295,26 +12257,10 @@ class NebulaVoxelApp {
                     // 🧪 HEALING POTION: Smart targeting system
                     const selectedSlot = this.hotbarSystem.getSelectedSlot();
                     if (selectedSlot && (selectedSlot.itemType === 'healing_potion' || selectedSlot.itemType === 'crafted_healing_potion')) {
-                        // Check if targeting companion sprite in battle
-                        if (this.battleArena && this.battleArena.isActive && this.battleArena.companionSprite) {
-                            // Check if raycaster hit the companion sprite
-                            if (hit.object === this.battleArena.companionSprite.sprite ||
-                                hit.object === this.battleArena.companionSprite.hpBarSprite) {
-                                // Heal companion
-                                const healAmount = 10; // Heal 10 HP
-                                const newHP = Math.min(this.battleArena.companionSprite.maxHP, 
-                                                      this.battleArena.companionSprite.currentHP + healAmount);
-                                this.battleArena.companionSprite.updateHP(newHP);
-                                this.updateStatus(`🧪 Healed ${this.battleArena.companionSprite.name} for ${healAmount} HP!`, 'discovery');
-                                console.log(`🧪 Healing potion used on companion: ${healAmount} HP restored`);
-                                
-                                // Consume charge
-                                this.hotbarSystem.removeFromSlot(this.hotbarSystem.selectedSlotIndex, 1);
-                                return;
-                            }
-                        }
+                        // OLD: Companion battle arena healing - DISABLED (arena system removed)
+                        // Now companions use overworld combat system
                         
-                        // Otherwise, heal player (if not at full HP)
+                        // Heal player (if not at full HP)
                         if (this.playerHP && this.playerHP.currentHP < this.playerHP.maxHP) {
                             // 💔 Smart healing: If odd HP (broken heart), heal just 1 HP to complete the heart
                             const isOddHP = (this.playerHP.currentHP % 2) === 1;
@@ -14751,7 +14697,7 @@ class NebulaVoxelApp {
             console.log('  voxelWorld.getLODStats() - Get LOD stats');
             console.log('  voxelWorld.openTutorialEditor() - Open tutorial editor');
         }
-    }
+    } // End of constructor
 
     // 🎨 LOD SYSTEM - Debug convenience methods
     toggleLOD() {

@@ -262,6 +262,7 @@ export class SpectralHuntSystem {
     
     /**
      * Explode a demolition charge (with bedrock protection)
+     * NOW USES UNIFIED COMBAT SYSTEM FOR ENEMY DAMAGE
      */
     explodeDemolitionCharge(charge, playerPos) {
         const explodePos = charge.position;
@@ -297,6 +298,97 @@ export class SpectralHuntSystem {
                         this.voxelWorld.removeBlock(bx, by, bz);
                     }
                 }
+            }
+        }
+        
+        // 💥 DAMAGE ENEMIES IN BLAST RADIUS (INCLUDING DEMOLITION GHOST ITSELF!)
+        // Uses unified combat system for fair play
+        if (this.voxelWorld.unifiedCombat) {
+            let enemiesHit = 0;
+            
+            // Check Blood Moon enemies
+            if (this.voxelWorld.bloodMoonSystem?.activeEnemies) {
+                for (const [enemyId, enemy] of this.voxelWorld.bloodMoonSystem.activeEnemies) {
+                    if (enemy.health <= 0) continue;
+                    
+                    const enemyPos = enemy.sprite.position;
+                    const distance = explodePos.distanceTo(enemyPos);
+                    
+                    if (distance <= radius + 1) {
+                        // Calculate falloff damage (full at center, reduced at edge)
+                        const damagePercent = 1.0 - (distance / (radius + 1));
+                        const damage = Math.max(1, Math.ceil(3 * damagePercent));
+                        
+                        const result = this.voxelWorld.unifiedCombat.applyDamage(
+                            enemy.sprite,
+                            damage,
+                            'ghost' // Attacker is the ghost!
+                        );
+                        
+                        if (result.hit) {
+                            enemiesHit++;
+                            console.log(`💥 Ghost's demolition charge hit ${enemy.entityType} for ${damage} damage!`);
+                        }
+                    }
+                }
+            }
+            
+            // Check colored ghosts (including the demolition ghost itself!)
+            if (this.coloredGhostSystem?.ghosts) {
+                for (const [ghostId, ghostData] of this.coloredGhostSystem.ghosts) {
+                    if (ghostData.isDead) continue;
+                    
+                    const ghostPos = ghostData.sprite.position;
+                    const distance = explodePos.distanceTo(ghostPos);
+                    
+                    if (distance <= radius + 1) {
+                        // Calculate falloff damage
+                        const damagePercent = 1.0 - (distance / (radius + 1));
+                        const damage = Math.max(1, Math.ceil(3 * damagePercent));
+                        
+                        const result = this.voxelWorld.unifiedCombat.applyDamage(
+                            ghostData.sprite,
+                            damage,
+                            'ghost'
+                        );
+                        
+                        if (result.hit) {
+                            enemiesHit++;
+                            console.log(`💥 Ghost's demolition charge hit ${ghostData.color.name} ghost for ${damage} damage!`);
+                        }
+                    }
+                }
+            }
+            
+            // Check the demolition ghost itself (can blow itself up!)
+            if (this.demolitionGhost?.isAlive) {
+                const ghostPos = this.demolitionGhost.sprite.position;
+                const distance = explodePos.distanceTo(ghostPos);
+                
+                if (distance <= radius + 1) {
+                    // Calculate falloff damage
+                    const damagePercent = 1.0 - (distance / (radius + 1));
+                    const damage = Math.max(1, Math.ceil(3 * damagePercent));
+                    
+                    // Apply damage to self!
+                    this.demolitionGhost.health -= damage;
+                    this.voxelWorld.createExplosionEffect(ghostPos.x, ghostPos.y, ghostPos.z, 'hit');
+                    
+                    console.log(`💥💣 Demolition ghost hit itself for ${damage} damage! (${this.demolitionGhost.health}/${this.demolitionGhost.maxHealth} HP)`);
+                    
+                    if (this.demolitionGhost.health <= 0) {
+                        console.log('💀💣 Demolition ghost killed itself with its own charge!');
+                        this.demolitionGhost.isAlive = false;
+                        this.scene.remove(this.demolitionGhost.sprite);
+                        this.voxelWorld.updateStatus('💣👻 Demolition ghost destroyed itself!', 'victory');
+                    }
+                    
+                    enemiesHit++;
+                }
+            }
+            
+            if (enemiesHit > 0) {
+                this.voxelWorld.updateStatus(`💥 Ghost's charge hit ${enemiesHit} targets!`, 'combat');
             }
         }
         
