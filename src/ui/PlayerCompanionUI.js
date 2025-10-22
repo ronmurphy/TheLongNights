@@ -14,6 +14,10 @@ export class PlayerCompanionUI {
 
         // Sprite cache
         this.spriteCache = {};
+        
+        // Pose animation timeouts
+        this.playerPoseTimeout = null;
+        this.companionPoseTimeout = null;
 
         this.init();
     }
@@ -38,6 +42,7 @@ export class PlayerCompanionUI {
     createPanel(type, side) {
         const panel = document.createElement('div');
         panel.className = `character-panel ${type}-panel`;
+        panel.id = `${type}-panel`; // Add ID for DOM queries (used by projectile system)
 
         // Position based on side
         const leftPos = side === 'left' ? '20px' : 'auto';
@@ -291,60 +296,194 @@ export class PlayerCompanionUI {
     /**
      * Update companion sprite pose (for combat animations)
      * @param {string} pose - 'default', 'attack', or 'ready'
+     * @param {boolean} startSequence - If true, starts full attack sequence (default→ready→attack→default)
      */
-    updateCompanionPose(pose) {
+    updateCompanionPose(pose, startSequence = false) {
         if (!this.currentCompanionData || !this.companionAvatar) return;
         
         const { race, gender } = this.currentCompanionData;
-        // Default pose has no suffix, attack/ready have _attack/_ready
+        
+        // Clear any existing pose timeout
+        if (this.companionPoseTimeout) {
+            clearTimeout(this.companionPoseTimeout);
+            this.companionPoseTimeout = null;
+        }
+        
+        // If starting full attack sequence, begin the cinematic flow
+        if (startSequence && pose === 'attack') {
+            console.log(`� Starting companion attack sequence...`);
+            // Step 1: Default pose (already showing, hold for 3 seconds)
+            this.companionPoseTimeout = setTimeout(() => {
+                // Step 2: Ready pose (hold for 2 seconds)
+                this._setCompanionSprite('ready', false);
+                this.companionPoseTimeout = setTimeout(() => {
+                    // Step 3: Attack pose (hold for 2 seconds)
+                    this._setCompanionSprite('attack', false);
+                    this.companionPoseTimeout = setTimeout(() => {
+                        // Step 4: Fade back to default
+                        this._setCompanionSprite('default', true); // Use fade for final transition
+                    }, 2000); // 2s attack hold
+                }, 2000); // 2s ready hold
+            }, 3000); // 3s default hold
+            return;
+        }
+        
+        // Direct pose change (no sequence)
+        const shouldFade = pose === 'default'; // Only fade when returning to default
+        this._setCompanionSprite(pose, shouldFade);
+    }
+    
+    /**
+     * Internal method to set companion sprite
+     * @param {string} pose - 'default', 'attack', or 'ready'
+     * @param {boolean} useFade - Whether to use fade transition
+     */
+    _setCompanionSprite(pose, useFade = false) {
+        if (!this.currentCompanionData || !this.companionAvatar) return;
+        
+        const { race, gender } = this.currentCompanionData;
         const spritePath = pose === 'default' 
             ? `art/player_avatars/${race}_${gender}.png`
             : `art/player_avatars/${race}_${gender}_${pose}.png`;
         
-        console.log(`🎨 Companion pose update requested: ${pose} (${spritePath})`);
+        console.log(`🎨 Companion pose: ${pose} (fade: ${useFade}) (${spritePath})`);
         
-        // Force browser to reload image by clearing src first, then setting new one
-        // This ensures visual update even if it's the same image file
-        this.companionAvatar.src = '';
-        
-        // Use requestAnimationFrame to ensure DOM updates between clearing and setting
-        requestAnimationFrame(() => {
-            if (this.spriteCache[spritePath]) {
-                this.companionAvatar.src = this.spriteCache[spritePath];
-            } else {
-                this.loadSprite(spritePath, this.companionAvatar);
-            }
-        });
+        if (useFade) {
+            // Fade transition (for returning to default)
+            this.companionAvatar.style.transition = 'opacity 0.3s ease-in-out';
+            this.companionAvatar.style.opacity = '0';
+            
+            setTimeout(() => {
+                this._loadSprite(spritePath, pose, () => {
+                    this.companionAvatar.style.opacity = '1';
+                });
+            }, 300);
+        } else {
+            // Direct load (no fade, for ready→attack transitions)
+            this._loadSprite(spritePath, pose);
+        }
+    }
+    
+    /**
+     * Load sprite helper
+     * @param {string} spritePath - Path to sprite
+     * @param {string} pose - Pose name for logging
+     * @param {function} callback - Optional callback after load
+     */
+    _loadSprite(spritePath, pose, callback) {
+        const img = new Image();
+        img.onload = () => {
+            this.companionAvatar.src = spritePath;
+            this.spriteCache[spritePath] = spritePath;
+            console.log(`✅ Companion sprite loaded: ${pose}`);
+            if (callback) callback();
+        };
+        img.onerror = () => {
+            const { race, gender } = this.currentCompanionData;
+            const defaultPath = `art/player_avatars/${race}_${gender}.png`;
+            console.warn(`⚠️ Sprite not found: ${spritePath}, using default`);
+            this.companionAvatar.src = this.spriteCache[defaultPath] || defaultPath;
+            if (callback) callback();
+        };
+        img.src = spritePath + '?t=' + Date.now();
     }
 
     /**
      * Update player sprite pose (for combat animations)
      * @param {string} pose - 'default', 'attack', or 'ready'
+     * @param {boolean} startSequence - If true, starts full attack sequence (default→ready→attack→default)
      */
-    updatePlayerPose(pose) {
+    updatePlayerPose(pose, startSequence = false) {
         if (!this.voxelWorld.playerCharacter || !this.playerAvatar) return;
         
         const race = this.voxelWorld.playerCharacter.race || 'human';
         const gender = this.voxelWorld.playerCharacter.gender || 'male';
-        // Default pose has no suffix, attack/ready have _attack/_ready
+        
+        // Clear any existing pose timeout
+        if (this.playerPoseTimeout) {
+            clearTimeout(this.playerPoseTimeout);
+            this.playerPoseTimeout = null;
+        }
+        
+        // If starting full attack sequence, begin the cinematic flow
+        if (startSequence && pose === 'attack') {
+            console.log(`🎬 Starting player attack sequence...`);
+            // Step 1: Default pose (already showing, hold for 3 seconds)
+            this.playerPoseTimeout = setTimeout(() => {
+                // Step 2: Ready pose (hold for 2 seconds)
+                this._setPlayerSprite('ready', false);
+                this.playerPoseTimeout = setTimeout(() => {
+                    // Step 3: Attack pose (hold for 2 seconds)
+                    this._setPlayerSprite('attack', false);
+                    this.playerPoseTimeout = setTimeout(() => {
+                        // Step 4: Fade back to default
+                        this._setPlayerSprite('default', true); // Use fade for final transition
+                    }, 2000); // 2s attack hold
+                }, 2000); // 2s ready hold
+            }, 3000); // 3s default hold
+            return;
+        }
+        
+        // Direct pose change (no sequence)
+        const shouldFade = pose === 'default'; // Only fade when returning to default
+        this._setPlayerSprite(pose, shouldFade);
+    }
+    
+    /**
+     * Internal method to set player sprite
+     * @param {string} pose - 'default', 'attack', or 'ready'
+     * @param {boolean} useFade - Whether to use fade transition
+     */
+    _setPlayerSprite(pose, useFade = false) {
+        if (!this.voxelWorld.playerCharacter || !this.playerAvatar) return;
+        
+        const race = this.voxelWorld.playerCharacter.race || 'human';
+        const gender = this.voxelWorld.playerCharacter.gender || 'male';
         const spritePath = pose === 'default' 
             ? `art/player_avatars/${race}_${gender}.png`
             : `art/player_avatars/${race}_${gender}_${pose}.png`;
         
-        console.log(`🎨 Player pose update requested: ${pose} (${spritePath})`);
+        console.log(`🎨 Player pose: ${pose} (fade: ${useFade}) (${spritePath})`);
         
-        // Force browser to reload image by clearing src first, then setting new one
-        // This ensures visual update even if it's the same image file
-        this.playerAvatar.src = '';
-        
-        // Use requestAnimationFrame to ensure DOM updates between clearing and setting
-        requestAnimationFrame(() => {
-            if (this.spriteCache[spritePath]) {
-                this.playerAvatar.src = this.spriteCache[spritePath];
-            } else {
-                this.loadSprite(spritePath, this.playerAvatar);
-            }
-        });
+        if (useFade) {
+            // Fade transition (for returning to default)
+            this.playerAvatar.style.transition = 'opacity 0.3s ease-in-out';
+            this.playerAvatar.style.opacity = '0';
+            
+            setTimeout(() => {
+                this._loadPlayerSprite(spritePath, pose, () => {
+                    this.playerAvatar.style.opacity = '1';
+                });
+            }, 300);
+        } else {
+            // Direct load (no fade, for ready→attack transitions)
+            this._loadPlayerSprite(spritePath, pose);
+        }
+    }
+    
+    /**
+     * Load player sprite helper
+     * @param {string} spritePath - Path to sprite
+     * @param {string} pose - Pose name for logging
+     * @param {function} callback - Optional callback after load
+     */
+    _loadPlayerSprite(spritePath, pose, callback) {
+        const img = new Image();
+        img.onload = () => {
+            this.playerAvatar.src = spritePath;
+            this.spriteCache[spritePath] = spritePath;
+            console.log(`✅ Player sprite loaded: ${pose}`);
+            if (callback) callback();
+        };
+        img.onerror = () => {
+            const race = this.voxelWorld.playerCharacter.race || 'human';
+            const gender = this.voxelWorld.playerCharacter.gender || 'male';
+            const defaultPath = `art/player_avatars/${race}_${gender}.png`;
+            console.warn(`⚠️ Sprite not found: ${spritePath}, using default`);
+            this.playerAvatar.src = this.spriteCache[defaultPath] || defaultPath;
+            if (callback) callback();
+        };
+        img.src = spritePath + '?t=' + Date.now();
     }
 
     /**

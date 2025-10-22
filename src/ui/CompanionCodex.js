@@ -512,8 +512,17 @@ export class CompanionCodex {
      * @returns {object} Stats object with hp, attack, defense, speed
      */
     calculateStats(companionId) {
+        // Safety check: Ensure allCompanions is loaded
+        if (!this.allCompanions) {
+            console.warn(`⚠️ calculateStats: allCompanions not loaded yet`);
+            return { hp: 10, attack: 2, defense: 1, speed: 1 }; // Default stats
+        }
+        
         const companion = this.allCompanions[companionId];
-        if (!companion) return null;
+        if (!companion) {
+            console.warn(`⚠️ calculateStats: Companion ${companionId} not found in allCompanions`);
+            return { hp: 10, attack: 2, defense: 1, speed: 1 }; // Default stats
+        }
 
         const equipment = this.companionEquipment[companionId] || { head: null, body: null, weapon: null, accessory: null };
         const stats = {

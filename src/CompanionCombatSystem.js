@@ -25,6 +25,10 @@ export class CompanionCombatSystem {
         this.companionPose = 'default'; // 'default', 'attack', 'ready'
         this.supportCooldown = 0;
         
+        // Debug logging throttle
+        this.lastDebugLog = 0;
+        this.debugLogInterval = 2000; // Log every 2 seconds
+        
         // Default weapons per race (matching sprite artwork)
         this.defaultWeapons = {
             // Dwarf
@@ -104,6 +108,15 @@ export class CompanionCombatSystem {
     }
     
     /**
+     * Get active companion ID from playerData
+     * @returns {string|null} Companion ID (e.g., "elf_female") or null
+     */
+    getActiveCompanionId() {
+        const playerData = JSON.parse(localStorage.getItem('NebulaWorld_playerData') || '{}');
+        return playerData.activeCompanion || playerData.starterMonster || null;
+    }
+    
+    /**
      * Update combat system (called every frame)
      * @param {number} deltaTime - Time since last frame
      */
@@ -138,17 +151,32 @@ export class CompanionCombatSystem {
      * @returns {boolean}
      */
     shouldCompanionJoinCombat() {
-        // Must have active companion
-        if (!this.voxelWorld.companionCodex?.activeCompanion) return false;
+        // Get active companion
+        const companionId = this.getActiveCompanionId();
+        
+        if (!companionId) {
+            return false;
+        }
         
         // Companion is exploring (not home)
         const companionStatus = this.voxelWorld.companionPortrait?.companionStatus;
-        if (companionStatus === 'exploring') return false;
+        if (companionStatus === 'exploring') {
+            return false;
+        }
         
-        // Check if player is in active combat with Blood Moon enemies
-        const hasNearbyEnemies = this.getNearbyEnemies().length > 0;
+        // Check if player recently hit an enemy (within last 2 seconds)
+        const lastEnemyHit = this.voxelWorld.unifiedCombat?.lastEnemyHit;
+        if (!lastEnemyHit) return false;
         
-        return hasNearbyEnemies;
+        const timeSinceHit = Date.now() - lastEnemyHit.timestamp;
+        const isRecentHit = timeSinceHit < 2000; // 2 second window (fast response)
+        
+        // Check if enemy still exists and has HP
+        const enemyStillAlive = lastEnemyHit.target && 
+                               lastEnemyHit.target.userData && 
+                               (lastEnemyHit.target.userData.hp || 0) > 0;
+        
+        return isRecentHit && enemyStillAlive;
     }
     
     /**
@@ -159,13 +187,15 @@ export class CompanionCombatSystem {
         this.combatStartTime = Date.now();
         this.companionPose = 'ready';
         
-        const companionId = this.voxelWorld.companionCodex?.activeCompanion;
+        const companionId = this.getActiveCompanionId();
         if (companionId) {
             const race = companionId.split('_')[0]; // Extract race from "elf_male"
             this.voxelWorld.updateStatus(`⚔️ ${this.capitalize(race)} companion joins the fight!`, 'combat');
             
-            // Update companion portrait to show ready pose
-            this.updateCompanionSprite('ready');
+            console.log(`🎬 Companion (${companionId}) entering combat - starting attack sequence`);
+            
+            // Start cinematic attack sequence immediately when entering combat
+            this.updateCompanionSprite('attack', true); // true = start full sequence
         }
     }
     
@@ -188,16 +218,26 @@ export class CompanionCombatSystem {
      * @param {number} deltaTime - Time since last frame
      */
     updateCompanionCombat(deltaTime) {
-        const enemies = this.getNearbyEnemies();
+        // Get the last enemy player hit
+        const lastEnemyHit = this.voxelWorld.unifiedCombat?.lastEnemyHit;
         
-        // Leave combat if no enemies nearby
-        if (enemies.length === 0) {
+        // Leave combat if no recent enemy target or enemy is dead
+        if (!lastEnemyHit || !lastEnemyHit.target) {
+            this.leaveCombat();
+            return;
+        }
+        
+        const timeSinceHit = Date.now() - lastEnemyHit.timestamp;
+        const enemyAlive = (lastEnemyHit.target.userData?.hp || 0) > 0;
+        
+        // Leave combat if enemy died or too much time passed (2 seconds)
+        if (timeSinceHit > 2000 || !enemyAlive) {
             this.leaveCombat();
             return;
         }
         
         // Attack cooldown based on race speed
-        const companionId = this.voxelWorld.companionCodex?.activeCompanion;
+        const companionId = this.getActiveCompanionId();
         if (!companionId) return;
         
         const race = companionId.split('_')[0];
@@ -206,19 +246,20 @@ export class CompanionCombatSystem {
         
         // Attack when cooldown is ready
         if (this.companionAttackCooldown <= 0) {
-            this.companionAttack(enemies);
+            // Attack the enemy player is fighting
+            this.companionAttack([lastEnemyHit.target]);
             this.companionAttackCooldown = attackInterval;
         }
     }
     
     /**
-     * Companion performs attack
-     * @param {Array} enemies - List of nearby enemies
+     * Companion performs attack on target
+     * @param {Array} targets - Target enemy (as array for compatibility)
      */
-    companionAttack(enemies) {
-        if (enemies.length === 0) return;
+    companionAttack(targets) {
+        if (!targets || targets.length === 0) return;
         
-        const companionId = this.voxelWorld.companionCodex?.activeCompanion;
+        const companionId = this.getActiveCompanionId();
         if (!companionId) return;
         
         const race = companionId.split('_')[0];
@@ -234,18 +275,12 @@ export class CompanionCombatSystem {
         const weaponAttack = weaponData?.attack || 1;
         const totalDamage = Math.floor((baseAttack + weaponAttack) * damageMultiplier);
         
-        // Show attack pose
+        // Start cinematic attack sequence (default→ready→attack→default)
         this.companionPose = 'attack';
-        this.updateCompanionSprite('attack');
+        this.updateCompanionSprite('attack', true); // true = start full sequence
         
-        // Return to ready pose after animation
-        setTimeout(() => {
-            this.companionPose = 'ready';
-            this.updateCompanionSprite('ready');
-        }, 300);
-        
-        // Select target (closest enemy)
-        const target = this.getClosestEnemy(enemies);
+        // Use first target (the one player is attacking)
+        const target = targets[0];
         if (!target) return;
         
         // Apply damage based on weapon type
@@ -303,15 +338,11 @@ export class CompanionCombatSystem {
      * @param {number} damage - Damage amount
      */
     fireCompanionRangedAttack(target, weapon, damage) {
-        const companionId = this.voxelWorld.companionCodex?.activeCompanion;
+        const companionId = this.getActiveCompanionId();
         const race = companionId?.split('_')[0];
         
-        // Get player position as companion position (companion is near player)
-        const startPos = {
-            x: this.voxelWorld.player.position.x,
-            y: this.voxelWorld.player.position.y + 1,
-            z: this.voxelWorld.player.position.z
-        };
+        // Get companion panel position and convert to 3D world coordinates
+        const startPos = this.getCompanionProjectileStart();
         
         const targetPos = {
             x: target.position.x,
@@ -343,6 +374,58 @@ export class CompanionCombatSystem {
         console.log(`🏹 Companion ranged attack: ${weapon} → ${projectileType} projectile`);
         this.voxelWorld.updateStatus(`🏹 ${this.capitalize(race)} fires ${weaponName}!`, 'combat');
     }
+
+    /**
+     * Get 3D world position for companion projectile start
+     * Converts companion panel DOM position to 3D scene coordinates
+     * @returns {object} - {x, y, z} position in 3D world
+     */
+    getCompanionProjectileStart() {
+        // Get companion panel element
+        const companionPanel = document.getElementById('companion-panel');
+        
+        if (!companionPanel) {
+            // Fallback to player position if panel not found
+            return {
+                x: this.voxelWorld.player.position.x,
+                y: this.voxelWorld.player.position.y + 1,
+                z: this.voxelWorld.player.position.z
+            };
+        }
+        
+        // Get panel center position in screen space
+        const rect = companionPanel.getBoundingClientRect();
+        const panelCenterX = rect.left + (rect.width / 2);
+        const panelCenterY = rect.top + (rect.height / 2);
+        
+        // Convert screen coordinates to normalized device coordinates (-1 to +1)
+        const canvas = this.voxelWorld.renderer.domElement;
+        const x = (panelCenterX / canvas.clientWidth) * 2 - 1;
+        const y = -(panelCenterY / canvas.clientHeight) * 2 + 1;
+        
+        // Create raycaster from camera through panel position
+        const raycaster = new THREE.Raycaster();
+        raycaster.setFromCamera(new THREE.Vector2(x, y), this.voxelWorld.camera);
+        
+        // Project from camera position along ray to get 3D position
+        // Use a distance of 5 units from camera (visible in world)
+        const direction = raycaster.ray.direction;
+        const distance = 5;
+        
+        const worldPos = new THREE.Vector3(
+            this.voxelWorld.camera.position.x + direction.x * distance,
+            this.voxelWorld.camera.position.y + direction.y * distance,
+            this.voxelWorld.camera.position.z + direction.z * distance
+        );
+        
+        console.log(`🎯 Companion projectile start: screen(${panelCenterX.toFixed(0)}, ${panelCenterY.toFixed(0)}) → world(${worldPos.x.toFixed(2)}, ${worldPos.y.toFixed(2)}, ${worldPos.z.toFixed(2)})`);
+        
+        return {
+            x: worldPos.x,
+            y: worldPos.y,
+            z: worldPos.z
+        };
+    }
     
     /**
      * Execute melee attack from companion
@@ -351,7 +434,7 @@ export class CompanionCombatSystem {
      * @param {number} damage - Damage amount
      */
     executeCompanionMeleeAttack(target, weapon, damage) {
-        const companionId = this.voxelWorld.companionCodex?.activeCompanion;
+        const companionId = this.getActiveCompanionId();
         const race = companionId?.split('_')[0];
         
         // Melee range check
@@ -382,22 +465,23 @@ export class CompanionCombatSystem {
     }
     
     /**
-     * Damage enemy entity
+     * Damage enemy entity (uses UnifiedCombatSystem)
      * @param {object} enemy - Enemy entity
      * @param {number} damage - Damage amount
      * @param {string} weapon - Weapon used
      */
     damageEnemy(enemy, damage, weapon) {
-        if (!enemy || !enemy.userData) return;
+        if (!enemy) return;
         
-        // Apply damage
-        enemy.userData.hp = (enemy.userData.hp || enemy.userData.maxHp || 10) - damage;
+        // Use UnifiedCombatSystem for consistent damage handling
+        const result = this.voxelWorld.unifiedCombat.applyDamage(enemy, damage, 'companion');
         
-        console.log(`⚔️ Companion dealt ${damage} damage to ${enemy.userData.type || 'enemy'} (HP: ${enemy.userData.hp}/${enemy.userData.maxHp})`);
-        
-        // Check if enemy died
-        if (enemy.userData.hp <= 0) {
-            this.onEnemyKilled(enemy);
+        if (result.hit) {
+            console.log(`⚔️ Companion dealt ${damage} damage to ${result.targetType} (HP: ${result.remainingHP}/${result.maxHP})`);
+            
+            if (result.killed) {
+                this.voxelWorld.updateStatus(`💀 Companion helped defeat enemy!`, 'combat');
+            }
         }
     }
     
@@ -422,7 +506,7 @@ export class CompanionCombatSystem {
         if (this.supportCooldown > 0) return;
         if (!this.companionInCombat) return;
         
-        const companionId = this.voxelWorld.companionCodex?.activeCompanion;
+        const companionId = this.getActiveCompanionId();
         if (!companionId) return;
         
         const race = companionId.split('_')[0];
@@ -568,17 +652,44 @@ export class CompanionCombatSystem {
      * @returns {Array} List of enemy entities
      */
     getNearbyEnemies() {
-        if (!this.voxelWorld.bloodMoonSystem?.enemies) return [];
-        
         const playerPos = this.voxelWorld.player.position;
         const combatRange = 15; // 15 block radius
+        const enemies = [];
         
-        return this.voxelWorld.bloodMoonSystem.enemies.filter(enemy => {
-            if (!enemy || !enemy.position) return false;
+        // Add Blood Moon enemies
+        if (this.voxelWorld.bloodMoonSystem?.enemies) {
+            const bloodMoonEnemies = this.voxelWorld.bloodMoonSystem.enemies.filter(enemy => {
+                if (!enemy || !enemy.position) return false;
+                const distance = playerPos.distanceTo(enemy.position);
+                return distance <= combatRange && (enemy.userData?.hp || 0) > 0;
+            });
+            enemies.push(...bloodMoonEnemies);
+        }
+        
+        // Add colored ghosts
+        if (this.voxelWorld.coloredGhostSystem?.ghosts) {
+            const ghostCount = this.voxelWorld.coloredGhostSystem.ghosts.size;
+            console.log(`👻 Checking ${ghostCount} colored ghosts for nearby enemies...`);
             
-            const distance = playerPos.distanceTo(enemy.position);
-            return distance <= combatRange && (enemy.userData?.hp || 0) > 0;
-        });
+            this.voxelWorld.coloredGhostSystem.ghosts.forEach((ghostData, ghostId) => {
+                if (!ghostData || !ghostData.sprite || !ghostData.sprite.position) {
+                    console.log(`  ⚠️ Ghost ${ghostId}: Invalid data`);
+                    return;
+                }
+                
+                const distance = playerPos.distanceTo(ghostData.sprite.position);
+                const hp = ghostData.sprite.userData?.hp || 0;
+                console.log(`  👻 Ghost ${ghostId}: distance=${distance.toFixed(2)}, hp=${hp}/${ghostData.sprite.userData?.maxHp}`);
+                
+                if (distance <= combatRange && hp > 0) {
+                    enemies.push(ghostData.sprite);
+                    console.log(`    ✅ Added to enemies list!`);
+                }
+            });
+        }
+        
+        console.log(`🔍 Found ${enemies.length} nearby enemies (Blood Moon + Colored Ghosts)`);
+        return enemies;
     }
     
     /**
@@ -722,13 +833,14 @@ export class CompanionCombatSystem {
     }
     
     /**
-     * Update companion sprite in portrait
+     * Update companion sprite UI
      * @param {string} pose - Pose name ('default', 'attack', 'ready')
+     * @param {boolean} startSequence - Whether to start full attack sequence
      */
-    updateCompanionSprite(pose) {
+    updateCompanionSprite(pose, startSequence = false) {
         // Update companion portrait UI to show different pose
         if (this.voxelWorld.playerCompanionUI) {
-            this.voxelWorld.playerCompanionUI.updateCompanionPose(pose);
+            this.voxelWorld.playerCompanionUI.updateCompanionPose(pose, startSequence);
         }
     }
     
@@ -770,7 +882,7 @@ export class CompanionCombatSystem {
         
         // Make companion react with pose animation and delayed attack
         if (this.companionInCombat && enemy) {
-            const companionId = this.voxelWorld.companionCodex?.activeCompanion;
+            const companionId = this.getActiveCompanionId();
             if (companionId) {
                 const race = companionId.split('_')[0];
                 const weapon = this.getCompanionWeapon(companionId);
@@ -788,11 +900,11 @@ export class CompanionCombatSystem {
                 
                 console.log(`⚔️ ${race} companion reacting - attack in ${totalDelay}ms (${isRanged ? 'ranged' : 'melee'})`);
                 
-                // Show ready pose immediately (companion prepares to attack)
-                this.companionPose = 'ready';
-                this.updateCompanionSprite('ready');
+                // Start attack sequence immediately when entering combat
+                this.companionPose = 'attack';
+                this.updateCompanionSprite('attack', true); // Start full cinematic sequence
                 
-                // Delayed attack with attack pose animation
+                // Delayed attack execution (actual damage happens during sequence)
                 setTimeout(() => {
                     // Only attack if companion still in combat and enemy still exists
                     if (this.companionInCombat) {
@@ -803,7 +915,7 @@ export class CompanionCombatSystem {
         }
         
         // Trigger goblin support ability (enemy debuff)
-        const companionId = this.voxelWorld.companionCodex?.activeCompanion;
+        const companionId = this.getActiveCompanionId();
         if (companionId) {
             const race = companionId.split('_')[0];
             if (race === 'goblin' && this.supportCooldown <= 0) {
@@ -824,7 +936,7 @@ export class CompanionCombatSystem {
         }
         
         // Trigger dwarf support ability (defense buff)
-        const companionId = this.voxelWorld.companionCodex?.activeCompanion;
+        const companionId = this.getActiveCompanionId();
         if (companionId) {
             const race = companionId.split('_')[0];
             if (race === 'dwarf' && this.supportCooldown <= 0) {

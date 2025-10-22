@@ -10,6 +10,9 @@ export class UnifiedCombatSystem {
     constructor(voxelWorld) {
         this.voxelWorld = voxelWorld;
         
+        // Last enemy hit by player (for companion targeting)
+        this.lastEnemyHit = null; // {target: sprite, position: {x,y,z}, timestamp: number}
+        
         // Weapon damage table (shared across all combat systems)
         this.weaponDamage = {
             // Bare hands
@@ -94,6 +97,20 @@ export class UnifiedCombatSystem {
             remainingHP: 0,
             maxHP: 0
         };
+        
+        // Store last enemy hit by PLAYER (for companion targeting)
+        if (attackType === 'player' && target && target.position) {
+            this.lastEnemyHit = {
+                target: target,
+                position: {
+                    x: target.position.x,
+                    y: target.position.y,
+                    z: target.position.z
+                },
+                timestamp: Date.now()
+            };
+            console.log(`🎯 Player hit enemy - stored for companion targeting`);
+        }
         
         // Identify target type and apply damage accordingly
         
@@ -228,14 +245,12 @@ export class UnifiedCombatSystem {
     
     /**
      * Trigger player attack pose animation
-     * @param {number} duration - Animation duration in ms (default 300)
+     * Uses cinematic sequence: default(3s)→ready(2s)→attack(2s)→fade to default
      */
-    triggerPlayerAttackPose(duration = 300) {
+    triggerPlayerAttackPose() {
         if (this.voxelWorld.playerCompanionUI) {
-            this.voxelWorld.playerCompanionUI.updatePlayerPose('attack');
-            setTimeout(() => {
-                this.voxelWorld.playerCompanionUI.updatePlayerPose('default');
-            }, duration);
+            // Start full cinematic attack sequence
+            this.voxelWorld.playerCompanionUI.updatePlayerPose('attack', true);
         }
     }
     
