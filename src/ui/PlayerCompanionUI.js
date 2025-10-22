@@ -216,8 +216,14 @@ export class PlayerCompanionUI {
     updatePlayer(playerCharacter) {
         if (!playerCharacter) return;
 
+        // Ensure gender is male or female for sprite loading
+        // (nonbinary/random were converted to male/female during quiz)
+        const spriteGender = (playerCharacter.gender === 'male' || playerCharacter.gender === 'female') 
+            ? playerCharacter.gender 
+            : 'male'; // Fallback to male if somehow invalid
+
         // Update avatar sprite
-        const spritePath = `art/player_avatars/${playerCharacter.race}_${playerCharacter.gender}.png`;
+        const spritePath = `art/player_avatars/${playerCharacter.race}_${spriteGender}.png`;
         this.loadSprite(spritePath, this.playerAvatar);
 
         // Update name with race and level

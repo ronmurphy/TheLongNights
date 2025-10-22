@@ -127,12 +127,15 @@ export class PlayerCharacter {
         const genders = ['male', 'female', 'nonbinary', 'random'];
         const genderChoice = genders[answers.gender];
 
-        if (genderChoice === 'random') {
-            // "Surprise me!" - randomly pick male or female
+        if (genderChoice === 'random' || genderChoice === 'nonbinary') {
+            // "Surprise me!" OR "Nonbinary" - randomly assign male or female sprite
+            // (Keep nonbinary identity in data, but use binary sprite for assets)
             this.gender = Math.random() < 0.5 ? 'male' : 'female';
-            console.log(`  Q5: Random gender → ${this.gender}`);
+            this.identity = genderChoice; // Store original choice for data tracking
+            console.log(`  Q5: ${genderChoice} → using ${this.gender} sprite`);
         } else {
             this.gender = genderChoice;
+            this.identity = genderChoice; // Same as gender for male/female
             console.log(`  Q5: Gender → ${this.gender}`);
         }
 
