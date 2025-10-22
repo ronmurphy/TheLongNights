@@ -142,6 +142,13 @@ export class ColoredGhostSystem {
         sprite.scale.set(this.config.spriteSize, this.config.spriteSize, 1);
         sprite.position.set(spawnPos.x, spawnPos.y, spawnPos.z);
         
+        // Add user data for targeting/outline system
+        sprite.userData.isGhost = true;
+        sprite.userData.isEnemy = true; // Colored ghosts are attackable
+        sprite.userData.type = `${colorData.name}_ghost`;
+        sprite.userData.hp = 5;
+        sprite.userData.maxHp = 5;
+        
         // Get behavior config for this color
         const behaviorConfig = this.config.behaviors[colorData.name] || this.config.behaviors.Red;
         
@@ -149,12 +156,20 @@ export class ColoredGhostSystem {
         const hitboxRadius = behaviorConfig.hitboxRadius || this.config.hitboxRadius;
         const hitboxGeometry = new THREE.SphereGeometry(hitboxRadius, 8, 8);
         const hitboxMaterial = new THREE.MeshBasicMaterial({
-            visible: false, // Invisible collision mesh
+            visible: false, // Invisible visually
             transparent: true,
             opacity: 0
         });
         const hitbox = new THREE.Mesh(hitboxGeometry, hitboxMaterial);
         hitbox.position.copy(sprite.position);
+        
+        // Copy userData to hitbox so raycasting works on either
+        hitbox.userData.isGhost = true;
+        hitbox.userData.isEnemy = true;
+        hitbox.userData.type = `${colorData.name}_ghost`;
+        hitbox.userData.hp = 5;
+        hitbox.userData.maxHp = 5;
+        hitbox.userData.ghostSprite = sprite; // Reference to sprite for position updates
         
         // Add both to scene
         this.scene.add(sprite);
@@ -174,6 +189,10 @@ export class ColoredGhostSystem {
             wanderChangeTime: 0,
             isFollowing: false,
             isDead: false,
+            
+            // Combat stats
+            hp: 5, // All colored ghosts have 5 HP
+            maxHp: 5,
             
             // Texture swapping for attack pose
             normalTexture: texture,
@@ -485,9 +504,9 @@ export class ColoredGhostSystem {
                 const finalDist = arrow.position.distanceTo(this.voxelWorld.camera.position);
                 if (finalDist < 2) {
                     console.log(`❄️ Ice projectile hit player!`);
-                    // TODO: Apply damage to player
-                    if (this.voxelWorld.takeDamage) {
-                        this.voxelWorld.takeDamage(1); // 1 damage
+                    // Apply damage to player
+                    if (this.voxelWorld.playerHP) {
+                        this.voxelWorld.playerHP.takeDamage(1); // 1 damage
                     }
                     // Ice impact effect
                     if (this.voxelWorld.createExplosionEffect) {
@@ -685,6 +704,48 @@ export class ColoredGhostSystem {
         // TODO: Particle system
         // For now, just log
         console.log(`✨ Particle burst at (${position.x.toFixed(1)}, ${position.y.toFixed(1)}, ${position.z.toFixed(1)})`);
+    }
+    
+    /**
+     * Remove a specific ghost (when defeated)
+     */
+    removeGhost(ghostId) {
+        const ghost = this.ghosts.get(ghostId);
+        if (!ghost) return;
+        
+        console.log(`👻 Removing colored ghost: ${ghost.color.name} (${ghostId})`);
+        
+        // Remove from scene
+        this.scene.remove(ghost.sprite);
+        this.scene.remove(ghost.hitbox);
+        
+        // Dispose materials and geometries
+        ghost.sprite.material.dispose();
+        ghost.sprite.material.map.dispose();
+        ghost.hitbox.geometry.dispose();
+        ghost.hitbox.material.dispose();
+        
+        // Remove from map
+        this.ghosts.delete(ghostId);
+        
+        // Particle effect (use VoxelWorld's explosion effect)
+        if (this.voxelWorld.createExplosionEffect) {
+            this.voxelWorld.createExplosionEffect(
+                ghost.sprite.position.x,
+                ghost.sprite.position.y,
+                ghost.sprite.position.z,
+                'ghost_death'
+            );
+        }
+        
+        // Play death sound
+        if (this.voxelWorld.sfxSystem) {
+            this.voxelWorld.sfxSystem.playSpatial('ghost_death', ghost.sprite.position, this.voxelWorld.camera.position, {
+                maxDistance: 40,
+                volume: 0.6,
+                pitchVariation: 0.3
+            });
+        }
     }
     
     /**

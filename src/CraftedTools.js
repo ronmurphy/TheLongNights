@@ -848,7 +848,7 @@ export class CraftedTools {
                     }
                 }
 
-                // Check for enemy collision
+                // Check for enemy collision (Blood Moon enemies)
                 if (this.voxelWorld.bloodMoonSystem && progress > 0.1) {
                     const projectilePos = new THREE.Vector3(currentPos.x, currentPos.y, currentPos.z);
                     const enemies = this.voxelWorld.bloodMoonSystem.activeEnemies;
@@ -864,10 +864,71 @@ export class CraftedTools {
                             console.log(`🎯 ${weaponType} hit ${enemy.entityType}! Damage: ${damage}`);
                             this.voxelWorld.bloodMoonSystem.hitEnemy(enemyId, damage);
 
+                            // ⚔️ Show player attack pose
+                            if (this.voxelWorld.playerCompanionUI) {
+                                this.voxelWorld.playerCompanionUI.updatePlayerPose('attack');
+                                setTimeout(() => {
+                                    this.voxelWorld.playerCompanionUI.updatePlayerPose('default');
+                                }, 300);
+                            }
+
+                            // ⚔️ Trigger companion combat system (player attacked enemy with ranged weapon)
+                            if (this.voxelWorld.companionCombatSystem) {
+                                this.voxelWorld.companionCombatSystem.onPlayerAttack(enemy, damage);
+                            }
+
                             // Apply special effects
                             this.applyWeaponEffect(effectType, enemyPos, enemyId);
 
                             // Remove projectile and flame particles
+                            this.cleanupProjectile(projectileMesh);
+
+                            return true; // Stop animation
+                        }
+                    }
+                }
+                
+                // Check for colored ghost collision
+                if (this.voxelWorld.spectralHuntSystem?.coloredGhostSystem && progress > 0.1) {
+                    const projectilePos = new THREE.Vector3(currentPos.x, currentPos.y, currentPos.z);
+                    const coloredGhostSystem = this.voxelWorld.spectralHuntSystem.coloredGhostSystem;
+
+                    for (const [ghostId, ghostData] of coloredGhostSystem.ghosts) {
+                        if (ghostData.isDead) continue;
+
+                        const ghostPos = ghostData.sprite.position;
+                        const distance = projectilePos.distanceTo(ghostPos);
+
+                        if (distance < 1.5) {
+                            // HIT GHOST!
+                            console.log(`🎯 ${weaponType} hit ${ghostData.color.name} ghost! Damage: ${damage}`);
+                            
+                            // ⚔️ Show player attack pose
+                            if (this.voxelWorld.playerCompanionUI) {
+                                this.voxelWorld.playerCompanionUI.updatePlayerPose('attack');
+                                setTimeout(() => {
+                                    this.voxelWorld.playerCompanionUI.updatePlayerPose('default');
+                                }, 300);
+                            }
+
+                            // Apply damage
+                            ghostData.hp = (ghostData.hp || 5) - damage;
+                            this.voxelWorld.createExplosionEffect(ghostPos.x, ghostPos.y, ghostPos.z, 'hit');
+
+                            if (ghostData.hp <= 0) {
+                                this.voxelWorld.updateStatus(`👻 Defeated ${ghostData.color.name} ghost!`, 'combat');
+                                ghostData.isDead = true;
+                                coloredGhostSystem.removeGhost(ghostId);
+                            } else {
+                                this.voxelWorld.updateStatus(`👻 Hit ${ghostData.color.name} ghost for ${damage} damage! (${ghostData.hp}/5 HP)`, 'combat');
+                            }
+
+                            // ⚔️ Trigger companion combat system
+                            if (this.voxelWorld.companionCombatSystem && !ghostData.isDead) {
+                                this.voxelWorld.companionCombatSystem.onPlayerAttack({ position: ghostPos, userData: { hp: ghostData.hp, maxHp: 5 } }, damage);
+                            }
+
+                            // Remove projectile
                             this.cleanupProjectile(projectileMesh);
 
                             return true; // Stop animation
@@ -1082,6 +1143,19 @@ export class CraftedTools {
 
                 // Create impact effect at enemy position
                 this.voxelWorld.createExplosionEffect(enemyPos.x, enemyPos.y, enemyPos.z, 'hit');
+
+                // ⚔️ Show player attack pose
+                if (this.voxelWorld.playerCompanionUI) {
+                    this.voxelWorld.playerCompanionUI.updatePlayerPose('attack');
+                    setTimeout(() => {
+                        this.voxelWorld.playerCompanionUI.updatePlayerPose('default');
+                    }, 300);
+                }
+
+                // ⚔️ Trigger companion combat system (player attacked enemy)
+                if (this.voxelWorld.companionCombatSystem) {
+                    this.voxelWorld.companionCombatSystem.onPlayerAttack(enemy, damage);
+                }
 
                 hitAny = true;
 

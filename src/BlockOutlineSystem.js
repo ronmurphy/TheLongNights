@@ -50,10 +50,10 @@ export class BlockOutlineSystem {
         // Create outline material (LineBasicMaterial for edges)
         const material = new THREE.LineBasicMaterial({
             color: this.colors.mineable,
-            linewidth: 2, // Note: linewidth > 1 only works in WebGL 2
+            linewidth: 3, // Thicker lines for visibility
             transparent: true,
             opacity: 0.9,
-            depthTest: true,
+            depthTest: true, // Respect depth for normal rendering
             depthWrite: false
         });
         
@@ -91,8 +91,13 @@ export class BlockOutlineSystem {
             blockType = hit.object.userData.itemId || 'crafted_object';
             isCrafted = true;
         }
-        // Check for entities (sprites with entity data)
+        // Check for entities (sprites OR hitbox meshes with entity data)
         else if (hit.object.isSprite && (hit.object.userData.isAnimal || hit.object.userData.isEnemy || hit.object.userData.isGhost)) {
+            blockType = hit.object.userData.type || 'entity';
+            isEntity = true;
+        }
+        // Check for mesh hitboxes (ghost hitboxes, etc.)
+        else if (hit.object.isMesh && (hit.object.userData.isEnemy || hit.object.userData.isGhost)) {
             blockType = hit.object.userData.type || 'entity';
             isEntity = true;
         }
@@ -117,6 +122,8 @@ export class BlockOutlineSystem {
             color = this.colors.crafted;
         } else if (isEntity) {
             color = this.colors.entity;
+            // Sprites need larger outline boxes (2x2x2 for visibility)
+            dimensions = { width: 2, height: 2, depth: 2 };
         } else if (isHouseSelected) {
             // Get house dimensions
             const interiorLength = this.voxelWorld.workbenchSystem?.selectedShape === 'simple_house' 
@@ -146,12 +153,12 @@ export class BlockOutlineSystem {
             this.lastTarget.dimensions !== dimensionsKey;
         
         if (needsUpdate) {
-            // Update position
+            // Update position - for sprites, no offset needed (outl will render in front automatically)
             this.outlineMesh.position.copy(pos);
             
             // Recreate geometry if dimensions changed
             if (this.lastTarget.dimensions !== dimensionsKey) {
-                this.updateGeometry(dimensions);
+                this.updateGeometry(dimensions, isEntity);
             }
             
             // Update color with smooth transition
@@ -163,7 +170,8 @@ export class BlockOutlineSystem {
                 y: pos.y, 
                 z: pos.z, 
                 type: blockType,
-                dimensions: dimensionsKey
+                dimensions: dimensionsKey,
+                isEntity: isEntity
             };
         }
         
@@ -174,22 +182,26 @@ export class BlockOutlineSystem {
     /**
      * Update outline geometry for different dimensions
      * @param {Object} dimensions - {width, height, depth}
+     * @param {Boolean} isEntity - Whether this is for an entity sprite
      */
-    updateGeometry(dimensions) {
+    updateGeometry(dimensions, isEntity = false) {
         // Dispose old geometry
         if (this.currentGeometry) {
             this.currentGeometry.dispose();
         }
         
+        // For entities, make the box significantly larger and use thicker lines
+        const padding = isEntity ? 0.5 : 0.02;
+        
         // Create new box with specified dimensions
         const boxGeometry = new THREE.BoxGeometry(
-            dimensions.width + 0.02,
-            dimensions.height + 0.02,
-            dimensions.depth + 0.02
+            dimensions.width + padding,
+            dimensions.height + padding,
+            dimensions.depth + padding
         );
         
-        // Create edges geometry
-        this.currentGeometry = new THREE.EdgesGeometry(boxGeometry);
+        // Create edges geometry with thicker threshold for entities
+        this.currentGeometry = new THREE.EdgesGeometry(boxGeometry, isEntity ? 1 : 15);
         this.outlineMesh.geometry = this.currentGeometry;
         
         // Dispose temporary box geometry

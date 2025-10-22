@@ -260,8 +260,17 @@ export class PlayerCompanionUI {
         // Later we'll have companion-specific sprites
         const race = companionData.race || 'human';
         const gender = companionData.gender || 'male';
-        const spritePath = `art/player_avatars/${race}_${gender}.png`;
+        
+        // Use current pose (default, attack, ready) - stored in voxelWorld.companionCombatSystem
+        const pose = this.voxelWorld.companionCombatSystem?.companionPose || 'default';
+        // Default pose has no suffix, attack/ready have _attack/_ready
+        const spritePath = pose === 'default'
+            ? `art/player_avatars/${race}_${gender}.png`
+            : `art/player_avatars/${race}_${gender}_${pose}.png`;
         this.loadSprite(spritePath, this.companionAvatar);
+        
+        // Store companion info for pose updates
+        this.currentCompanionData = { race, gender };
 
         // Update name
         const nameLabel = this.companionPanel.querySelector('.companion-name');
@@ -277,6 +286,65 @@ export class PlayerCompanionUI {
         // Update stamina (companions don't have stamina yet, so show full)
         const staminaBar = this.companionPanel.querySelector('.companion-stamina-bar');
         staminaBar.style.width = '100%';
+    }
+
+    /**
+     * Update companion sprite pose (for combat animations)
+     * @param {string} pose - 'default', 'attack', or 'ready'
+     */
+    updateCompanionPose(pose) {
+        if (!this.currentCompanionData || !this.companionAvatar) return;
+        
+        const { race, gender } = this.currentCompanionData;
+        // Default pose has no suffix, attack/ready have _attack/_ready
+        const spritePath = pose === 'default' 
+            ? `art/player_avatars/${race}_${gender}.png`
+            : `art/player_avatars/${race}_${gender}_${pose}.png`;
+        
+        console.log(`🎨 Companion pose update requested: ${pose} (${spritePath})`);
+        
+        // Force browser to reload image by clearing src first, then setting new one
+        // This ensures visual update even if it's the same image file
+        this.companionAvatar.src = '';
+        
+        // Use requestAnimationFrame to ensure DOM updates between clearing and setting
+        requestAnimationFrame(() => {
+            if (this.spriteCache[spritePath]) {
+                this.companionAvatar.src = this.spriteCache[spritePath];
+            } else {
+                this.loadSprite(spritePath, this.companionAvatar);
+            }
+        });
+    }
+
+    /**
+     * Update player sprite pose (for combat animations)
+     * @param {string} pose - 'default', 'attack', or 'ready'
+     */
+    updatePlayerPose(pose) {
+        if (!this.voxelWorld.playerCharacter || !this.playerAvatar) return;
+        
+        const race = this.voxelWorld.playerCharacter.race || 'human';
+        const gender = this.voxelWorld.playerCharacter.gender || 'male';
+        // Default pose has no suffix, attack/ready have _attack/_ready
+        const spritePath = pose === 'default' 
+            ? `art/player_avatars/${race}_${gender}.png`
+            : `art/player_avatars/${race}_${gender}_${pose}.png`;
+        
+        console.log(`🎨 Player pose update requested: ${pose} (${spritePath})`);
+        
+        // Force browser to reload image by clearing src first, then setting new one
+        // This ensures visual update even if it's the same image file
+        this.playerAvatar.src = '';
+        
+        // Use requestAnimationFrame to ensure DOM updates between clearing and setting
+        requestAnimationFrame(() => {
+            if (this.spriteCache[spritePath]) {
+                this.playerAvatar.src = this.spriteCache[spritePath];
+            } else {
+                this.loadSprite(spritePath, this.playerAvatar);
+            }
+        });
     }
 
     /**

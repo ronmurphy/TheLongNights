@@ -28,8 +28,9 @@ import { BlockOutlineSystem } from './BlockOutlineSystem.js';
 import { AtmosphericFog } from './AtmosphericFog.js';
 import { WeatherSystem } from './WeatherSystem.js';
 import { WeatherCycleSystem } from './WeatherCycleSystem.js';
-import { BattleSystem } from './BattleSystem.js';
-import { BattleArena } from './BattleArena.js';
+// import { BattleSystem } from './BattleSystem.js'; // DISABLED: Replaced with CompanionCombatSystem
+// import { BattleArena } from './BattleArena.js'; // DISABLED: Replaced with CompanionCombatSystem
+import { CompanionCombatSystem } from './CompanionCombatSystem.js';
 import { RPGIntegration } from './rpg/RPGIntegration.js';
 import { CompanionCodex } from './ui/CompanionCodex.js';
 import { CompanionPortrait } from './ui/CompanionPortrait.js';
@@ -195,6 +196,56 @@ class NebulaVoxelApp {
             
             // Check equipment slots
             return this.hasEquippedTool(toolType);
+        };
+
+        // ⚔️ Get attack damage based on equipped weapon or bare hands
+        this.getAttackDamage = (selectedSlot) => {
+            if (!selectedSlot || !selectedSlot.itemType) {
+                return 1; // Bare-handed punch = 1 damage
+            }
+            
+            const weapon = selectedSlot.itemType;
+            
+            // Weapon damage values (same as CompanionCombatSystem)
+            const weaponDamage = {
+                // Melee weapons
+                'stone_hammer': 3,
+                'crafted_stone_hammer': 3,
+                'tree_feller': 4,
+                'crafted_tree_feller': 4,
+                'machete': 2,
+                'crafted_machete': 2,
+                'combat_sword': 4,
+                'crafted_combat_sword': 4,
+                'war_hammer': 5,
+                'crafted_war_hammer': 5,
+                'battle_axe': 4,
+                'crafted_battle_axe': 4,
+                'stone_spear': 4,
+                'crafted_stone_spear': 4,
+                'club': 3,
+                'crafted_club': 3,
+                
+                // Ranged weapons
+                'crossbow': 2,
+                'crafted_crossbow': 2,
+                'ice_bow': 2,
+                'crafted_ice_bow': 2,
+                'fire_staff': 3,
+                'crafted_fire_staff': 3,
+                'throwing_knives': 1,
+                'crafted_throwing_knives': 1,
+                
+                // Tools that can be used as weapons
+                'pickaxe': 2,
+                'crafted_pickaxe': 2,
+                'mining_pick': 2,
+                'crafted_mining_pick': 2,
+                'torch': 1,
+                'crafted_torch': 1,
+            };
+            
+            return weaponDamage[weapon] || 1; // Default to 1 damage if not a weapon
         };
 
         this.container = container;
@@ -415,11 +466,14 @@ class NebulaVoxelApp {
         // 🌫️ Initialize Atmospheric Fog System (volumetric fog during night/blood moon)
         this.atmosphericFog = null;
 
-        // ⚔️ Initialize Battle System (Pokemon-style auto-battler)
-        this.battleSystem = null;
+        // ⚔️ Initialize Battle System (Pokemon-style auto-battler) - DISABLED
+        this.battleSystem = null; // Kept for compatibility with AngryGhostSystem
 
-        // 🏟️ Initialize Battle Arena (3D arena combat)
-        this.battleArena = null;
+        // 🏟️ Initialize Battle Arena (3D arena combat) - DISABLED
+        this.battleArena = null; // Replaced with CompanionCombatSystem
+
+        // ⚔️ Initialize Companion Combat System (player-driven combat with companion support)
+        this.companionCombatSystem = null;
 
         // 🎲 Initialize RPG System (requires scene, so will be set after scene is created)
         this.rpgIntegration = null;
@@ -8567,11 +8621,15 @@ class NebulaVoxelApp {
         // 👻 Initialize Ghost System now that scene is ready
         this.ghostSystem = new GhostSystem(this.scene, this.enhancedGraphics, this);
 
-        // ⚔️ Initialize Battle System now that scene is ready
-        this.battleSystem = new BattleSystem(this);
+        // ⚔️ Initialize Battle System now that scene is ready - DISABLED (kept for AngryGhostSystem compatibility)
+        // this.battleSystem = new BattleSystem(this);
+        this.battleSystem = { startBattle: () => console.log('⚠️ Old battle system disabled, use companion combat') }; // Stub for compatibility
 
-        // 🏟️ Initialize Battle Arena now that scene is ready
-        this.battleArena = new BattleArena(this);
+        // 🏟️ Initialize Battle Arena now that scene is ready - DISABLED
+        // this.battleArena = new BattleArena(this);
+
+        // ⚔️ Initialize Companion Combat System (new active combat system)
+        this.companionCombatSystem = new CompanionCombatSystem(this);
 
         // 💀 Initialize Angry Ghost System now that scene is ready
         this.angryGhostSystem = new AngryGhostSystem(this.scene, this.enhancedGraphics, this.battleSystem, this);
@@ -11150,10 +11208,15 @@ class NebulaVoxelApp {
                 this.spectralHuntSystem.update(deltaTime);
             }
 
-            // 🏟️ Update battle arena - 3D combat animations
-            if (this.battleArena) {
-                this.battleArena.update(deltaTime);
+            // ⚔️ Update companion combat system - player-driven combat with companion support
+            if (this.companionCombatSystem) {
+                this.companionCombatSystem.update(deltaTime);
             }
+
+            // 🏟️ Update battle arena - 3D combat animations - DISABLED (replaced with CompanionCombatSystem)
+            // if (this.battleArena) {
+            //     this.battleArena.update(deltaTime);
+            // }
 
             // 🎄 Update Christmas system - Mega Fir proximity alerts and snow melt
             if (this.christmasSystem) {
@@ -12130,6 +12193,105 @@ class NebulaVoxelApp {
                 }
 
                 if (e.button === 0) { // Left click - harvesting (blocks or crafted objects)
+                    // ⚔️ UNIVERSAL ENEMY ATTACK: Check if clicking on any enemy/ghost (works even bare-handed)
+                    // Check for BOTH sprites AND meshes (hitboxes have userData too)
+                    if (hit.object && (hit.object.isSprite || (hit.object.isMesh && (hit.object.userData.isEnemy || hit.object.userData.isGhost)))) {
+                        // Check for Blood Moon enemies
+                        if (this.bloodMoonSystem && this.bloodMoonSystem.activeEnemies) {
+                            for (const [enemyId, enemy] of this.bloodMoonSystem.activeEnemies) {
+                                if (enemy.sprite === hit.object && enemy.health > 0) {
+                                    // Clicked on a Blood Moon enemy!
+                                    const damage = this.getAttackDamage(this.hotbarSystem.getSelectedSlot());
+                                    this.bloodMoonSystem.hitEnemy(enemyId, damage);
+                                    this.createExplosionEffect(enemy.sprite.position.x, enemy.sprite.position.y, enemy.sprite.position.z, 'hit');
+                                    this.updateStatus(`⚔️ Hit enemy for ${damage} damage!`, 'combat');
+                                    
+                                    // Show player attack pose
+                                    if (this.playerCompanionUI) {
+                                        this.playerCompanionUI.updatePlayerPose('attack');
+                                        setTimeout(() => {
+                                            this.playerCompanionUI.updatePlayerPose('default');
+                                        }, 300);
+                                    }
+                                    
+                                    // Trigger companion combat
+                                    if (this.companionCombatSystem) {
+                                        this.companionCombatSystem.onPlayerAttack(enemy, damage);
+                                    }
+                                    return; // Don't continue to block harvesting
+                                }
+                            }
+                        }
+                        
+                        // Check for colored ghosts (SpectralHuntSystem -> ColoredGhostSystem)
+                        if (this.spectralHuntSystem && this.spectralHuntSystem.coloredGhostSystem) {
+                            const coloredGhostSystem = this.spectralHuntSystem.coloredGhostSystem;
+                            for (const [ghostId, ghostData] of coloredGhostSystem.ghosts) {
+                                // Check BOTH sprite AND hitbox (hitbox has ghostSprite reference)
+                                const hitSprite = hit.object.isSprite ? hit.object : hit.object.userData?.ghostSprite;
+                                if ((ghostData.sprite === hit.object || ghostData.sprite === hitSprite) && !ghostData.isDead) {
+                                    // Clicked on a colored ghost (sprite or hitbox)!
+                                    const damage = this.getAttackDamage(this.hotbarSystem.getSelectedSlot());
+                                    
+                                    // Show player attack pose
+                                    if (this.playerCompanionUI) {
+                                        this.playerCompanionUI.updatePlayerPose('attack');
+                                        setTimeout(() => {
+                                            this.playerCompanionUI.updatePlayerPose('default');
+                                        }, 300);
+                                    }
+                                    
+                                    // Colored ghosts have HP in SpectralHuntSystem
+                                    // Find matching ghost in spectralHuntSystem
+                                    let defeated = false;
+                                    coloredGhostSystem.ghosts.forEach((ghost, id) => {
+                                        if (id === ghostId) {
+                                            ghost.hp = (ghost.hp || ghost.maxHp || 5) - damage;
+                                            this.createExplosionEffect(ghost.sprite.position.x, ghost.sprite.position.y, ghost.sprite.position.z, 'hit');
+                                            
+                                            if (ghost.hp <= 0) {
+                                                this.updateStatus(`👻 Defeated ${ghost.color.name} ghost!`, 'combat');
+                                                ghost.isDead = true;
+                                                coloredGhostSystem.removeGhost(ghostId);
+                                                defeated = true;
+                                            } else {
+                                                this.updateStatus(`👻 Hit ${ghost.color.name} ghost for ${damage} damage! (${ghost.hp}/${ghost.maxHp || 5} HP)`, 'combat');
+                                            }
+                                        }
+                                    });
+                                    
+                                    // Trigger companion combat
+                                    if (this.companionCombatSystem && !defeated) {
+                                        this.companionCombatSystem.onPlayerAttack({ position: ghostData.sprite.position, userData: { hp: ghostData.hp, maxHp: ghostData.maxHp || 5 } }, damage);
+                                    }
+                                    return; // Don't continue to block harvesting
+                                }
+                            }
+                        }
+                        
+                        // Check for angry ghosts (AngryGhostSystem)
+                        if (this.angryGhostSystem && this.angryGhostSystem.angryGhosts) {
+                            for (const [ghostId, ghostData] of this.angryGhostSystem.angryGhosts) {
+                                if (ghostData.sprite === hit.object) {
+                                    // Clicked on angry ghost - these trigger battles, give feedback
+                                    this.updateStatus(`💀 Angry ghosts cannot be harmed! They trigger battles!`, 'warning');
+                                    return;
+                                }
+                            }
+                        }
+                        
+                        // Check for regular ghosts (GhostSystem)
+                        if (this.ghostSystem && this.ghostSystem.ghosts) {
+                            for (const [ghostId, ghostData] of this.ghostSystem.ghosts) {
+                                if (ghostData.sprite === hit.object) {
+                                    // Clicked on regular ghost - these are just ambient, can't be harmed
+                                    this.updateStatus(`👻 Ghosts are ethereal and cannot be harmed!`, 'info');
+                                    return;
+                                }
+                            }
+                        }
+                    }
+                    
                     // 🧪 HEALING POTION: Smart targeting system
                     const selectedSlot = this.hotbarSystem.getSelectedSlot();
                     if (selectedSlot && (selectedSlot.itemType === 'healing_potion' || selectedSlot.itemType === 'crafted_healing_potion')) {

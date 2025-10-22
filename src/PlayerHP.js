@@ -120,6 +120,11 @@ export class PlayerHP {
             this.voxelWorld.playerCompanionUI.updatePlayer(this.voxelWorld.playerCharacter);
         }
 
+        // ⚔️ Trigger companion combat system (player took damage)
+        if (this.voxelWorld.companionCombatSystem) {
+            this.voxelWorld.companionCombatSystem.onPlayerHit(amount);
+        }
+
         // Flash screen red
         this.flashDamage();
 
