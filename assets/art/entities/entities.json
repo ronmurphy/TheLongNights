@@ -717,6 +717,225 @@
       "craftable": false
     }
   },
+  "ghosts": {
+    "colored_ghost_red": {
+      "name": "Red Ghost",
+      "type": "ghost",
+      "tier": 1,
+      "hp": 5,
+      "attack": 2,
+      "defense": 10,
+      "speed": 7,
+      "color": "#FF0000",
+      "behavior": "aggressive_rusher",
+      "ai_config": {
+        "personalSpace": 0.5,
+        "followSpeed": 0.07,
+        "attackRange": 1.0
+      },
+      "sprite_ready": "ghost.png",
+      "sprite_attack": "angry_ghost_attack_pose_enhanced.png",
+      "description": "Aggressive rusher - charges right at you!"
+    },
+    "colored_ghost_orange": {
+      "name": "Orange Ghost",
+      "type": "ghost",
+      "tier": 1,
+      "hp": 5,
+      "attack": 2,
+      "defense": 10,
+      "speed": 6,
+      "color": "#FF8800",
+      "behavior": "circler",
+      "ai_config": {
+        "personalSpace": 3,
+        "followSpeed": 0.06,
+        "circleRadius": 4,
+        "circleSpeed": 0.03
+      },
+      "sprite_ready": "ghost.png",
+      "sprite_attack": "angry_ghost_attack_pose_enhanced.png",
+      "description": "Circler - orbits around you menacingly"
+    },
+    "colored_ghost_yellow": {
+      "name": "Yellow Ghost",
+      "type": "ghost",
+      "tier": 1,
+      "hp": 5,
+      "attack": 2,
+      "defense": 10,
+      "speed": 5,
+      "color": "#FFFF00",
+      "behavior": "zigzagger",
+      "ai_config": {
+        "personalSpace": 2,
+        "followSpeed": 0.05,
+        "zigzagInterval": 1.0
+      },
+      "sprite_ready": "ghost.png",
+      "sprite_attack": "angry_ghost_attack_pose_enhanced.png",
+      "description": "Zigzagger - unpredictable erratic movement"
+    },
+    "colored_ghost_green": {
+      "name": "Green Ghost",
+      "type": "ghost",
+      "tier": 2,
+      "hp": 5,
+      "attack": 2,
+      "defense": 10,
+      "speed": 3,
+      "color": "#00FF00",
+      "behavior": "teleporter",
+      "ai_config": {
+        "personalSpace": 2,
+        "followSpeed": 0.03,
+        "teleportInterval": 5,
+        "teleportRange": 8
+      },
+      "sprite_ready": "ghost.png",
+      "sprite_attack": "angry_ghost_attack_pose_enhanced.png",
+      "description": "Teleporter - blinks closer every 5 seconds"
+    },
+    "colored_ghost_blue": {
+      "name": "Blue Ghost",
+      "type": "ghost",
+      "tier": 2,
+      "hp": 5,
+      "attack": 2,
+      "defense": 10,
+      "speed": 4,
+      "color": "#0088FF",
+      "behavior": "ranged",
+      "ai_config": {
+        "personalSpace": 8,
+        "followSpeed": 0.04,
+        "projectileInterval": 3,
+        "preferredDistance": 10
+      },
+      "sprite_ready": "ghost.png",
+      "sprite_attack": "angry_ghost_attack_pose_enhanced.png",
+      "description": "Ranged attacker - keeps distance and throws ice"
+    },
+    "colored_ghost_indigo": {
+      "name": "Indigo Ghost",
+      "type": "ghost",
+      "tier": 3,
+      "hp": 5,
+      "attack": 2,
+      "defense": 12,
+      "speed": 3,
+      "color": "#4400FF",
+      "behavior": "tank",
+      "ai_config": {
+        "personalSpace": 1.5,
+        "followSpeed": 0.03,
+        "maxFollowSpeed": 0.04,
+        "hitboxRadius": 2.5
+      },
+      "sprite_ready": "ghost.png",
+      "sprite_attack": "angry_ghost_attack_pose_enhanced.png",
+      "description": "Tank - slow and sturdy, blocks your path"
+    },
+    "colored_ghost_black": {
+      "name": "Black Ghost",
+      "type": "ghost",
+      "tier": 4,
+      "hp": 5,
+      "attack": 3,
+      "defense": 12,
+      "speed": 6,
+      "color": "#000000",
+      "behavior": "boss",
+      "ai_config": {
+        "personalSpace": 2,
+        "followSpeed": 0.06,
+        "canTeleport": true,
+        "canCircle": true,
+        "teleportInterval": 8
+      },
+      "sprite_ready": "ghost.png",
+      "sprite_attack": "angry_ghost_attack_pose_enhanced.png",
+      "description": "Boss ghost - uses multiple abilities!"
+    },
+    "big_ghost_normal": {
+      "name": "Spectral Presence",
+      "type": "atmospheric",
+      "tier": 3,
+      "hp": null,
+      "attack": 0,
+      "defense": 0,
+      "speed": 0,
+      "color": "#DDDDDD",
+      "visual_config": {
+        "size": 25,
+        "distance": 25,
+        "opacity": 0.4,
+        "baseHeight": 15,
+        "rotationSpeed": 0.01
+      },
+      "sprite_ready": "ghost.png",
+      "description": "Looming atmospheric ghost that follows at a distance"
+    },
+    "big_ghost_black": {
+      "name": "Black Spectral Presence",
+      "type": "atmospheric",
+      "tier": 4,
+      "hp": null,
+      "attack": 0,
+      "defense": 0,
+      "speed": 0,
+      "color": "#2A2A2A",
+      "visual_config": {
+        "size": 40,
+        "distance": 25,
+        "opacity": 0.5,
+        "baseHeight": 15,
+        "rotationSpeed": 0.01
+      },
+      "sprite_ready": "ghost.png",
+      "description": "Day 7 black ghost - larger and more ominous"
+    },
+    "big_ghost_halloween": {
+      "name": "Halloween Mega Ghost",
+      "type": "atmospheric",
+      "tier": 5,
+      "hp": null,
+      "attack": 0,
+      "defense": 0,
+      "speed": 0,
+      "color": "#FFFFFF",
+      "visual_config": {
+        "size": 120,
+        "distance": 50,
+        "opacity": 0.6,
+        "baseHeight": 15,
+        "rotationSpeed": 0.02
+      },
+      "sprite_ready": "ghost.png",
+      "description": "Halloween special - massive ghost at close range"
+    },
+    "demolition_ghost": {
+      "name": "Demolition Ghost",
+      "type": "boss",
+      "tier": 5,
+      "hp": 10,
+      "attack": 3,
+      "defense": 12,
+      "speed": 4,
+      "color": "#FFFFFF",
+      "abilities": ["Explosive Throw", "Self Damage"],
+      "ai_config": {
+        "throwInterval": 5,
+        "explosionRadius": 3,
+        "preferredDistance": 20,
+        "moveSpeed": 0.1
+      },
+      "sprite_ready": "ghost.png",
+      "sprite_attack": "angry_ghost_attack_pose_enhanced.png",
+      "scale": 1.5,
+      "description": "7th Blood Moon combo boss - throws demolition charges"
+    }
+  },
   "starter_choices": ["human", "elf", "dwarf", "goblin"],
   "combat_rules": {
     "turn_order": "Determined by speed stat + random(1-6)",

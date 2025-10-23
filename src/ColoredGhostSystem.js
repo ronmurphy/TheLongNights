@@ -19,18 +19,22 @@ export class ColoredGhostSystem {
         this.voxelWorld = voxelWorld;
         this.spectralHuntSystem = spectralHuntSystem;
         this.enhancedGraphics = voxelWorld.enhancedGraphics;
-        
+
         // Ghost registry - Map<ghostId, ghostData>
         this.ghosts = new Map();
         this.nextGhostId = 0;
-        
+
         // Animation timing
         this.time = 0;
-        
+
         // Sound effect timing
         this.lastGhostSound = 0;
         this.ghostSoundCooldown = 8000; // 8 seconds
-        
+
+        // Entity database (loaded from entities.json)
+        this.entityDatabase = null;
+        this.loadEntityData();
+
         // Configuration (same as GhostSystem)
         this.config = {
             // Visual
@@ -114,43 +118,90 @@ export class ColoredGhostSystem {
         
         console.log('👻 ColoredGhostSystem initialized');
     }
-    
+
+    /**
+     * Load entity data from entities.json
+     */
+    async loadEntityData() {
+        try {
+            const response = await fetch('art/entities/entities.json');
+            const data = await response.json();
+            this.entityDatabase = data;
+            console.log('👻 ColoredGhost entity database loaded:', data.ghosts ? Object.keys(data.ghosts).length : 0, 'ghost types');
+        } catch (error) {
+            console.error('👻 Failed to load entities.json:', error);
+        }
+    }
+
+    /**
+     * Get ghost data from entities.json by color name
+     * @param {string} colorName - Color name (e.g., 'Red', 'Orange', etc.)
+     * @returns {object} Ghost data from JSON
+     */
+    getGhostData(colorName) {
+        if (!this.entityDatabase || !this.entityDatabase.ghosts) {
+            console.warn(`👻 Entity database not loaded yet for ${colorName} ghost`);
+            return null;
+        }
+
+        const ghostKey = `colored_ghost_${colorName.toLowerCase()}`;
+        const ghostData = this.entityDatabase.ghosts[ghostKey];
+
+        if (!ghostData) {
+            console.warn(`👻 Ghost data not found for ${colorName} (looking for "${ghostKey}")`);
+            return null;
+        }
+
+        return ghostData;
+    }
+
     /**
      * Spawn a colored ghost
      */
     spawnColoredGhost(colorData) {
+        // Load ghost data from entities.json
+        const ghostData = this.getGhostData(colorData.name);
+
+        if (!ghostData) {
+            console.error(`👻 Cannot spawn ${colorData.name} ghost - data not loaded from entities.json`);
+            return null;
+        }
+
         // Get player position
         const playerPos = this.voxelWorld.camera.position;
-        
+
         // Find spawn position (just outside render distance)
         const spawnPos = this.findSpawnPosition(playerPos);
-        
+
         // Create ghost texture
         const texture = this.createGhostTexture();
-        
+
+        // Parse color from JSON (hex string to THREE.Color)
+        const colorHex = parseInt(ghostData.color.replace('#', '0x'));
+
         // Create sprite material with color tint
         const material = new THREE.SpriteMaterial({
             map: texture,
             transparent: true,
             opacity: this.config.opacity,
             depthWrite: false,
-            color: new THREE.Color(colorData.hex) // Color tint!
+            color: new THREE.Color(colorHex) // Color tint from JSON!
         });
-        
+
         // Create sprite
         const sprite = new THREE.Sprite(material);
         sprite.scale.set(this.config.spriteSize, this.config.spriteSize, 1);
         sprite.position.set(spawnPos.x, spawnPos.y, spawnPos.z);
-        
-        // Add user data for targeting/outline system
+
+        // Add user data for targeting/outline system (from JSON)
         sprite.userData.isGhost = true;
         sprite.userData.isEnemy = true; // Colored ghosts are attackable
-        sprite.userData.type = `${colorData.name}_ghost`;
-        sprite.userData.hp = 5;
-        sprite.userData.maxHp = 5;
-        
-        // Get behavior config for this color
-        const behaviorConfig = this.config.behaviors[colorData.name] || this.config.behaviors.Red;
+        sprite.userData.type = `${ghostData.name}_ghost`;
+        sprite.userData.hp = ghostData.hp;
+        sprite.userData.maxHp = ghostData.hp;
+
+        // Get behavior config from JSON (fallback to hardcoded if needed)
+        const behaviorConfig = ghostData.ai_config || this.config.behaviors[colorData.name] || this.config.behaviors.Red;
         
         // Create hitbox (size based on behavior - Indigo has larger hitbox)
         const hitboxRadius = behaviorConfig.hitboxRadius || this.config.hitboxRadius;
@@ -163,25 +214,26 @@ export class ColoredGhostSystem {
         const hitbox = new THREE.Mesh(hitboxGeometry, hitboxMaterial);
         hitbox.position.copy(sprite.position);
         
-        // Copy userData to hitbox so raycasting works on either
+        // Copy userData to hitbox so raycasting works on either (use JSON HP values)
         hitbox.userData.isGhost = true;
         hitbox.userData.isEnemy = true;
-        hitbox.userData.type = `${colorData.name}_ghost`;
-        hitbox.userData.hp = 5;
-        hitbox.userData.maxHp = 5;
+        hitbox.userData.type = `${ghostData.name}_ghost`;
+        hitbox.userData.hp = ghostData.hp;
+        hitbox.userData.maxHp = ghostData.hp;
         hitbox.userData.ghostSprite = sprite; // Reference to sprite for position updates
-        
+
         // Add both to scene
         this.scene.add(sprite);
         this.scene.add(hitbox);
-        
-        // Create ghost data
+
+        // Create ghost data object (name collision - use ghostInstance)
         const ghostId = `colored_ghost_${this.nextGhostId++}`;
-        const ghostData = {
+        const ghostInstance = {
             id: ghostId,
             sprite: sprite,
             hitbox: hitbox,
-            color: colorData,
+            color: colorData, // Keep original colorData for compatibility
+            colorName: ghostData.name, // From JSON
             behavior: behaviorConfig,
             baseY: spawnPos.y,
             floatOffset: Math.random() * Math.PI * 2,
@@ -189,10 +241,10 @@ export class ColoredGhostSystem {
             wanderChangeTime: 0,
             isFollowing: false,
             isDead: false,
-            
-            // Combat stats
-            hp: 5, // All colored ghosts have 5 HP
-            maxHp: 5,
+
+            // Combat stats from JSON
+            hp: ghostData.hp,
+            maxHp: ghostData.hp,
             
             // Texture swapping for attack pose
             normalTexture: texture,
@@ -205,17 +257,20 @@ export class ColoredGhostSystem {
             teleportTimer: 0,                             // For Green/Black (teleporter)
             projectileTimer: 0                            // For Blue (ranged)
         };
-        
-        this.ghosts.set(ghostId, ghostData);
-        
-        console.log(`👻 Colored ghost spawned: ${colorData.name} at (${spawnPos.x.toFixed(1)}, ${spawnPos.y.toFixed(1)}, ${spawnPos.z.toFixed(1)}) - ${behaviorConfig.description}`);
-        
+
+        this.ghosts.set(ghostId, ghostInstance);
+
+        // Use description from JSON if available, fallback to behaviorConfig
+        const description = ghostData.description || behaviorConfig.description || 'Unknown behavior';
+
+        console.log(`👻 Colored ghost spawned: ${ghostData.name} at (${spawnPos.x.toFixed(1)}, ${spawnPos.y.toFixed(1)}, ${spawnPos.z.toFixed(1)}) - ${description}`);
+
         // Status message
         this.voxelWorld.updateStatus(
-            `👻 ${colorData.name} ghost appeared! (${behaviorConfig.description})`,
+            `👻 ${ghostData.name} ghost appeared! (${description})`,
             'warning'
         );
-        
+
         // Play spawn sound
         if (this.voxelWorld.sfxSystem) {
             this.voxelWorld.sfxSystem.playSpatial('ghost', spawnPos, this.voxelWorld.camera.position, {
@@ -224,7 +279,7 @@ export class ColoredGhostSystem {
                 pitchVariation: 0.2
             });
         }
-        
+
         return ghostId;
     }
     
