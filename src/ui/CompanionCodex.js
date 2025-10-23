@@ -609,6 +609,19 @@ export class CompanionCodex {
     }
 
     /**
+     * Get companion data by ID
+     * @param {string} companionId - Companion ID
+     * @returns {object|null} Companion data from entities.json
+     */
+    getCompanionData(companionId) {
+        if (!this.allCompanions) {
+            console.warn('⚠️ allCompanions not loaded yet');
+            return null;
+        }
+        return this.allCompanions[companionId] || null;
+    }
+
+    /**
      * Render companion details on the right page
      */
     renderCompanionDetails(rightPage, companionId) {

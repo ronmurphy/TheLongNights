@@ -97,7 +97,25 @@ export class UnifiedCombatSystem {
             remainingHP: 0,
             maxHP: 0
         };
-        
+
+        // ⚔️ FAIR COMBAT: Hit/Miss System for Player Attacks
+        // Roll 1-3: 1-2 = HIT (50% chance), 3 = MISS (50% chance)
+        // Only applies to player/companion attacks, not enemy internal damage
+        if (attackType === 'player' || attackType === 'companion') {
+            const hitRoll = Math.floor(Math.random() * 3) + 1;
+
+            if (hitRoll === 3) {
+                // MISS! No damage dealt
+                console.log(`🎲 ${attackType} Roll=${hitRoll}: MISSED!`);
+                this.voxelWorld.updateStatus(`💨 Attack missed!`, 'info');
+                result.hit = false;
+                return result;
+            }
+
+            // HIT! Proceed with damage
+            console.log(`🎲 ${attackType} Roll=${hitRoll}: HIT for ${damage} damage!`);
+        }
+
         // Store last enemy hit by PLAYER (for companion targeting)
         if (attackType === 'player' && target && target.position) {
             this.lastEnemyHit = {
