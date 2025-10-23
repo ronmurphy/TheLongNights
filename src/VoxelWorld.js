@@ -7571,6 +7571,40 @@ class NebulaVoxelApp {
             }
         };
 
+        // BLOODMOON TEST: Set day to 7 and time to 22 (10 PM) for bloodmoon testing
+        // Usage: bloodmoonTest()
+        window.bloodmoonTest = () => {
+            this.dayNightCycle.dayOfWeek = 7;
+            this.dayNightCycle.currentTime = 22;
+            console.log('🩸 Bloodmoon Test: Set to Day 7, Time 22:00 (10 PM)');
+            console.log('🩸 Bloodmoon starts at 22:00 and ends at 02:00');
+            this.updateStatus('🩸 Bloodmoon Test: Day 7 @ 10 PM', 'success');
+        };
+
+        // SET DAY: Set the current day of week (1-7)
+        // Usage: setDay(7)
+        window.setDay = (day) => {
+            if (day < 1 || day > 7) {
+                console.error('❌ Day must be between 1-7');
+                return;
+            }
+            this.dayNightCycle.dayOfWeek = day;
+            console.log(`✅ Set day to ${day}/7`);
+            this.updateStatus(`Day set to ${day}/7`, 'success');
+        };
+
+        // SET TIME: Set the current time (0-24 hours)
+        // Usage: setTime(22) for 10 PM
+        window.setTime = (hour) => {
+            if (hour < 0 || hour >= 24) {
+                console.error('❌ Hour must be between 0-23');
+                return;
+            }
+            this.dayNightCycle.currentTime = hour;
+            console.log(`✅ Set time to ${hour}:00`);
+            this.updateStatus(`Time set to ${hour}:00`, 'success');
+        };
+
         // 📋 LIST ITEMS UTILITY: Show all available items organized by category
         // Can be called from browser console: listItems()
         window.listItems = () => {
