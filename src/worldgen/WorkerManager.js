@@ -681,5 +681,13 @@ export class WorkerManager {
             this.isWorkerReady = false;
             console.log('🛑 Worker terminated');
         }
+
+        // 🌲 CLEANUP: Terminate TreeWorker to prevent resource leak
+        if (this.treeWorker) {
+            this.treeWorker.terminate();
+            this.treeWorker = null;
+            this.isTreeWorkerReady = false;
+            console.log('🛑 TreeWorker terminated');
+        }
     }
 }
