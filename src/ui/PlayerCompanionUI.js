@@ -706,7 +706,8 @@ export class PlayerCompanionUI {
             transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
         `;
         
-        this.playerPanel.style.position = 'relative';
+        // Don't change panel position - keep it fixed!
+        // Just append the heart as a child (it has absolute positioning)
         this.playerPanel.appendChild(heart);
         
         // Animate: fade in + scale up + float up
