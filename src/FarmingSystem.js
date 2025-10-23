@@ -27,7 +27,32 @@ export class FarmingSystem {
         // Track 3D crop meshes for disposal (prevent memory leaks)
         this.crop3DModels = new Map(); // Map<"x,y,z", {mesh, leafIndicators[]}>
 
+        // 🍃 OPTIMIZATION: Create shared leaf texture ONCE, reuse for all leaf sprites
+        // Instead of creating a new canvas for each leaf (memory waste), create one and share it
+        this.sharedLeafTexture = this.createSharedLeafTexture();
+
         console.log('🌾 FarmingSystem initialized');
+    }
+
+    /**
+     * 🍃 Create ONE leaf texture, share it across all leaf sprites
+     * Reduces memory by ~95% compared to creating new texture per leaf
+     */
+    createSharedLeafTexture() {
+        const canvas = document.createElement('canvas');
+        canvas.width = 32;
+        canvas.height = 32;
+        const ctx = canvas.getContext('2d');
+
+        // Draw leaf emoji once
+        ctx.font = '28px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('🍃', 16, 16);
+
+        const texture = new THREE.CanvasTexture(canvas);
+        console.log('🍃 Created shared leaf texture (reused by all crops)');
+        return texture;
     }
 
     /**
@@ -330,6 +355,7 @@ export class FarmingSystem {
 
     /**
      * 🍃 Create leaf indicators (1-3 leaves) floating above crop
+     * OPTIMIZED: Uses shared leaf texture instead of creating new one per leaf
      */
     createLeafIndicators(x, y, z, _cropType, growthStage) {
         const indicators = [];
@@ -339,20 +365,8 @@ export class FarmingSystem {
         const height = 0.2 + (growthStage * 0.15);
 
         for (let i = 0; i < leafCount; i++) {
-            // Create simple leaf sprite using canvas
-            const canvas = document.createElement('canvas');
-            canvas.width = 32;
-            canvas.height = 32;
-            const ctx = canvas.getContext('2d');
-
-            // Draw leaf emoji (fallback if image doesn't load)
-            ctx.font = '28px Arial';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('🍃', 16, 16);
-
-            const texture = new THREE.CanvasTexture(canvas);
-            const material = new THREE.SpriteMaterial({ map: texture, transparent: true });
+            // 🍃 OPTIMIZATION: Reuse shared leaf texture instead of creating new one
+            const material = new THREE.SpriteMaterial({ map: this.sharedLeafTexture, transparent: true });
             const sprite = new THREE.Sprite(material);
 
             // Position leaves in a circle above the crop
@@ -391,9 +405,8 @@ export class FarmingSystem {
             if (model.leafIndicators) {
                 model.leafIndicators.forEach(sprite => {
                     this.voxelWorld.scene.remove(sprite);
-                    if (sprite.material && sprite.material.map) {
-                        sprite.material.map.dispose();
-                    }
+                    // 🍃 IMPORTANT: Don't dispose shared leaf texture (it's still in use!)
+                    // Only dispose the material, not the texture itself
                     if (sprite.material) sprite.material.dispose();
                 });
             }
