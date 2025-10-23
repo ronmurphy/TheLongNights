@@ -580,10 +580,16 @@ export class BloodMoonSystem {
             // KILLED!
             console.log(`💀 ${enemy.entityType} defeated!`);
             this.voxelWorld.updateStatus(`💀 You killed a ${enemy.entityType}!`, 'success');
-            
+
+            // ⚰️ Track kill for Mega Boss waves
+            if (this.voxelWorld.enemyKillTracker) {
+                const isEnemy = enemy.sprite?.userData?.isEnemy || true; // Blood Moon enemies are always isEnemy
+                this.voxelWorld.enemyKillTracker.recordKill(enemy.entityType, isEnemy, false);
+            }
+
             // Remove from game
             this.removeEnemy(enemyId);
-            
+
             // TODO: Drop loot (zombie flesh, bones, etc.)
         } else {
             // Still alive, show damage

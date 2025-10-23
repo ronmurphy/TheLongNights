@@ -19,6 +19,77 @@ The World Boss Ghost is an **optional endgame challenge** that players can summo
 
 ---
 
+## ⚰️ Phase 1.5: Enemy Kill Tracker System (NEW!)
+
+### File: `src/EnemyKillTracker.js`
+
+**Core Concept: "Your Past Comes Back to Haunt You"**
+
+Every enemy with `isEnemy` flag is tracked when killed. This data persists across deaths and sessions, building toward the Mega Boss finale.
+
+### Kill Tracking:
+```javascript
+{
+    enemyKills: {
+        "zombie_crawler": 45,
+        "zombie_shambler": 23,
+        "colored_ghost_red": 12,
+        "demolition_ghost": 1
+        // ... capped at 100 per type
+    },
+    animalKills: {
+        "deer": 3,
+        "rabbit": 1
+        // Red herring - doesn't affect boss
+    }
+}
+```
+
+### Features:
+- **Persistent Tracking**: Survives player death (your sins follow you)
+- **Cap System**: 100 kills per enemy type (prevents impossible fights)
+- **Animal Tracking**: Tracked separately as misleading "achievement" stat
+- **Integration**: Hooks into `UnifiedCombatSystem.applyDamage()` on kill
+- **Storage**: Saved in `localStorage.NebulaWorld_playerData.killTracker`
+
+### Companion Moral Threshold System:
+
+**Concept**: If player kills too many enemies, companion refuses to help in boss fight.
+
+```javascript
+companionMoralThresholds = {
+    elf_male: 500,      // Peaceful nature lovers
+    elf_female: 500,
+    human_male: 700,    // Moderate warriors
+    human_female: 700,
+    dwarf_male: 800,    // Battle-hardened
+    dwarf_female: 800,
+    goblin_male: 900,   // Chaotic, accept violence
+    goblin_female: 900
+}
+```
+
+**What Happens When Threshold Exceeded:**
+1. Chat.js cutscene triggers before boss fight
+2. Companion: *"All this death... this is YOUR doing. I won't be part of this slaughter."*
+3. Companion aid **DISABLED** for entire boss fight (no attacks, no support)
+4. Player faces wave gauntlet **ALONE**
+
+**Warnings:**
+- At 10 kills before threshold: Companion expresses concern
+- At threshold: Companion refuses to help in boss fight
+- Status persists: Once threshold crossed, can't undo
+
+### Explorer's Journal - "Vanquished" Tab (TODO):
+New bookmark tab showing kill statistics:
+- Enemy grid with sprites + kill counts
+- "Most Killed" stat (e.g., "245 Zombie Crawlers")
+- Total kills displayed prominently
+- Animals shown separately (red herring)
+- **Looks like achievements, but it's building your doom**
+
+---
+
 ## 📦 Phase 2: Ghost Rod Item System
 
 ### Recipe (Workbench):
@@ -164,52 +235,54 @@ update() {
 
 ---
 
-## ⚔️ Phase 5: Wave Spawning System
+## ⚔️ Phase 5: Wave Spawning System - "YOUR PAST COMES BACK TO HAUNT YOU"
 
-### Wave Structure (20 Total):
+### 🎯 NEW MECHANIC: Dynamic Waves Based on Kill History
+
+**Core Concept:**
+Every enemy the player has killed returns during the Mega Boss fight. The wave system is **dynamically generated** from the player's EnemyKillTracker data.
+
+### Wave Generation (Dynamic):
 ```javascript
-const waveSystem = {
-    // Wave 1-7: First ROYGBIV cycle
-    1: { color: 'Red',    count: 1, delay: 2 },
-    2: { color: 'Orange', count: 1, delay: 2 },
-    3: { color: 'Yellow', count: 1, delay: 2 },
-    4: { color: 'Green',  count: 1, delay: 2 },
-    5: { color: 'Blue',   count: 1, delay: 2 },
-    6: { color: 'Indigo', count: 1, delay: 2 },
-    7: { color: 'Black',  count: 1, delay: 2 },
-    
-    // Wave 8-14: Second ROYGBIV cycle
-    8:  { color: 'Red',    count: 1, delay: 2 },
-    9:  { color: 'Orange', count: 1, delay: 2 },
-    10: { color: 'Yellow', count: 1, delay: 2 },
-    11: { color: 'Green',  count: 1, delay: 2 },
-    12: { color: 'Blue',   count: 1, delay: 2 },
-    13: { color: 'Indigo', count: 1, delay: 2 },
-    14: { color: 'Black',  count: 1, delay: 2 },
-    
-    // Wave 15-18: Partial cycle (ramp up)
-    15: { color: 'Red',    count: 1, delay: 1 },
-    16: { color: 'Orange', count: 1, delay: 1 },
-    17: { color: 'Yellow', count: 1, delay: 1 },
-    18: { color: 'Green',  count: 1, delay: 1 },
-    
-    // Wave 19: BOSS - Demolition Ghost
-    19: { 
-        color: 'Demolition', 
-        count: 1, 
-        delay: 3,
-        message: '💣 DEMOLITION GHOST INCOMING!' 
-    },
-    
-    // Wave 20: FINALE - 4x Blue Ranged Ghosts
-    20: { 
-        color: 'Blue', 
-        count: 4, 
-        delay: 0,
-        message: '🎯 FINAL WAVE - 4 BLUE SNIPERS!' 
-    }
-};
+/**
+ * Generate waves from player's kill history
+ * @returns {Array<Wave>} Wave configuration for boss fight
+ */
+generateWavesFromKillHistory() {
+    const killTracker = this.voxelWorld.enemyKillTracker;
+    const enemiesKilled = killTracker.getEnemyTypesKilled(); // Sorted by count descending
+
+    const waves = [];
+
+    // Generate one wave per enemy type killed
+    enemiesKilled.forEach(({type, count}) => {
+        waves.push({
+            enemyType: type,
+            count: count,  // All of this enemy type spawn (capped at 100)
+            batchSize: 10, // Spawn in batches of 10 to prevent lag
+            delay: 2       // 2 seconds between batches
+        });
+    });
+
+    return waves;
+}
+
+/**
+ * Example: Player has killed 45 crawlers, 23 shamblers, 12 red ghosts
+ *
+ * Wave 1: 45 Zombie Crawlers (spawned in 5 batches of 9-10)
+ * Wave 2: 23 Zombie Shamblers (spawned in 3 batches of 7-8)
+ * Wave 3: 12 Red Ghosts (spawned in 2 batches of 6)
+ */
 ```
+
+### Challenge Scaling:
+- **Pacifist Run**: Killed 10 enemies → 10 enemies return (easy)
+- **Normal Run**: Killed 200 enemies → 200 enemies return (moderate)
+- **Genocide Run**: Killed 1000+ enemies → 1000 enemies return, capped at 100 per type (NIGHTMARE)
+
+### Wave Structure (Old Design - DEPRECATED):
+~~Fixed 20 waves with ROYGBIV ghosts~~ **REPLACED WITH DYNAMIC SYSTEM**
 
 ### Spawn Logic:
 ```javascript
@@ -643,6 +716,26 @@ triggerCompanionGhostRodHint() {
 ## 🎮 Testing Commands
 
 ```javascript
+// === KILL TRACKER COMMANDS ===
+// Show kill statistics
+window.voxelApp.enemyKillTracker.showStats()
+
+// Get specific kill count
+window.voxelApp.enemyKillTracker.getKillCount('zombie_crawler')
+
+// Get total kills
+window.voxelApp.enemyKillTracker.getTotalEnemyKills()
+
+// Check companion moral status
+window.voxelApp.enemyKillTracker.checkCompanionMoralStatus()
+
+// Reset all kills (testing)
+window.voxelApp.enemyKillTracker.resetAllKills()
+
+// Manually record kill (testing)
+window.voxelApp.enemyKillTracker.recordKill('zombie_crawler', true, false)
+
+// === WORLD BOSS COMMANDS ===
 // Test atmospheric ghost
 spectral_hunt('test_big')
 
@@ -708,15 +801,18 @@ cleanupBossFight() {
 
 ### Recommended Sequence:
 1. ✅ **Atmospheric Ghost** - Player-centered, 50 blocks, 50x scale (DONE!)
-2. **Ghost Rod Item** - Recipe, crafting, placement
-3. **World Boss Ghost Entity** - Massive static billboard
-4. **Arena Fog Wall** - Boundary system with player containment
-5. **Wave Spawning System** - 20 waves with colored ghosts
-6. **Player Buff System** - 30% damage reduction for 3 minutes
-7. **Victory/Defeat Logic** - Rewards, rod states, cleanup
-8. **Dead Ghost Rods** - World generation, messages, loot
-9. **Companion Hint** - Trigger on 4th essence
-10. **Testing & Polish** - Balance, performance, bug fixes
+2. ✅ **Enemy Kill Tracker** - Track kills, companion moral system (DONE!)
+3. ⚙️ **Vanquished Tab UI** - Explorer's Journal kill statistics display (IN PROGRESS)
+4. **Ghost Rod Item** - Recipe, crafting, placement
+5. **World Boss Ghost Entity** - Massive static billboard
+6. **Arena Fog Wall** - Boundary system with player containment
+7. **Dynamic Wave Spawning System** - Waves generated from kill history
+8. **Companion Moral Cutscene** - Chat.js dialogue when threshold exceeded
+9. **Player Buff System** - 30% damage reduction for 3 minutes
+10. **Victory/Defeat Logic** - Rewards, rod states, cleanup
+11. **Dead Ghost Rods** - World generation, messages, loot
+12. **Companion Hint** - Trigger on 4th essence
+13. **Testing & Polish** - Balance, performance, bug fixes
 
 ---
 

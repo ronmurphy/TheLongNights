@@ -30,6 +30,7 @@ import { WeatherSystem } from './WeatherSystem.js';
 import { WeatherCycleSystem } from './WeatherCycleSystem.js';
 import { CompanionCombatSystem } from './CompanionCombatSystem.js';
 import { UnifiedCombatSystem } from './UnifiedCombatSystem.js';
+import { EnemyKillTracker } from './EnemyKillTracker.js';
 import { RPGIntegration } from './rpg/RPGIntegration.js';
 import { CompanionCodex } from './ui/CompanionCodex.js';
 import { CompanionPortrait } from './ui/CompanionPortrait.js';
@@ -3572,8 +3573,46 @@ class NebulaVoxelApp {
                 }
             });
 
+            // ⚰️ Vanquished bookmark tab (NEW - Kill Tracker)
+            const vanquishedTab = document.createElement('div');
+            vanquishedTab.className = 'bookmark-tab';
+            vanquishedTab.title = 'Vanquished Foes (V)';
+            vanquishedTab.style.cssText = `
+                width: 40px;
+                height: 80px;
+                background: linear-gradient(90deg, #8B0000, #A52A2A);
+                border: 3px solid #4B0000;
+                border-right: none;
+                border-radius: 8px 0 0 8px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                font-size: 24px;
+                transition: all 0.2s ease;
+                box-shadow: -2px 2px 8px rgba(0, 0, 0, 0.5);
+            `;
+            vanquishedTab.textContent = '💀';
+
+            vanquishedTab.addEventListener('mouseover', () => {
+                vanquishedTab.style.left = '5px';
+                vanquishedTab.style.background = 'linear-gradient(90deg, #A52A2A, #DC143C)';
+            });
+
+            vanquishedTab.addEventListener('mouseout', () => {
+                vanquishedTab.style.left = '0';
+                vanquishedTab.style.background = 'linear-gradient(90deg, #8B0000, #A52A2A)';
+            });
+
+            vanquishedTab.addEventListener('click', () => {
+                this.closeWorldMap(false); // Don't re-engage pointer lock, we're switching tabs
+                // Open vanquished panel
+                setTimeout(() => this.showVanquishedPanel(), 100);
+            });
+
             bookmarkTabs.appendChild(mapTab);
             bookmarkTabs.appendChild(codexTab);
+            bookmarkTabs.appendChild(vanquishedTab);
             this.worldMapModal.appendChild(bookmarkTabs);
 
             // Create book layout container
@@ -4219,6 +4258,520 @@ class NebulaVoxelApp {
                 }
             }, 300);
             console.log('🗺️ World map closed');
+        };
+
+        // ⚰️ Show Vanquished Panel (Kill Tracker) - Book Layout
+        this.showVanquishedPanel = () => {
+            console.log('⚰️ Opening Vanquished panel...');
+
+            // Create vanquished modal (matching CompanionCodex book style)
+            this.vanquishedModal = document.createElement('div');
+            this.vanquishedModal.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                width: 85%;
+                max-width: 1400px;
+                height: 85%;
+                background: linear-gradient(135deg, #3A2618, #5C4033);
+                border: 8px ridge #654321;
+                border-radius: 15px;
+                z-index: 50000;
+                display: flex;
+                flex-direction: column;
+                box-shadow: 0 0 40px rgba(0, 0, 0, 0.9), inset 0 0 20px rgba(101, 67, 33, 0.4);
+                backdrop-filter: blur(2px);
+                opacity: 0;
+                transition: opacity 0.3s ease;
+            `;
+
+            // Disable game controls
+            this.controlsEnabled = false;
+            if (document.pointerLockElement) {
+                document.exitPointerLock();
+            }
+
+            // Create bookmark tabs container
+            const bookmarkTabs = document.createElement('div');
+            bookmarkTabs.style.cssText = `
+                position: absolute;
+                left: -40px;
+                top: 150px;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                z-index: 1001;
+            `;
+
+            // Map bookmark tab
+            const mapTab = document.createElement('div');
+            mapTab.className = 'bookmark-tab';
+            mapTab.title = 'World Map (M)';
+            mapTab.style.cssText = `
+                width: 40px;
+                height: 80px;
+                background: linear-gradient(90deg, #8B4513, #A0522D);
+                border: 3px solid #654321;
+                border-right: none;
+                border-radius: 8px 0 0 8px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                font-size: 24px;
+                transition: all 0.2s ease;
+                box-shadow: -2px 2px 8px rgba(0, 0, 0, 0.5);
+            `;
+            mapTab.textContent = '🗺️';
+            mapTab.addEventListener('mouseover', () => {
+                mapTab.style.left = '5px';
+                mapTab.style.background = 'linear-gradient(90deg, #A0522D, #CD853F)';
+            });
+            mapTab.addEventListener('mouseout', () => {
+                mapTab.style.left = '0';
+                mapTab.style.background = 'linear-gradient(90deg, #8B4513, #A0522D)';
+            });
+            mapTab.addEventListener('click', () => {
+                this.closeVanquishedPanel(false);
+                setTimeout(() => this.toggleWorldMap(), 100);
+            });
+
+            // Codex bookmark tab
+            const codexTab = document.createElement('div');
+            codexTab.className = 'bookmark-tab';
+            codexTab.title = 'Companion Codex (C)';
+            codexTab.style.cssText = `
+                width: 40px;
+                height: 80px;
+                background: linear-gradient(90deg, #8B4513, #A0522D);
+                border: 3px solid #654321;
+                border-right: none;
+                border-radius: 8px 0 0 8px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                font-size: 24px;
+                transition: all 0.2s ease;
+                box-shadow: -2px 2px 8px rgba(0, 0, 0, 0.5);
+            `;
+            codexTab.textContent = '📘';
+            codexTab.addEventListener('mouseover', () => {
+                codexTab.style.left = '5px';
+                codexTab.style.background = 'linear-gradient(90deg, #A0522D, #CD853F)';
+            });
+            codexTab.addEventListener('mouseout', () => {
+                codexTab.style.left = '0';
+                codexTab.style.background = 'linear-gradient(90deg, #8B4513, #A0522D)';
+            });
+            codexTab.addEventListener('click', () => {
+                this.closeVanquishedPanel(false);
+                if (this.companionCodex) {
+                    setTimeout(() => this.companionCodex.show(), 100);
+                }
+            });
+
+            // Vanquished bookmark tab (active)
+            const vanquishedTab = document.createElement('div');
+            vanquishedTab.className = 'bookmark-tab active';
+            vanquishedTab.title = 'Vanquished Foes (V)';
+            vanquishedTab.style.cssText = `
+                width: 40px;
+                height: 80px;
+                background: linear-gradient(90deg, #D4AF37, #F4E4A6);
+                border: 3px solid #654321;
+                border-right: none;
+                border-radius: 8px 0 0 8px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: default;
+                font-size: 24px;
+                box-shadow: -2px 2px 8px rgba(0, 0, 0, 0.5), inset 0 0 10px rgba(212, 175, 55, 0.5);
+            `;
+            vanquishedTab.textContent = '💀';
+
+            bookmarkTabs.appendChild(mapTab);
+            bookmarkTabs.appendChild(codexTab);
+            bookmarkTabs.appendChild(vanquishedTab);
+            this.vanquishedModal.appendChild(bookmarkTabs);
+
+            // Header with title
+            const header = document.createElement('div');
+            header.style.cssText = `
+                padding: 20px;
+                text-align: center;
+                color: #F5E6D3;
+                font-family: 'Georgia', serif;
+                border-bottom: 3px solid #8B4513;
+            `;
+            header.innerHTML = `
+                <h1 style="margin: 0; font-size: 36px; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);">💀 Vanquished Foes</h1>
+                <p style="margin: 5px 0 0 0; font-size: 16px; color: #E8D5B7;">"Your past comes back to haunt you..."</p>
+            `;
+
+            // Book container (left + spine + right)
+            const bookContainer = document.createElement('div');
+            bookContainer.style.cssText = `
+                flex: 1;
+                display: flex;
+                padding: 20px;
+                gap: 20px;
+                overflow: hidden;
+            `;
+
+            // Left page - Defeated Foes List
+            const leftPage = document.createElement('div');
+            leftPage.id = 'vanquished-left-page';
+            leftPage.style.cssText = `
+                width: 48%;
+                height: 100%;
+                background: linear-gradient(45deg, #F5E6D3, #E8D5B7);
+                border: 3px solid #8B4513;
+                border-radius: 15px 5px 5px 15px;
+                padding: 20px;
+                box-shadow: inset 2px 0 10px rgba(139, 69, 19, 0.3);
+                overflow-y: auto;
+                font-family: 'Georgia', serif;
+            `;
+
+            // Get kill stats
+            const stats = this.enemyKillTracker.getStats();
+            const enemyTypes = this.enemyKillTracker.getEnemyTypesKilled();
+
+            // Left page title
+            leftPage.innerHTML = `
+                <h2 style="margin: 0 0 20px 0; color: #4A3728; text-align: center; font-size: 24px; border-bottom: 2px solid #D4AF37; padding-bottom: 10px;">
+                    Defeated Foes
+                </h2>
+                <p style="text-align: center; color: #666; margin-bottom: 20px;">
+                    ${stats.totalEnemyKills} Total Kills | ${stats.uniqueEnemyTypes} Types
+                </p>
+            `;
+
+            // Enemy list container
+            const enemyListContainer = document.createElement('div');
+            enemyListContainer.style.cssText = `
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+            `;
+
+            // Store selected enemy for right page
+            let selectedEnemy = enemyTypes.length > 0 ? enemyTypes[0].type : null;
+
+            // Render enemy list
+            if (enemyTypes.length === 0) {
+                const emptyMsg = document.createElement('div');
+                emptyMsg.style.cssText = `
+                    text-align: center;
+                    color: #8B7355;
+                    font-style: italic;
+                    padding: 40px 20px;
+                `;
+                emptyMsg.textContent = 'No foes vanquished yet...';
+                enemyListContainer.appendChild(emptyMsg);
+            } else {
+                enemyTypes.forEach(({type, count}, index) => {
+                    const enemyCard = document.createElement('div');
+                    const isActive = index === 0;
+                    const isCapped = count >= this.enemyKillTracker.killCap;
+
+                    enemyCard.style.cssText = `
+                        padding: 12px;
+                        background: ${isActive ? 'linear-gradient(90deg, #D4AF37, #F4E4A6)' : 'rgba(255, 255, 255, 0.3)'};
+                        border: 2px solid ${isCapped ? '#8B0000' : '#8B7355'};
+                        border-radius: 8px;
+                        cursor: pointer;
+                        transition: all 0.2s ease;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                    `;
+
+                    const enemyName = document.createElement('span');
+                    enemyName.textContent = type.replace(/_/g, ' ').toUpperCase();
+                    enemyName.style.cssText = `
+                        color: #2C1810;
+                        font-weight: bold;
+                        font-size: 14px;
+                    `;
+
+                    const killCount = document.createElement('span');
+                    killCount.textContent = `${count} ${isCapped ? '(MAX)' : ''}`;
+                    killCount.style.cssText = `
+                        color: ${isCapped ? '#8B0000' : '#8B7355'};
+                        font-weight: bold;
+                        font-size: 16px;
+                    `;
+
+                    enemyCard.appendChild(enemyName);
+                    enemyCard.appendChild(killCount);
+
+                    // Click to select enemy (show details on right)
+                    enemyCard.addEventListener('click', () => {
+                        selectedEnemy = type;
+                        // Remove active from all cards
+                        enemyListContainer.querySelectorAll('div').forEach(card => {
+                            card.style.background = 'rgba(255, 255, 255, 0.3)';
+                        });
+                        // Set this card as active
+                        enemyCard.style.background = 'linear-gradient(90deg, #D4AF37, #F4E4A6)';
+                        // Update right page
+                        this.renderVanquishedDetails(rightPage, type, count);
+                    });
+
+                    enemyCard.addEventListener('mouseover', () => {
+                        if (!isActive) {
+                            enemyCard.style.background = 'rgba(212, 175, 55, 0.3)';
+                        }
+                    });
+
+                    enemyCard.addEventListener('mouseout', () => {
+                        if (selectedEnemy !== type) {
+                            enemyCard.style.background = 'rgba(255, 255, 255, 0.3)';
+                        }
+                    });
+
+                    enemyListContainer.appendChild(enemyCard);
+                });
+            }
+
+            leftPage.appendChild(enemyListContainer);
+
+            // Book spine separator
+            const bookSpine = document.createElement('div');
+            bookSpine.style.cssText = `
+                width: 4%;
+                height: 100%;
+                background: linear-gradient(180deg, #654321, #8B4513, #654321);
+                border-radius: 5px;
+                box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-direction: column;
+            `;
+
+            // Spine decorations
+            for (let i = 0; i < 5; i++) {
+                const spineDecor = document.createElement('div');
+                spineDecor.style.cssText = `
+                    width: 60%;
+                    height: 3px;
+                    background: #8B4513;
+                    margin: 20px 0;
+                    border-radius: 2px;
+                `;
+                bookSpine.appendChild(spineDecor);
+            }
+
+            // Right page - Enemy Details
+            const rightPage = document.createElement('div');
+            rightPage.id = 'vanquished-right-page';
+            rightPage.style.cssText = `
+                width: 48%;
+                height: 100%;
+                background: linear-gradient(45deg, #E8D5B7, #F5E6D3);
+                border: 3px solid #8B4513;
+                border-radius: 5px 15px 15px 5px;
+                padding: 20px;
+                box-shadow: inset -2px 0 10px rgba(139, 69, 19, 0.3);
+                overflow-y: auto;
+                font-family: 'Georgia', serif;
+            `;
+
+            // Render first enemy details
+            if (selectedEnemy) {
+                const firstEnemy = enemyTypes[0];
+                this.renderVanquishedDetails(rightPage, firstEnemy.type, firstEnemy.count);
+            } else {
+                rightPage.innerHTML = `
+                    <div style="text-align: center; color: #8B7355; padding: 40px; font-style: italic;">
+                        Select a defeated foe to view details
+                    </div>
+                `;
+            }
+
+            // Footer with close button
+            const footer = document.createElement('div');
+            footer.style.cssText = `
+                padding: 15px 20px;
+                text-align: center;
+                border-top: 3px solid #8B4513;
+            `;
+
+            const closeButton = document.createElement('button');
+            closeButton.textContent = 'Close Record';
+            closeButton.style.cssText = `
+                padding: 12px 40px;
+                font-size: 18px;
+                font-family: 'Georgia', serif;
+                background: linear-gradient(135deg, #D4AF37 0%, #F4E4A6 50%, #D4AF37 100%);
+                color: #2C1810;
+                border: 3px solid #8B7355;
+                border-radius: 8px;
+                cursor: pointer;
+                font-weight: bold;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+                transition: all 0.2s ease;
+            `;
+
+            closeButton.addEventListener('mouseover', () => {
+                closeButton.style.transform = 'scale(1.05)';
+            });
+            closeButton.addEventListener('mouseout', () => {
+                closeButton.style.transform = 'scale(1)';
+            });
+            closeButton.addEventListener('click', () => {
+                this.closeVanquishedPanel();
+            });
+
+            footer.appendChild(closeButton);
+
+            // Assemble the book
+            bookContainer.appendChild(leftPage);
+            bookContainer.appendChild(bookSpine);
+            bookContainer.appendChild(rightPage);
+
+            this.vanquishedModal.appendChild(header);
+            this.vanquishedModal.appendChild(bookContainer);
+            this.vanquishedModal.appendChild(footer);
+
+            document.body.appendChild(this.vanquishedModal);
+
+            // Fade in
+            setTimeout(() => {
+                this.vanquishedModal.style.opacity = '1';
+            }, 10);
+
+            console.log('⚰️ Vanquished panel opened');
+        };
+
+        // ⚰️ Render enemy details on right page
+        this.renderVanquishedDetails = async (rightPage, enemyType, killCount) => {
+            // Fetch enemy data from entities.json
+            try {
+                const response = await fetch('art/entities/entities.json');
+                const entityDb = await response.json();
+
+                // Find enemy in monsters or ghosts section
+                let enemyData = entityDb.monsters?.[enemyType] || entityDb.ghosts?.[enemyType];
+
+                if (!enemyData) {
+                    rightPage.innerHTML = `
+                        <div style="text-align: center; color: #8B7355; padding: 40px;">
+                            No data found for ${enemyType}
+                        </div>
+                    `;
+                    return;
+                }
+
+                const isCapped = killCount >= this.enemyKillTracker.killCap;
+
+                rightPage.innerHTML = `
+                    <div style="text-align: center; padding-bottom: 20px; border-bottom: 2px solid #D4AF37;">
+                        <h2 style="margin: 0; color: #4A3728; font-size: 28px;">
+                            ${enemyData.name || enemyType}
+                        </h2>
+                        <p style="margin: 5px 0 0 0; color: #666; font-size: 14px; font-style: italic;">
+                            ${enemyData.description || 'A formidable foe'}
+                        </p>
+                    </div>
+
+                    <div style="text-align: center; margin: 20px 0;">
+                        <div style="font-size: 64px; margin: 20px 0;">💀</div>
+                        <div style="font-size: 36px; font-weight: bold; color: ${isCapped ? '#8B0000' : '#4A3728'};">
+                            ${killCount} ${isCapped ? '(MAXED OUT)' : ''}
+                        </div>
+                        <div style="color: #666; margin-top: 5px;">Times Defeated</div>
+                    </div>
+
+                    <div style="background: rgba(212, 175, 55, 0.1); border: 2px solid #D4AF37; border-radius: 10px; padding: 20px; margin-top: 20px;">
+                        <h3 style="margin: 0 0 15px 0; color: #4A3728; font-size: 20px; text-align: center;">Combat Statistics</h3>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; text-align: center;">
+                            <div>
+                                <div style="color: #666; font-size: 14px;">HP</div>
+                                <div style="color: #4A3728; font-size: 24px; font-weight: bold;">${enemyData.hp || '?'}</div>
+                            </div>
+                            <div>
+                                <div style="color: #666; font-size: 14px;">Attack</div>
+                                <div style="color: #4A3728; font-size: 24px; font-weight: bold;">${enemyData.attack || '?'}</div>
+                            </div>
+                            <div>
+                                <div style="color: #666; font-size: 14px;">Defense</div>
+                                <div style="color: #4A3728; font-size: 24px; font-weight: bold;">${enemyData.defense || '?'}</div>
+                            </div>
+                            <div>
+                                <div style="color: #666; font-size: 14px;">Speed</div>
+                                <div style="color: #4A3728; font-size: 24px; font-weight: bold;">${enemyData.speed || '?'}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    ${enemyData.abilities && enemyData.abilities.length > 0 ? `
+                        <div style="margin-top: 20px;">
+                            <h3 style="margin: 0 0 10px 0; color: #4A3728; font-size: 18px;">Known Abilities</h3>
+                            <div style="background: rgba(139, 115, 85, 0.1); border-left: 4px solid #8B7355; padding: 10px;">
+                                ${enemyData.abilities.map(ability =>
+                                    `<div style="color: #4A3728; margin: 5px 0;">• ${ability}</div>`
+                                ).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+
+                    ${isCapped ? `
+                        <div style="margin-top: 20px; padding: 15px; background: linear-gradient(135deg, rgba(139, 0, 0, 0.1), rgba(139, 0, 0, 0.2)); border: 2px solid #8B0000; border-radius: 10px; text-align: center;">
+                            <div style="color: #8B0000; font-weight: bold; font-size: 16px;">⚠️ KILL LIMIT REACHED</div>
+                            <div style="color: #666; font-size: 14px; margin-top: 5px;">
+                                This enemy type has reached the maximum tracked kills (${this.enemyKillTracker.killCap}).
+                            </div>
+                        </div>
+                    ` : ''}
+
+                    <div style="margin-top: 20px; padding: 15px; background: rgba(101, 67, 33, 0.1); border-radius: 10px; font-style: italic; color: #666; text-align: center; font-size: 14px;">
+                        "Every enemy slain is remembered..."
+                    </div>
+                `;
+
+            } catch (error) {
+                console.error('Failed to load enemy data:', error);
+                rightPage.innerHTML = `
+                    <div style="text-align: center; color: #8B0000; padding: 40px;">
+                        Failed to load enemy data
+                    </div>
+                `;
+            }
+        };
+
+        // ⚰️ Close Vanquished Panel
+        this.closeVanquishedPanel = (reEngagePointerLock = true) => {
+            if (!this.vanquishedModal) return;
+
+            this.vanquishedModal.style.opacity = '0';
+
+            setTimeout(() => {
+                if (this.vanquishedModal) {
+                    document.body.removeChild(this.vanquishedModal);
+                    this.vanquishedModal = null;
+                }
+
+                // Re-enable controls
+                this.controlsEnabled = true;
+
+                // Re-engage pointer lock (only if not switching tabs)
+                if (reEngagePointerLock) {
+                    setTimeout(() => {
+                        if (this.controlsEnabled) {
+                            this.renderer.domElement.requestPointerLock();
+                        }
+                    }, 100);
+                }
+            }, 300);
+
+            console.log('⚰️ Vanquished panel closed');
         };
 
         // 📊 Toggle FPS counter visibility
@@ -8677,6 +9230,10 @@ class NebulaVoxelApp {
         // this.battleSystem = new BattleSystem(this);
         // ⚔️ Initialize Unified Combat System (centralized damage for all weapons/enemies)
         this.unifiedCombat = new UnifiedCombatSystem(this);
+
+        // ⚰️ Initialize Enemy Kill Tracker (tracks kills for Mega Boss waves)
+        this.enemyKillTracker = new EnemyKillTracker(this);
+        this.enemyKillTracker.loadFromLocalStorage(); // Load existing kill data
 
         // ⚔️ Initialize Companion Combat System (companion behavior and abilities)
         this.companionCombatSystem = new CompanionCombatSystem(this);

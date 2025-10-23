@@ -386,6 +386,11 @@ export class SpectralHuntSystem {
                         console.log('💀💣 Demolition ghost killed itself with its own charge!');
                         this.demolitionGhost.isAlive = false;
 
+                        // ⚰️ Track kill for Mega Boss waves
+                        if (this.voxelWorld.enemyKillTracker) {
+                            this.voxelWorld.enemyKillTracker.recordKill('demolition_ghost', true, false);
+                        }
+
                         // Return sprite to pool or remove manually
                         if (this.entityPool) {
                             this.entityPool.release(this.demolitionGhost.sprite);

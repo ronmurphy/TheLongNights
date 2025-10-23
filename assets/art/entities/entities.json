@@ -564,7 +564,9 @@
       "sprite_attack": "human_male_attack.png",
       "sprite_portrait": "human_male.png",
       "description": "Balanced and adaptable, jack of all trades.",
-      "craftable": false
+      "craftable": false,
+      "moralThreshold": 700,
+      "moralityNote": "Moderate warrior - balanced view but refuses boss fight at 700+ kills"
     },
     "human_female": {
       "name": "Human",
@@ -579,7 +581,9 @@
       "sprite_attack": "human_female_attack.png",
       "sprite_portrait": "human_female.png",
       "description": "Balanced and adaptable, jack of all trades.",
-      "craftable": false
+      "craftable": false,
+      "moralThreshold": 700,
+      "moralityNote": "Moderate warrior - balanced view but refuses boss fight at 700+ kills"
     },
     "elf": {
       "name": "Elf",
@@ -609,7 +613,9 @@
       "sprite_attack": "elf_male_attack.png",
       "sprite_portrait": "elf_male.png",
       "description": "Swift and precise, masters of agility.",
-      "craftable": false
+      "craftable": false,
+      "moralThreshold": 500,
+      "moralityNote": "Peaceful nature lover - refuses boss fight if player kills 500+ enemies"
     },
     "elf_female": {
       "name": "Elf",
@@ -624,7 +630,9 @@
       "sprite_attack": "elf_female_attack.png",
       "sprite_portrait": "elf_female.png",
       "description": "Swift and precise, masters of agility.",
-      "craftable": false
+      "craftable": false,
+      "moralThreshold": 500,
+      "moralityNote": "Peaceful nature lover - refuses boss fight if player kills 500+ enemies"
     },
     "dwarf": {
       "name": "Dwarf",
@@ -654,7 +662,9 @@
       "sprite_attack": "dwarf_male_attack.png",
       "sprite_portrait": "dwarf_male.png",
       "description": "Tough and resilient, built like a mountain.",
-      "craftable": false
+      "craftable": false,
+      "moralThreshold": 800,
+      "moralityNote": "Battle-hardened warrior - accepts violence but refuses boss fight at 800+ kills"
     },
     "dwarf_female": {
       "name": "Dwarf",
@@ -669,7 +679,9 @@
       "sprite_attack": "dwarf_female_attack.png",
       "sprite_portrait": "dwarf_female.png",
       "description": "Tough and resilient, built like a mountain.",
-      "craftable": false
+      "craftable": false,
+      "moralThreshold": 800,
+      "moralityNote": "Battle-hardened warrior - accepts violence but refuses boss fight at 800+ kills"
     },
     "goblin": {
       "name": "Goblin",
@@ -699,7 +711,9 @@
       "sprite_attack": "goblin_male_attack.png",
       "sprite_portrait": "goblin_male.png",
       "description": "Cunning and aggressive, fights dirty to win.",
-      "craftable": false
+      "craftable": false,
+      "moralThreshold": 900,
+      "moralityNote": "Chaotic warrior - embraces violence but even they have limits at 900+ kills"
     },
     "goblin_female": {
       "name": "Goblin",
@@ -714,7 +728,9 @@
       "sprite_attack": "goblin_female_attack.png",
       "sprite_portrait": "goblin_female.png",
       "description": "Cunning and aggressive, fights dirty to win.",
-      "craftable": false
+      "craftable": false,
+      "moralThreshold": 900,
+      "moralityNote": "Chaotic warrior - embraces violence but even they have limits at 900+ kills"
     }
   },
   "ghosts": {

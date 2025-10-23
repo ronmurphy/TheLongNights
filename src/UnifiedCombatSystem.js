@@ -148,7 +148,13 @@ export class UnifiedCombatSystem {
                         // Create hit effect
                         const pos = enemy.sprite.position;
                         this.voxelWorld.createExplosionEffect(pos.x, pos.y, pos.z, 'hit');
-                        
+
+                        // ⚰️ Track kill for Mega Boss waves
+                        if (result.killed && this.voxelWorld.enemyKillTracker) {
+                            const isEnemy = enemy.sprite?.userData?.isEnemy || false;
+                            this.voxelWorld.enemyKillTracker.recordKill(enemyId, isEnemy, false);
+                        }
+
                         return result;
                     }
                 }
@@ -177,10 +183,17 @@ export class UnifiedCombatSystem {
                             ghostData.isDead = true;
                             coloredGhostSystem.removeGhost(ghostId);
                             this.voxelWorld.updateStatus(`👻 Defeated ${ghostData.color.name} ghost!`, 'combat');
+
+                            // ⚰️ Track kill for Mega Boss waves
+                            if (this.voxelWorld.enemyKillTracker) {
+                                const isGhost = ghostData.sprite?.userData?.isGhost || false;
+                                const isEnemy = ghostData.sprite?.userData?.isEnemy || false;
+                                this.voxelWorld.enemyKillTracker.recordKill(ghostId, isEnemy || isGhost, false);
+                            }
                         } else {
                             this.voxelWorld.updateStatus(`👻 Hit ${ghostData.color.name} ghost for ${damage} damage! (${ghostData.hp}/5 HP)`, 'combat');
                         }
-                        
+
                         return result;
                     }
                 }
@@ -206,8 +219,14 @@ export class UnifiedCombatSystem {
                         if (animal.health <= 0) {
                             result.killed = true;
                             this.voxelWorld.animalSystem.killAnimal(animalId);
+
+                            // ⚰️ Track animal kill separately (red herring - doesn't affect boss)
+                            if (this.voxelWorld.enemyKillTracker) {
+                                const isAnimal = animal.sprite?.userData?.isAnimal || false;
+                                this.voxelWorld.enemyKillTracker.recordKill(animalId, false, isAnimal);
+                            }
                         }
-                        
+
                         return result;
                     }
                 }
