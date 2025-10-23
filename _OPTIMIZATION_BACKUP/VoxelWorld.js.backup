@@ -2595,7 +2595,7 @@ class NebulaVoxelApp {
                 isCompanionDiscovery = target.userData.isCompanionDiscovery;
             }
 
-            // BACKPACK UNLOCK: Check if this is the starting backpack (world item version)
+            // 🎒 BACKPACK UNLOCK: Check if this is the starting backpack (world item version)
             if (itemType === 'backpack' && !this.hasBackpack) {
                 this.hasBackpack = true; // Mark backpack as found
                 this.backpackPosition = null; // Remove from minimap
@@ -2603,14 +2603,14 @@ class NebulaVoxelApp {
                 this.showHotbarTutorial(); // Show hotbar and tutorial
                 this.showToolButtons(); // Show tool menu buttons
                 console.log(`Found backpack! Hotbar unlocked!`);
-                this.updateStatus(`Found backpack! Inventory system unlocked!`, 'discovery');
+                this.updateStatus(`🎒 Found backpack! Inventory system unlocked!`, 'discovery');
 
                 // Show backpack tutorial for first-time players
                 if (this.tutorialSystem) {
                     this.tutorialSystem.onBackpackOpened();
                 }
 
-                // Create companion portrait after backpack found
+                // 🖼️ Create companion portrait after backpack found
                 if (this.companionPortrait) {
                     this.companionPortrait.create();
                 }
@@ -2619,7 +2619,7 @@ class NebulaVoxelApp {
             // Add to inventory
             this.inventory.addToInventory(itemType, 1);
 
-            // �️ Notify spear system if this was a thrown spear
+            // 🗡️ Notify spear system if this was a thrown spear
             if ((itemType === 'stone_spear' || itemType === 'crafted_stone_spear') && this.spearSystem) {
                 this.spearSystem.removeSpear(sprite);
             }
@@ -7178,6 +7178,13 @@ class NebulaVoxelApp {
         window.nuclearClear = () => {
             console.log('🧨💥 NUCLEAR CLEAR - WIPING EVERYTHING...');
 
+            // 0. Stop game time interval
+            if (this.gameTimeInterval) {
+                clearInterval(this.gameTimeInterval);
+                this.gameTimeInterval = null;
+                console.log('⏰ Game time interval stopped');
+            }
+
             // 1. Clear all localStorage (includes campfire respawn)
             console.log('🧹 Clearing localStorage (including campfire respawn)...');
             localStorage.clear();
@@ -11348,15 +11355,16 @@ class NebulaVoxelApp {
             if (this.keys[" "]) this.player.velocity = this.player.velocity || jumpSpeed; // Spacebar to jump
 
             // Mobile joystick input
-            if (this.isMobile) {
-                dir.x += this.leftJoystickValue.x;
-                dir.z += this.leftJoystickValue.y;
-
-                // Mobile jump (if right joystick pressed up)
-                if (this.rightJoystickValue.y < -0.5) {
-                    this.player.velocity = this.player.velocity || jumpSpeed;
-                }
-            }
+            // DISABLED: Mobile/Android support dropped
+            // if (this.isMobile) {
+            //     dir.x += this.leftJoystickValue.x;
+            //     dir.z += this.leftJoystickValue.y;
+            //
+            //     // Mobile jump (if right joystick pressed up)
+            //     if (this.rightJoystickValue.y < -0.5) {
+            //         this.player.velocity = this.player.velocity || jumpSpeed;
+            //     }
+            // }
             
             // Apply rotation to movement direction
             dir.applyAxisAngle(new THREE.Vector3(0, 1, 0), this.player.rotation.y);
@@ -11693,16 +11701,17 @@ class NebulaVoxelApp {
             this.camera.position.set(this.player.position.x, this.player.position.y, this.player.position.z);
 
             // Mobile camera controls
-            if (this.isMobile && this.rightJoystickActive) {
-                const cameraSpeed = 0.5 * deltaTime;
-                this.player.rotation.y -= this.rightJoystickValue.x * cameraSpeed;
-                this.player.rotation.x += this.rightJoystickValue.y * cameraSpeed;
-
-                // Clamp vertical rotation
-                const maxLookUp = Math.PI / 2 - 0.1;
-                const maxLookDown = -Math.PI / 2 + 0.1;
-                this.player.rotation.x = Math.max(maxLookDown, Math.min(maxLookUp, this.player.rotation.x));
-            }
+            // DISABLED: Mobile/Android support dropped
+            // if (this.isMobile && this.rightJoystickActive) {
+            //     const cameraSpeed = 0.5 * deltaTime;
+            //     this.player.rotation.y -= this.rightJoystickValue.x * cameraSpeed;
+            //     this.player.rotation.x += this.rightJoystickValue.y * cameraSpeed;
+            //
+            //     // Clamp vertical rotation
+            //     const maxLookUp = Math.PI / 2 - 0.1;
+            //     const maxLookDown = -Math.PI / 2 + 0.1;
+            //     this.player.rotation.x = Math.max(maxLookDown, Math.min(maxLookUp, this.player.rotation.x));
+            // }
 
             // Use quaternions for stable rotation
             const yawQuaternion = new THREE.Quaternion();
@@ -12173,10 +12182,43 @@ class NebulaVoxelApp {
             );
             
             if (intersects.length > 0) {
-                const hit = intersects[0];
+                // 🎯 PRIORITIZE ENTITY HITS: Check for enemy/ghost hitboxes first, regardless of distance
+                let hit = null;
+                for (const intersection of intersects) {
+                    const obj = intersection.object;
+                    // Prioritize entity hitboxes (meshes with entitySprite) and enemy sprites
+                    if ((obj.isMesh && obj.userData.entitySprite) || 
+                        (obj.isSprite && (obj.userData.isEnemy || obj.userData.isGhost))) {
+                        hit = intersection;
+                        console.log(`🎯 DEBUG: Prioritized entity hit: ${obj.userData.type || obj.userData.entityType} at distance ${intersection.distance.toFixed(1)}`);
+                        break;
+                    }
+                }
+                
+                // If no entity found, use the closest intersection (blocks, etc.)
+                if (!hit) {
+                    hit = intersects[0];
+                }
 
-                // Get position from regular mesh
-                const pos = hit.object.position.clone();
+                // Get position - special handling for entity hitboxes
+                let pos;
+                if (hit.object.isMesh && hit.object.userData.entitySprite) {
+                    // Mesh hitbox - use the sprite position, not the hitbox intersection point
+                    pos = hit.object.userData.entitySprite.position.clone();
+                    console.log(`🎯 DEBUG: Right-click on entity hitbox, using sprite pos: (${pos.x.toFixed(1)}, ${pos.y.toFixed(1)}, ${pos.z.toFixed(1)})`);
+                } else if (hit.object.isSprite && (hit.object.userData.isEnemy || hit.object.userData.isGhost)) {
+                    // Enemy/ghost sprite - use sprite position directly
+                    pos = hit.object.position.clone();
+                    console.log(`🎯 DEBUG: Right-click on enemy sprite, using sprite pos: (${pos.x.toFixed(1)}, ${pos.y.toFixed(1)}, ${pos.z.toFixed(1)})`);
+                } else if (hit.point) {
+                    // Regular mesh/block - use intersection point
+                    pos = hit.point.clone();
+                    console.log(`🎯 DEBUG: Right-click on mesh/block, using hit point: (${pos.x.toFixed(1)}, ${pos.y.toFixed(1)}, ${pos.z.toFixed(1)})`);
+                } else {
+                    // Other sprite - use object position
+                    pos = hit.object.position.clone();
+                    console.log(`🎯 DEBUG: Right-click on other sprite, using sprite pos: (${pos.x.toFixed(1)}, ${pos.y.toFixed(1)}, ${pos.z.toFixed(1)})`);
+                }
 
                 // 🐰 Check if clicked object is a hunted animal
                 if (hit.object.userData && hit.object.userData.isAnimal) {
@@ -13788,6 +13830,7 @@ class NebulaVoxelApp {
 
         // Time indicator click handler (opens menu)
         this.timeIndicator.onclick = () => {
+            this.hideUI(); // Hide hotbar and other UI elements
             modal.style.display = 'block';
         };
 
@@ -14027,7 +14070,10 @@ class NebulaVoxelApp {
         if (modalRenderDistanceBtn) modalRenderDistanceBtn.onclick = cycleRenderDistance;
         if (modalEnhancedGraphicsBtn) modalEnhancedGraphicsBtn.onclick = toggleEnhancedGraphics;
         if (modalGPUBtn) modalGPUBtn.onclick = cycleGPUPreference;
-        if (modalCloseBtn) modalCloseBtn.onclick = () => modal.style.display = 'none';
+        if (modalCloseBtn) modalCloseBtn.onclick = () => {
+            modal.style.display = 'none';
+            this.showUI(); // Restore hotbar and other UI elements
+        };
 
         // 📚 Help system - Load markdown files
         const helpContentArea = modal.querySelector('#help-content-area');
@@ -14765,9 +14811,10 @@ class NebulaVoxelApp {
         }
 
         // Create mobile virtual joysticks if on mobile device
-        if (this.isMobile) {
-            this.createMobileJoysticks(contentArea);
-        }
+        // DISABLED: Mobile/Android support dropped, keeping code for future controller/mobile implementation
+        // if (this.isMobile) {
+        //     this.createMobileJoysticks(contentArea);
+        // }
 
         // 🎨 LOD SYSTEM DEBUG COMMANDS (TEST VERSION)
         // Usage in browser console:

@@ -1,0 +1,633 @@
+/**
+ * BloodMoonSystem.js
+ * 
+ * Manages blood moon enemy spawning and AI behavior.
+ * Spawns waves of enemies during blood moons (Day 7, 10pm-2am).
+ * Enemies move towards player and attack fortifications.
+ */
+
+import * as THREE from 'three';
+import { EntityPool } from './EntityPool.js';
+
+export class BloodMoonSystem {
+    constructor(voxelWorld) {
+        this.voxelWorld = voxelWorld;
+        this.scene = voxelWorld.scene;
+
+        // Entity pool for sprite reuse
+        this.entityPool = new EntityPool(voxelWorld.scene, voxelWorld.enhancedGraphics);
+        
+        // Enemy tracking
+        this.activeEnemies = new Map(); // Map<enemyId, enemyData>
+        this.nextEnemyId = 0;
+        
+        // Entity data (loaded from entities.json)
+        this.entityDatabase = null;
+        this.loadEntityData();
+        
+        // Animation timing
+        this.time = 0;
+        this.lastUpdateTime = Date.now();
+        
+        // Progressive spawn tracking (Day 7: Noon to Midnight)
+        this.lastSpawnHour = -1;
+        this.spawnedThisBloodMoon = false;
+        
+        // Spawn config
+        this.config = {
+            spawnDistance: 30,       // Blocks away from player
+            spawnDistanceVariation: 10, // Random variation (+/- blocks)
+            spawnHeight: 1,          // Height above ground
+            
+            // Animation
+            animationSpeed: 2.0,     // Speed of animation cycle (crawler push-ups)
+            crawlSpeed: 0.15,        // Blocks per second (VERY SLOW - no legs! Relentless but slow)
+            
+            // AI
+            attackRange: 2,          // Blocks - distance to start attacking
+            attackDamage: 5,         // Damage per attack
+            attackCooldown: 2000,    // Milliseconds between attacks
+        };
+        
+        // Animation loop (60 FPS) - only runs during blood moon
+        this.animationInterval = null;
+        
+        console.log('🩸 BloodMoonSystem initialized');
+    }
+    
+    /**
+     * Start animation loop (called when blood moon begins)
+     */
+    startAnimationLoop() {
+        if (this.animationInterval) return; // Already running
+        
+        this.animationInterval = setInterval(() => this.updateEnemies(), 16); // ~60 FPS
+        console.log('🩸 Animation loop started');
+    }
+    
+    /**
+     * Stop animation loop (called when blood moon ends)
+     */
+    stopAnimationLoop() {
+        if (this.animationInterval) {
+            clearInterval(this.animationInterval);
+            this.animationInterval = null;
+            console.log('🩸 Animation loop stopped');
+        }
+    }
+    
+    /**
+     * Load entity data from entities.json
+     */
+    async loadEntityData() {
+        try {
+            const response = await fetch('art/entities/entities.json');
+            const data = await response.json();
+            this.entityDatabase = data;
+            console.log('🩸 Entity database loaded:', Object.keys(data).length, 'categories');
+        } catch (error) {
+            console.error('🩸 Failed to load entities.json:', error);
+        }
+    }
+    
+    /**
+     * Get entity data by ID
+     */
+    getEntityData(entityId) {
+        if (!this.entityDatabase) {
+            console.warn('🩸 Entity database not loaded yet');
+            return null;
+        }
+        
+        // Search through all categories (monsters, companions, etc.)
+        for (const category in this.entityDatabase) {
+            if (this.entityDatabase[category][entityId]) {
+                return this.entityDatabase[category][entityId];
+            }
+        }
+        
+        console.warn(`🩸 Entity "${entityId}" not found in database`);
+        return null;
+    }
+    
+    /**
+     * Progressive spawn system - spawns more enemies each hour from Noon to Midnight on Day 7
+     * This creates a building sense of panic as the player needs to return to base
+     */
+    checkProgressiveSpawn(week, currentTime) {
+        // Only spawn during Day 7, from 12:00 (noon) to 24:00 (midnight)
+        const currentHour = Math.floor(currentTime);
+        
+        // Check if we're in the spawn window (12:00 to 23:59)
+        if (currentHour < 12 || currentHour >= 24) {
+            return;
+        }
+        
+        // Check if we already spawned this hour
+        if (currentHour === this.lastSpawnHour) {
+            return;
+        }
+        
+        // Check if entity database is loaded
+        if (!this.entityDatabase) {
+            console.warn('🩸 Cannot spawn enemies - entity database not loaded yet. Retrying in 100ms...');
+            setTimeout(() => this.checkProgressiveSpawn(week, currentTime), 100);
+            return;
+        }
+        
+        // Calculate spawn count based on time of day
+        // Noon (12): 2-3 crawlers (warning signs)
+        // Afternoon (14-18): 3-5 crawlers per hour (building threat)
+        // Evening (19-21): 5-8 crawlers per hour (panic mode)
+        // Night (22-23): 8-12 crawlers per hour (peak chaos)
+        let spawnCount;
+        if (currentHour === 12) {
+            spawnCount = 2 + Math.floor(Math.random() * 2); // 2-3
+        } else if (currentHour < 19) {
+            spawnCount = 3 + Math.floor(Math.random() * 3); // 3-5
+        } else if (currentHour < 22) {
+            spawnCount = 5 + Math.floor(Math.random() * 4); // 5-8
+        } else {
+            spawnCount = 8 + Math.floor(Math.random() * 5); // 8-12
+        }
+        
+        // Scale with week difficulty
+        spawnCount = Math.floor(spawnCount * (1 + week * 0.3));
+        
+        // 🌙 PROGRESSIVE SPEED BOOST: As darkness approaches, they get faster!
+        // Hour 12 (noon): 1.0x speed (base: 0.15 blocks/sec)
+        // Hour 13-23: +0.05x speed per hour compounded
+        // Hour 23 (11pm): ~1.7x speed (0.26 blocks/sec)
+        // This creates escalating terror as night falls
+        const hoursFromNoon = currentHour - 12;
+        const speedMultiplier = 1.0 + (hoursFromNoon * 0.05);
+        
+        console.log(`🩸 Hour ${currentHour}:00 - Spawning ${spawnCount} enemies (${speedMultiplier.toFixed(2)}x speed)...`);
+
+        // Get enemy pool for this bloodmoon
+        const enemyPool = this.getEnemyPoolForBloodmoon(week);
+
+        // Get player position
+        const playerPos = this.voxelWorld.player.position;
+
+        // Spawn enemies in a circle around player
+        for (let i = 0; i < spawnCount; i++) {
+            // Pick random enemy from pool
+            const enemyId = this.pickRandomEnemy(enemyPool, week);
+
+            // Random angle around player
+            const angle = Math.random() * Math.PI * 2;
+            const distance = this.config.spawnDistance + Math.random() * this.config.spawnDistanceVariation;
+
+            const x = playerPos.x + Math.cos(angle) * distance;
+            const z = playerPos.z + Math.sin(angle) * distance;
+
+            // Get ground height at spawn location
+            const y = this.voxelWorld.getGroundHeight(x, z) + this.config.spawnHeight;
+
+            // Spawn enemy with speed boost
+            this.spawnEnemy(enemyId, x, y, z, speedMultiplier);
+        }
+        
+        // Update last spawn hour
+        this.lastSpawnHour = currentHour;
+        
+        console.log(`🩸 Total active enemies: ${this.activeEnemies.size}`);
+    }
+    
+    /**
+     * OLD: Spawn all blood moon enemies at once (kept for reference/backwards compatibility)
+     */
+    spawnEnemiesAllAtOnce(week) {
+        // Check if entity database is loaded
+        if (!this.entityDatabase) {
+            console.warn('🩸 Cannot spawn enemies - entity database not loaded yet. Retrying in 100ms...');
+            setTimeout(() => this.spawnEnemiesAllAtOnce(week), 100);
+            return;
+        }
+        
+        // Calculate enemy count based on week (10 + 10 per week)
+        const enemyCount = 10 + (week * 10);
+        const maxEnemies = 100; // Cap at 100
+        const finalCount = Math.min(enemyCount, maxEnemies);
+        
+        console.log(`🩸 Spawning ${finalCount} enemies for Bloodmoon ${week}...`);
+
+        // Get enemy pool for this bloodmoon
+        const enemyPool = this.getEnemyPoolForBloodmoon(week);
+
+        // Get player position (same as Animal system)
+        const playerPos = this.voxelWorld.player.position;
+        console.log(`🩸 Player position: (${playerPos.x.toFixed(1)}, ${playerPos.y.toFixed(1)}, ${playerPos.z.toFixed(1)})`);
+
+        // Spawn enemies in a circle around player
+        for (let i = 0; i < finalCount; i++) {
+            // Pick random enemy from pool
+            const enemyId = this.pickRandomEnemy(enemyPool, week);
+
+            // Random angle around player
+            const angle = (Math.PI * 2 * i) / finalCount + (Math.random() * 0.5 - 0.25);
+            const distance = this.config.spawnDistance + Math.random() * this.config.spawnDistanceVariation;
+
+            const x = playerPos.x + Math.cos(angle) * distance;
+            const z = playerPos.z + Math.sin(angle) * distance;
+
+            // Get ground height at spawn location
+            const y = this.voxelWorld.getGroundHeight(x, z) + this.config.spawnHeight;
+
+            console.log(`🩸 Attempting to spawn ${enemyId} ${i+1}/${finalCount} at (${x.toFixed(1)}, ${y.toFixed(1)}, ${z.toFixed(1)})`);
+
+            // Spawn enemy
+            const enemy = this.spawnEnemy(enemyId, x, y, z);
+            if (enemy) {
+                console.log(`✅ ${enemyId} ${i+1} spawned successfully`);
+            } else {
+                console.error(`❌ Failed to spawn ${enemyId} ${i+1}`);
+            }
+        }
+        
+        console.log(`🩸 Spawned ${this.activeEnemies.size} enemies`);
+    }
+    
+    /**
+     * Get enemy pool for current bloodmoon based on difficulty progression
+     * Bloodmoon 1: Tier 1 only
+     * Bloodmoon 2: Tier 1-2
+     * Bloodmoon 3: Tier 2-3
+     * Bloodmoon 4+: Higher tiers unlock
+     */
+    getEnemyPoolForBloodmoon(bloodmoonNumber) {
+        if (!this.entityDatabase || !this.entityDatabase.monsters) {
+            console.warn('🩸 Entity database not loaded');
+            return ['zombie_crawler']; // Fallback
+        }
+
+        // Determine max tier based on bloodmoon number
+        let maxTier = 1;
+        if (bloodmoonNumber >= 6) maxTier = 5;       // Bloodmoon 6+: All tiers
+        else if (bloodmoonNumber >= 5) maxTier = 4;  // Bloodmoon 5: Up to tier 4
+        else if (bloodmoonNumber >= 4) maxTier = 3;  // Bloodmoon 4: Up to tier 3
+        else if (bloodmoonNumber >= 3) maxTier = 3;  // Bloodmoon 3: Up to tier 3
+        else if (bloodmoonNumber >= 2) maxTier = 2;  // Bloodmoon 2: Up to tier 2
+        // Bloodmoon 1: maxTier = 1 (tier 1 only)
+
+        // Filter enemies by type=enemy and tier <= maxTier
+        const availableEnemies = [];
+        for (const [id, data] of Object.entries(this.entityDatabase.monsters)) {
+            // Skip companions, bosses, and friendly entities
+            if (data.type === 'enemy' && data.tier <= maxTier) {
+                // Skip enemies without sprites (incomplete)
+                if (data.sprite_ready && data.sprite_attack) {
+                    availableEnemies.push(id);
+                }
+            }
+        }
+
+        console.log(`🩸 Bloodmoon ${bloodmoonNumber}: Max tier ${maxTier}, ${availableEnemies.length} enemy types available`);
+        return availableEnemies.length > 0 ? availableEnemies : ['zombie_crawler'];
+    }
+
+    /**
+     * Pick random enemy from pool with weighted selection
+     * Lower tiers are more common, higher tiers are rare
+     */
+    pickRandomEnemy(enemyPool, bloodmoonNumber) {
+        if (enemyPool.length === 0) return 'zombie_crawler';
+        if (enemyPool.length === 1) return enemyPool[0];
+
+        // Get tier for each enemy
+        const enemiesWithTiers = enemyPool.map(id => ({
+            id,
+            tier: this.entityDatabase.monsters[id]?.tier || 1
+        }));
+
+        // Weight: lower tiers more common
+        // Tier 1: 40% chance
+        // Tier 2: 30% chance
+        // Tier 3: 20% chance
+        // Tier 4: 8% chance
+        // Tier 5: 2% chance
+        const tierWeights = { 1: 40, 2: 30, 3: 20, 4: 8, 5: 2 };
+        const weightedPool = [];
+
+        for (const enemy of enemiesWithTiers) {
+            const weight = tierWeights[enemy.tier] || 10;
+            for (let i = 0; i < weight; i++) {
+                weightedPool.push(enemy.id);
+            }
+        }
+
+        return weightedPool[Math.floor(Math.random() * weightedPool.length)];
+    }
+
+    /**
+     * Spawn individual enemy
+     * @param {number} speedMultiplier - Speed boost from time of day (default 1.0)
+     */
+    spawnEnemy(entityId, x, y, z, speedMultiplier = 1.0) {
+        console.log(`🩸 spawnEnemy called: ${entityId} at (${x.toFixed(1)}, ${y.toFixed(1)}, ${z.toFixed(1)}) [${speedMultiplier.toFixed(2)}x speed]`);
+
+        // Start animation loop when first enemy spawns
+        if (this.activeEnemies.size === 0) {
+            this.startAnimationLoop();
+        }
+
+        // Load enemy data from entities.json
+        const entityData = this.getEntityData(entityId);
+
+        if (!entityData) {
+            console.warn(`🩸 Enemy type "${entityId}" not found in entities.json`);
+            return null;
+        }
+
+        console.log(`🩸 Entity data found:`, entityData);
+
+        // 🎯 Zombie crawlers are weak - 1 hit kill (they have no legs!)
+        const crawlerHP = entityId === 'zombie_crawler' ? 1 : entityData.hp;
+
+        // ♻️ Get sprite from entity pool (reuses existing sprite if available)
+        const sprite = this.entityPool.acquire(entityId, entityData, x, y, z);
+
+        // Override HP for zombie crawlers
+        sprite.userData.hp = crawlerHP;
+        sprite.userData.maxHp = crawlerHP;
+
+        // Create enemy data
+        const enemyId = `bloodmoon_${this.nextEnemyId++}`;
+
+        const enemyData = {
+            id: enemyId,
+            entityType: entityId,
+            sprite: sprite,
+
+            // Stats from entities.json
+            health: crawlerHP,
+            maxHealth: crawlerHP,
+            attack: entityData.attack,
+            defense: entityData.defense,
+            baseSpeed: entityData.speed * 0.01, // Base speed from entities.json
+            speedMultiplier: speedMultiplier,    // Time-of-day speed boost
+
+            // AI state
+            target: {
+                x: this.voxelWorld.player.position.x,
+                y: this.voxelWorld.player.position.y,
+                z: this.voxelWorld.player.position.z
+            },
+            lastAttackTime: 0,
+
+            // Animation state
+            animationTime: Math.random() * Math.PI * 2, // Random start time for variation
+        };
+
+        this.activeEnemies.set(enemyId, enemyData);
+
+        return enemyData;
+    }
+    
+    // Removed loadEntityTexture() - EntityPool handles texture loading now
+    
+    /**
+     * Update all enemies (movement, animation, attacks)
+     */
+    updateEnemies() {
+        if (this.activeEnemies.size === 0) return;
+        
+        const now = Date.now();
+        const deltaTime = (now - this.lastUpdateTime) / 1000; // Seconds
+        this.lastUpdateTime = now;
+        this.time += deltaTime;
+        
+        // Update player position (target) - same as Animal system
+        const playerPos = this.voxelWorld.player.position;
+        
+        // Update each enemy
+        for (const [enemyId, enemy] of this.activeEnemies) {
+            // Check if dead
+            if (enemy.health <= 0) {
+                this.removeEnemy(enemyId);
+                continue;
+            }
+            
+            // Calculate distance to player
+            const dx = playerPos.x - enemy.sprite.position.x;
+            const dz = playerPos.z - enemy.sprite.position.z;
+            const distance = Math.sqrt(dx * dx + dz * dz);
+            
+            // Update animation time
+            enemy.animationTime += deltaTime * this.config.animationSpeed;
+            
+            // Animate between ready pose and attack pose (crawling push-ups!)
+            // sin wave oscillates between -1 and 1, map to 0-1 for texture blend
+            const animPhase = (Math.sin(enemy.animationTime) + 1) / 2;
+
+            // ♻️ Get textures from sprite userData (set by EntityPool)
+            const textures = enemy.sprite.userData.textures;
+            if (!textures) continue; // Safety check
+
+            // Switch texture based on animation phase
+            if (animPhase < 0.5) {
+                // Ready pose (pushing up)
+                if (enemy.sprite.material.map !== textures.ready) {
+                    enemy.sprite.material.map = textures.ready;
+                    enemy.sprite.material.needsUpdate = true;
+                }
+            } else {
+                // Attack pose (dragging forward)
+                if (enemy.sprite.material.map !== textures.attack) {
+                    enemy.sprite.material.map = textures.attack;
+                    enemy.sprite.material.needsUpdate = true;
+                }
+            }
+            
+            // Movement - crawl towards player
+            if (distance > this.config.attackRange) {
+                // Move towards player (VERY slow crawl - they have no legs!)
+                // Use deltaTime to make it frame-rate independent
+                // Apply time-of-day speed multiplier (faster as darkness approaches)
+                const crawlSpeed = this.config.crawlSpeed * deltaTime * enemy.speedMultiplier;
+                const moveX = (dx / distance) * crawlSpeed;
+                const moveZ = (dz / distance) * crawlSpeed;
+                
+                enemy.sprite.position.x += moveX;
+                enemy.sprite.position.z += moveZ;
+                
+                // Update Y to follow terrain
+                enemy.sprite.position.y = this.voxelWorld.getGroundHeight(
+                    enemy.sprite.position.x, 
+                    enemy.sprite.position.z
+                ) + this.config.spawnHeight;
+                
+            } else {
+                // In attack range - attack!
+                if (now - enemy.lastAttackTime > this.config.attackCooldown) {
+                    this.attemptAttack(enemy);
+                    enemy.lastAttackTime = now;
+                }
+            }
+        }
+        
+        // Check if all enemies defeated
+        if (this.activeEnemies.size === 0 && this.voxelWorld.dayNightCycle.bloodMoonActive) {
+            this.voxelWorld.updateStatus('🩸 All blood moon enemies defeated! Bonus +50 XP', 'success');
+            console.log('🩸 All enemies defeated!');
+        }
+    }
+    
+    /**
+     * Enemy attacks player or nearest fortification
+     */
+    attemptAttack(enemy) {
+        const enemyPos = enemy.sprite.position;
+        
+        // Find nearest player-placed block within range
+        const nearestBlock = this.findNearestPlayerBlock(enemyPos);
+        
+        if (nearestBlock) {
+            // Attack block
+            const blockKey = `${nearestBlock.x},${nearestBlock.y},${nearestBlock.z}`;
+            console.log(`🩸 ${enemy.entityType} attacking block at ${blockKey}`);
+            
+            // TODO: Implement block damage system
+            // For now, just log the attack
+            // this.voxelWorld.damageBlock(nearestBlock.x, nearestBlock.y, nearestBlock.z, enemy.attack);
+            
+        } else {
+            // No fortifications nearby - attack player or companion
+            console.log(`🩸 ${enemy.entityType} attacking!`);
+            
+            // ⚔️ Use Rule of 3rds damage distribution
+            if (this.voxelWorld.companionCombatSystem) {
+                const result = this.voxelWorld.companionCombatSystem.distributeEnemyDamage(
+                    enemy.attack,
+                    enemy.entityType
+                );
+                console.log(`🩸 ${enemy.entityType} attacked → ${result.target} (${result.actualDamage} damage)`);
+            } else {
+                // Fallback: Direct player damage
+                if (this.voxelWorld.playerHP) {
+                    this.voxelWorld.playerHP.takeDamage(enemy.attack);
+                }
+                this.voxelWorld.updateStatus(`🩸 ${enemy.entityType} hits you for ${enemy.attack} damage!`, 'danger');
+            }
+        }
+    }
+    
+    /**
+     * Find nearest player-placed block within attack range
+     * TODO: This needs proper integration with block tracking system
+     */
+    findNearestPlayerBlock(position) {
+        // For now, return null - block damage system not yet implemented
+        // This will make zombies go after the player directly
+        // Future: integrate with voxelWorld's block tracking system
+        return null;
+        
+        /* PLACEHOLDER for future block damage system:
+        let nearest = null;
+        let minDistance = this.config.attackRange;
+        
+        // Check if modifiedBlocks exists and is iterable
+        if (this.voxelWorld.modifiedBlocks && 
+            typeof this.voxelWorld.modifiedBlocks[Symbol.iterator] === 'function') {
+            
+            for (const [key, blockData] of this.voxelWorld.modifiedBlocks) {
+                if (blockData === null) continue;
+                
+                const [x, y, z] = key.split(',').map(Number);
+                const dx = x - position.x;
+                const dy = y - position.y;
+                const dz = z - position.z;
+                const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+                
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    nearest = { x, y, z, type: blockData };
+                }
+            }
+        }
+        
+        return nearest;
+        */
+    }
+    
+    /**
+     * Hit enemy with weapon (called by SpearSystem)
+     */
+    hitEnemy(enemyId, damage = 1) {
+        const enemy = this.activeEnemies.get(enemyId);
+        if (!enemy) return;
+        
+        // Apply damage
+        enemy.health -= damage;
+        
+        console.log(`🎯 ${enemy.entityType} hit! HP: ${enemy.health}/${enemy.maxHealth}`);
+        
+        if (enemy.health <= 0) {
+            // KILLED!
+            console.log(`💀 ${enemy.entityType} defeated!`);
+            this.voxelWorld.updateStatus(`💀 You killed a ${enemy.entityType}!`, 'success');
+            
+            // Remove from game
+            this.removeEnemy(enemyId);
+            
+            // TODO: Drop loot (zombie flesh, bones, etc.)
+        } else {
+            // Still alive, show damage
+            this.voxelWorld.updateStatus(`🎯 Hit ${enemy.entityType}! (${enemy.health} HP left)`, 'info');
+        }
+    }
+    
+    /**
+     * Remove enemy from scene (returns sprite to pool)
+     */
+    removeEnemy(enemyId) {
+        const enemy = this.activeEnemies.get(enemyId);
+        if (!enemy) return;
+
+        // ♻️ Return sprite to pool for reuse (instead of disposing)
+        this.entityPool.release(enemy.sprite);
+
+        // Remove from active enemies
+        this.activeEnemies.delete(enemyId);
+
+        console.log(`🩸 Removed enemy ${enemyId} (${this.activeEnemies.size} remaining)`);
+    }
+    
+    /**
+     * Clean up all enemies (called when blood moon ends or player sleeps)
+     */
+    cleanup() {
+        console.log(`🩸 Cleaning up ${this.activeEnemies.size} enemies...`);
+        
+        // Stop animation loop when blood moon ends
+        this.stopAnimationLoop();
+        
+        // Remove all enemies
+        const enemyIds = Array.from(this.activeEnemies.keys());
+        for (const enemyId of enemyIds) {
+            this.removeEnemy(enemyId);
+        }
+        
+        console.log('🩸 Blood moon enemies cleaned up');
+    }
+    
+    /**
+     * Dispose of blood moon system
+     */
+    dispose() {
+        if (this.animationInterval) {
+            clearInterval(this.animationInterval);
+            this.animationInterval = null;
+        }
+
+        this.cleanup();
+
+        // ♻️ Dispose entity pool
+        if (this.entityPool) {
+            this.entityPool.dispose();
+        }
+
+        console.log('🩸 BloodMoonSystem disposed');
+    }
+}
