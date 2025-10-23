@@ -1,22 +1,26 @@
 /**
  * BloodMoonSystem.js
- * 
+ *
  * Manages blood moon enemy spawning and AI behavior.
  * Spawns waves of enemies during blood moons (Day 7, 10pm-2am).
  * Enemies move towards player and attack fortifications.
  */
 
 import * as THREE from 'three';
+import { EntityPool } from './EntityPool.js';
 
 export class BloodMoonSystem {
     constructor(voxelWorld) {
         this.voxelWorld = voxelWorld;
         this.scene = voxelWorld.scene;
-        
+
+        // Entity pool for sprite reuse (performance optimization)
+        this.entityPool = new EntityPool(this.scene, voxelWorld.enhancedGraphics);
+
         // Enemy tracking
         this.activeEnemies = new Map(); // Map<enemyId, enemyData>
         this.nextEnemyId = 0;
-        
+
         // Entity data (loaded from entities.json)
         this.entityDatabase = null;
         this.loadEntityData();
@@ -322,63 +326,46 @@ export class BloodMoonSystem {
      */
     spawnEnemy(entityId, x, y, z, speedMultiplier = 1.0) {
         console.log(`🩸 spawnEnemy called: ${entityId} at (${x.toFixed(1)}, ${y.toFixed(1)}, ${z.toFixed(1)}) [${speedMultiplier.toFixed(2)}x speed]`);
-        
+
         // Start animation loop when first enemy spawns
         if (this.activeEnemies.size === 0) {
             this.startAnimationLoop();
         }
-        
+
         // Load enemy data from entities.json
         const entityData = this.getEntityData(entityId);
-        
+
         if (!entityData) {
             console.warn(`🩸 Enemy type "${entityId}" not found in entities.json`);
             return null;
         }
-        
+
         console.log(`🩸 Entity data found:`, entityData);
-        
-        // Load textures for animation (ready_pose and attack_pose)
-        // Note: Textures load asynchronously, so we don't validate them here
-        console.log(`🩸 Loading textures: ${entityData.sprite_ready}, ${entityData.sprite_attack}`);
-        const readyTexture = this.loadEntityTexture(entityData.sprite_ready);
-        const attackTexture = this.loadEntityTexture(entityData.sprite_attack);
-        
-        // Create sprite material with ready pose
-        const material = new THREE.SpriteMaterial({
-            map: readyTexture,
-            transparent: true,
-            opacity: 1.0,
-            depthWrite: false,
-        });
-        
+
         // 🎯 Zombie crawlers are weak - 1 hit kill (they have no legs!)
         const crawlerHP = entityId === 'zombie_crawler' ? 1 : entityData.hp;
 
-        // Create sprite
-        const sprite = new THREE.Sprite(material);
-        sprite.scale.set(1.5, 1.5, 1); // Size
-        sprite.position.set(x, y, z);
+        // Modify entityData for crawler HP (non-destructive)
+        const modifiedEntityData = { ...entityData, hp: crawlerHP };
 
-        // Add user data for targeting/outline system
-        sprite.userData.isEnemy = true;
-        sprite.userData.type = entityId; // 'zombie_crawler', etc.
-        sprite.userData.hp = crawlerHP;
-        sprite.userData.maxHp = crawlerHP;
+        // ♻️ Get sprite from EntityPool (automatically handles textures and hitbox)
+        const sprite = this.entityPool.acquire(entityId, modifiedEntityData, x, y, z);
 
-        // Add to scene
-        this.scene.add(sprite);
+        if (!sprite) {
+            console.error(`🩸 Failed to acquire sprite from pool for ${entityId}`);
+            return null;
+        }
 
-        // Create enemy data
+        // Create enemy data (textures are stored in sprite.userData.textures by EntityPool)
         const enemyId = `bloodmoon_${this.nextEnemyId++}`;
-        
+
         const enemyData = {
             id: enemyId,
             entityType: entityId,
             sprite: sprite,
-            readyTexture: readyTexture,
-            attackTexture: attackTexture,
-            
+            readyTexture: sprite.userData.textures.ready,
+            attackTexture: sprite.userData.textures.attack,
+
             // Stats from entities.json
             health: crawlerHP,
             maxHealth: crawlerHP,
@@ -386,21 +373,23 @@ export class BloodMoonSystem {
             defense: entityData.defense,
             baseSpeed: entityData.speed * 0.01, // Base speed from entities.json
             speedMultiplier: speedMultiplier,    // Time-of-day speed boost
-            
+
             // AI state
-            target: { 
-                x: this.voxelWorld.player.position.x, 
-                y: this.voxelWorld.player.position.y, 
-                z: this.voxelWorld.player.position.z 
+            target: {
+                x: this.voxelWorld.player.position.x,
+                y: this.voxelWorld.player.position.y,
+                z: this.voxelWorld.player.position.z
             },
             lastAttackTime: 0,
-            
+
             // Animation state
             animationTime: Math.random() * Math.PI * 2, // Random start time for variation
         };
-        
+
         this.activeEnemies.set(enemyId, enemyData);
-        
+
+        console.log(`♻️ Enemy spawned using EntityPool (active: ${this.activeEnemies.size})`);
+
         return enemyData;
     }
     
@@ -608,22 +597,13 @@ export class BloodMoonSystem {
     removeEnemy(enemyId) {
         const enemy = this.activeEnemies.get(enemyId);
         if (!enemy) return;
-        
-        // Remove sprite from scene
-        this.scene.remove(enemy.sprite);
-        
-        // Dispose of textures and materials
-        if (enemy.sprite.material) {
-            if (enemy.sprite.material.map) enemy.sprite.material.map.dispose();
-            enemy.sprite.material.dispose();
-        }
-        
-        if (enemy.readyTexture) enemy.readyTexture.dispose();
-        if (enemy.attackTexture) enemy.attackTexture.dispose();
-        
+
+        // ♻️ Return sprite to pool instead of destroying it
+        this.entityPool.release(enemy.sprite);
+
         // Remove from active enemies
         this.activeEnemies.delete(enemyId);
-        
+
         console.log(`🩸 Removed enemy ${enemyId} (${this.activeEnemies.size} remaining)`);
     }
     
@@ -646,6 +626,13 @@ export class BloodMoonSystem {
     }
     
     /**
+     * Get EntityPool statistics (for debugging)
+     */
+    getPoolStats() {
+        return this.entityPool.getStats();
+    }
+
+    /**
      * Dispose of blood moon system
      */
     dispose() {
@@ -653,8 +640,14 @@ export class BloodMoonSystem {
             clearInterval(this.animationInterval);
             this.animationInterval = null;
         }
-        
+
         this.cleanup();
+
+        // Dispose entity pool
+        if (this.entityPool) {
+            this.entityPool.dispose();
+        }
+
         console.log('🩸 BloodMoonSystem disposed');
     }
 }

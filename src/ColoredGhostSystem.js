@@ -14,11 +14,14 @@
 import * as THREE from 'three';
 
 export class ColoredGhostSystem {
-    constructor(scene, voxelWorld, spectralHuntSystem) {
+    constructor(scene, voxelWorld, spectralHuntSystem, entityPool = null) {
         this.scene = scene;
         this.voxelWorld = voxelWorld;
         this.spectralHuntSystem = spectralHuntSystem;
         this.enhancedGraphics = voxelWorld.enhancedGraphics;
+
+        // Entity pool for sprite reuse (passed from SpectralHuntSystem)
+        this.entityPool = entityPool;
 
         // Ghost registry - Map<ghostId, ghostData>
         this.ghosts = new Map();
@@ -33,7 +36,8 @@ export class ColoredGhostSystem {
 
         // Entity database (loaded from entities.json)
         this.entityDatabase = null;
-        this.loadEntityData();
+        this.entityDataLoaded = false;
+        this.entityDataPromise = this.loadEntityData();
 
         // Configuration (same as GhostSystem)
         this.config = {
@@ -127,9 +131,11 @@ export class ColoredGhostSystem {
             const response = await fetch('art/entities/entities.json');
             const data = await response.json();
             this.entityDatabase = data;
+            this.entityDataLoaded = true;
             console.log('👻 ColoredGhost entity database loaded:', data.ghosts ? Object.keys(data.ghosts).length : 0, 'ghost types');
         } catch (error) {
             console.error('👻 Failed to load entities.json:', error);
+            this.entityDataLoaded = false;
         }
     }
 
@@ -158,7 +164,13 @@ export class ColoredGhostSystem {
     /**
      * Spawn a colored ghost
      */
-    spawnColoredGhost(colorData) {
+    async spawnColoredGhost(colorData) {
+        // Wait for entity data to load if not ready yet
+        if (!this.entityDataLoaded) {
+            console.log(`👻 Waiting for entity data to load before spawning ${colorData.name} ghost...`);
+            await this.entityDataPromise;
+        }
+
         // Load ghost data from entities.json
         const ghostData = this.getGhostData(colorData.name);
 
@@ -173,58 +185,82 @@ export class ColoredGhostSystem {
         // Find spawn position (just outside render distance)
         const spawnPos = this.findSpawnPosition(playerPos);
 
-        // Create ghost texture
-        const texture = this.createGhostTexture();
-
-        // Parse color from JSON (hex string to THREE.Color)
-        const colorHex = parseInt(ghostData.color.replace('#', '0x'));
-
-        // Create sprite material with color tint
-        const material = new THREE.SpriteMaterial({
-            map: texture,
-            transparent: true,
-            opacity: this.config.opacity,
-            depthWrite: false,
-            color: new THREE.Color(colorHex) // Color tint from JSON!
-        });
-
-        // Create sprite
-        const sprite = new THREE.Sprite(material);
-        sprite.scale.set(this.config.spriteSize, this.config.spriteSize, 1);
-        sprite.position.set(spawnPos.x, spawnPos.y, spawnPos.z);
-
-        // Add user data for targeting/outline system (from JSON)
-        sprite.userData.isGhost = true;
-        sprite.userData.isEnemy = true; // Colored ghosts are attackable
-        sprite.userData.type = `${ghostData.name}_ghost`;
-        sprite.userData.hp = ghostData.hp;
-        sprite.userData.maxHp = ghostData.hp;
-
         // Get behavior config from JSON (fallback to hardcoded if needed)
         const behaviorConfig = ghostData.ai_config || this.config.behaviors[colorData.name] || this.config.behaviors.Red;
-        
-        // Create hitbox (size based on behavior - Indigo has larger hitbox)
-        const hitboxRadius = behaviorConfig.hitboxRadius || this.config.hitboxRadius;
-        const hitboxGeometry = new THREE.SphereGeometry(hitboxRadius, 8, 8);
-        const hitboxMaterial = new THREE.MeshBasicMaterial({
-            visible: false, // Invisible visually
-            transparent: true,
-            opacity: 0
-        });
-        const hitbox = new THREE.Mesh(hitboxGeometry, hitboxMaterial);
-        hitbox.position.copy(sprite.position);
-        
-        // Copy userData to hitbox so raycasting works on either (use JSON HP values)
-        hitbox.userData.isGhost = true;
-        hitbox.userData.isEnemy = true;
-        hitbox.userData.type = `${ghostData.name}_ghost`;
-        hitbox.userData.hp = ghostData.hp;
-        hitbox.userData.maxHp = ghostData.hp;
-        hitbox.userData.ghostSprite = sprite; // Reference to sprite for position updates
 
-        // Add both to scene
-        this.scene.add(sprite);
-        this.scene.add(hitbox);
+        let sprite, hitbox;
+
+        if (this.entityPool) {
+            // ♻️ USE ENTITY POOL (preferred)
+            const entityKey = `colored_ghost_${ghostData.name.toLowerCase()}`;
+            sprite = this.entityPool.acquire(entityKey, ghostData, spawnPos.x, spawnPos.y, spawnPos.z);
+
+            if (!sprite) {
+                console.error(`👻 Failed to acquire sprite from pool for ${ghostData.name} ghost`);
+                return null;
+            }
+
+            // EntityPool creates hitbox automatically - retrieve it
+            hitbox = sprite.userData.hitbox;
+
+            // Apply custom size for colored ghosts
+            sprite.scale.set(this.config.spriteSize, this.config.spriteSize, 1);
+
+            // Apply color tint from JSON
+            const colorHex = parseInt(ghostData.color.replace('#', '0x'));
+            sprite.material.color.setHex(colorHex);
+            sprite.material.opacity = this.config.opacity;
+            sprite.material.needsUpdate = true;
+
+            console.log(`♻️ Colored ghost spawned using EntityPool: ${ghostData.name}`);
+
+        } else {
+            // FALLBACK: Manual sprite creation (if no EntityPool)
+            console.warn(`👻 No EntityPool available, creating ${ghostData.name} ghost manually`);
+
+            const texture = this.createGhostTexture();
+            const colorHex = parseInt(ghostData.color.replace('#', '0x'));
+
+            const material = new THREE.SpriteMaterial({
+                map: texture,
+                transparent: true,
+                opacity: this.config.opacity,
+                depthWrite: false,
+                color: new THREE.Color(colorHex)
+            });
+
+            sprite = new THREE.Sprite(material);
+            sprite.scale.set(this.config.spriteSize, this.config.spriteSize, 1);
+            sprite.position.set(spawnPos.x, spawnPos.y, spawnPos.z);
+
+            // Manual userData setup
+            sprite.userData.isGhost = true;
+            sprite.userData.isEnemy = true;
+            sprite.userData.type = `${ghostData.name}_ghost`;
+            sprite.userData.hp = ghostData.hp;
+            sprite.userData.maxHp = ghostData.hp;
+
+            // Create hitbox manually
+            const hitboxRadius = behaviorConfig.hitboxRadius || this.config.hitboxRadius;
+            const hitboxGeometry = new THREE.SphereGeometry(hitboxRadius, 8, 8);
+            const hitboxMaterial = new THREE.MeshBasicMaterial({
+                visible: false,
+                transparent: true,
+                opacity: 0
+            });
+            hitbox = new THREE.Mesh(hitboxGeometry, hitboxMaterial);
+            hitbox.position.copy(sprite.position);
+
+            hitbox.userData.isGhost = true;
+            hitbox.userData.isEnemy = true;
+            hitbox.userData.type = `${ghostData.name}_ghost`;
+            hitbox.userData.hp = ghostData.hp;
+            hitbox.userData.maxHp = ghostData.hp;
+            hitbox.userData.ghostSprite = sprite;
+
+            this.scene.add(sprite);
+            this.scene.add(hitbox);
+        }
 
         // Create ghost data object (name collision - use ghostInstance)
         const ghostId = `colored_ghost_${this.nextGhostId++}`;
@@ -245,10 +281,10 @@ export class ColoredGhostSystem {
             // Combat stats from JSON
             hp: ghostData.hp,
             maxHp: ghostData.hp,
-            
+
             // Texture swapping for attack pose
-            normalTexture: texture,
-            attackTexture: null, // Lazy load when needed
+            normalTexture: this.entityPool ? sprite.userData.textures.ready : sprite.material.map,
+            attackTexture: this.entityPool ? sprite.userData.textures.attack : null, // EntityPool loads attack texture
             isAttacking: false,
             
             // Behavior-specific state
@@ -772,22 +808,9 @@ export class ColoredGhostSystem {
     removeGhost(ghostId) {
         const ghost = this.ghosts.get(ghostId);
         if (!ghost) return;
-        
+
         console.log(`👻 Removing colored ghost: ${ghost.color.name} (${ghostId})`);
-        
-        // Remove from scene
-        this.scene.remove(ghost.sprite);
-        this.scene.remove(ghost.hitbox);
-        
-        // Dispose materials and geometries
-        ghost.sprite.material.dispose();
-        ghost.sprite.material.map.dispose();
-        ghost.hitbox.geometry.dispose();
-        ghost.hitbox.material.dispose();
-        
-        // Remove from map
-        this.ghosts.delete(ghostId);
-        
+
         // Particle effect (use VoxelWorld's explosion effect)
         if (this.voxelWorld.createExplosionEffect) {
             this.voxelWorld.createExplosionEffect(
@@ -797,7 +820,7 @@ export class ColoredGhostSystem {
                 'ghost_death'
             );
         }
-        
+
         // Play death sound
         if (this.voxelWorld.sfxSystem) {
             this.voxelWorld.sfxSystem.playSpatial('ghost_death', ghost.sprite.position, this.voxelWorld.camera.position, {
@@ -806,6 +829,23 @@ export class ColoredGhostSystem {
                 pitchVariation: 0.3
             });
         }
+
+        if (this.entityPool) {
+            // ♻️ Return sprite to pool instead of destroying it
+            this.entityPool.release(ghost.sprite);
+        } else {
+            // FALLBACK: Manual cleanup (if no EntityPool)
+            this.scene.remove(ghost.sprite);
+            this.scene.remove(ghost.hitbox);
+
+            ghost.sprite.material.dispose();
+            ghost.sprite.material.map.dispose();
+            ghost.hitbox.geometry.dispose();
+            ghost.hitbox.material.dispose();
+        }
+
+        // Remove from map
+        this.ghosts.delete(ghostId);
     }
     
     /**
@@ -813,17 +853,25 @@ export class ColoredGhostSystem {
      */
     cleanup() {
         console.log(`👻 Cleaning up ${this.ghosts.size} colored ghosts`);
-        
-        this.ghosts.forEach((ghost) => {
-            this.scene.remove(ghost.sprite);
-            this.scene.remove(ghost.hitbox);
-            
-            ghost.sprite.material.dispose();
-            ghost.sprite.material.map.dispose();
-            ghost.hitbox.geometry.dispose();
-            ghost.hitbox.material.dispose();
-        });
-        
+
+        if (this.entityPool) {
+            // ♻️ Return all sprites to pool
+            this.ghosts.forEach((ghost) => {
+                this.entityPool.release(ghost.sprite);
+            });
+        } else {
+            // FALLBACK: Manual cleanup
+            this.ghosts.forEach((ghost) => {
+                this.scene.remove(ghost.sprite);
+                this.scene.remove(ghost.hitbox);
+
+                ghost.sprite.material.dispose();
+                ghost.sprite.material.map.dispose();
+                ghost.hitbox.geometry.dispose();
+                ghost.hitbox.material.dispose();
+            });
+        }
+
         this.ghosts.clear();
     }
     

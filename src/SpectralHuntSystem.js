@@ -17,21 +17,25 @@
 import * as THREE from 'three';
 import { BigGhostEntity } from './BigGhostEntity.js';
 import { ColoredGhostSystem } from './ColoredGhostSystem.js';
+import { EntityPool } from './EntityPool.js';
 
 export class SpectralHuntSystem {
     constructor(voxelWorld) {
         this.voxelWorld = voxelWorld;
         this.scene = voxelWorld.scene;
         this.camera = voxelWorld.camera;
-        
+
+        // Entity pool for ghost sprite reuse (shared with ColoredGhostSystem)
+        this.entityPool = new EntityPool(this.scene, voxelWorld.enhancedGraphics);
+
         // Hunt state
         this.isActive = false;
         this.huntStartTime = 0;
         this.currentDay = 1;
-        
+
         // Big ghost entity
         this.bigGhost = null;
-        
+
         // Colored ghosts system
         this.coloredGhostSystem = null;
         
@@ -175,7 +179,7 @@ export class SpectralHuntSystem {
         if (this.voxelWorld.craftedTools) {
             // Create a demolition charge mesh
             const geometry = new THREE.SphereGeometry(0.3, 8, 8);
-            const material = new THREE.MeshBasicMaterial({ 
+            const material = new THREE.MeshLambertMaterial({
                 color: 0xFF0000,
                 emissive: 0xFF0000,
                 emissiveIntensity: 0.5
@@ -205,11 +209,13 @@ export class SpectralHuntSystem {
                 const by = Math.floor(charge.position.y);
                 const bz = Math.floor(charge.position.z);
                 const blockType = this.voxelWorld.getBlock(bx, by, bz);
-                
+
                 // If hit a solid block (not air/water), stick and explode
                 if (blockType && blockType !== 'air' && blockType !== 'water') {
                     hasExploded = true;
-                    console.log(`💣 Demolition charge stuck to ${blockType}!`);
+                    // Handle blockType being an object (extract type property if needed)
+                    const blockName = typeof blockType === 'string' ? blockType : (blockType.type || 'unknown');
+                    console.log(`💣 Demolition charge stuck to ${blockName}!`);
                     
                     // Stick to block surface
                     charge.position.x = bx + 0.5;
@@ -379,7 +385,14 @@ export class SpectralHuntSystem {
                     if (this.demolitionGhost.health <= 0) {
                         console.log('💀💣 Demolition ghost killed itself with its own charge!');
                         this.demolitionGhost.isAlive = false;
-                        this.scene.remove(this.demolitionGhost.sprite);
+
+                        // Return sprite to pool or remove manually
+                        if (this.entityPool) {
+                            this.entityPool.release(this.demolitionGhost.sprite);
+                        } else {
+                            this.scene.remove(this.demolitionGhost.sprite);
+                        }
+
                         this.voxelWorld.updateStatus('💣👻 Demolition ghost destroyed itself!', 'victory');
                     }
                     
@@ -487,11 +500,12 @@ export class SpectralHuntSystem {
         // Spawn big ghost
         this.spawnBigGhost(isHalloween);
         
-        // Initialize colored ghost system
+        // Initialize colored ghost system (pass entityPool for sprite reuse)
         this.coloredGhostSystem = new ColoredGhostSystem(
             this.scene,
             this.voxelWorld,
-            this
+            this,
+            this.entityPool
         );
         
         // Schedule colored ghost waves
@@ -552,43 +566,85 @@ export class SpectralHuntSystem {
     /**
      * Spawn the special Demolition Ghost (7th Blood Moon combo)
      */
-    spawnDemolitionGhost() {
+    async spawnDemolitionGhost() {
         if (this.demolitionGhost) {
             console.warn('Demolition ghost already exists!');
             return;
         }
-        
+
+        // Load demolition ghost data from entities.json
+        let demolitionData = null;
+        try {
+            const response = await fetch('art/entities/entities.json');
+            const entityDb = await response.json();
+            demolitionData = entityDb.ghosts?.demolition_ghost;
+        } catch (error) {
+            console.warn('💣 Failed to load demolition_ghost from entities.json:', error);
+        }
+
+        // Fallback to hardcoded values if JSON load fails
+        if (!demolitionData) {
+            demolitionData = {
+                hp: 10,
+                color: '#FFFFFF',
+                scale: 1.5
+            };
+        }
+
         const playerPos = this.voxelWorld.camera.position;
-        
+
         // Spawn at a dramatic distance
         const spawnDistance = 30 + Math.random() * 10; // 30-40 blocks away
         const angle = Math.random() * Math.PI * 2;
-        
+
         const x = playerPos.x + Math.cos(angle) * spawnDistance;
         const z = playerPos.z + Math.sin(angle) * spawnDistance;
         const y = playerPos.y;
-        
-        // Create 1.5x sized white ghost sprite
-        const texture = this.coloredGhostSystem?.createGhostTexture() || this.createFallbackTexture();
-        const material = new THREE.SpriteMaterial({
-            map: texture,
-            transparent: true,
-            opacity: 0.9,
-            color: 0xFFFFFF // Pure white - stands out!
-        });
-        
-        const sprite = new THREE.Sprite(material);
-        sprite.scale.set(3.0, 3.0, 1); // 1.5x the normal 2.0 size
-        sprite.position.set(x, y, z);
 
-        // Add user data for targeting/outline system
-        sprite.userData.isGhost = true;
-        sprite.userData.isEnemy = true;
-        sprite.userData.type = 'demolition_ghost';
-        sprite.userData.hp = 10;
-        sprite.userData.maxHp = 10;
+        let sprite;
 
-        this.scene.add(sprite);
+        if (this.entityPool) {
+            // ♻️ USE ENTITY POOL
+            sprite = this.entityPool.acquire('demolition_ghost', demolitionData, x, y, z);
+
+            if (!sprite) {
+                console.error('💣 Failed to acquire demolition ghost from pool');
+                return;
+            }
+
+            // Apply demolition ghost custom scale and color
+            const scale = (demolitionData.scale || 1.5) * 2.0; // 1.5x the normal 2.0 size
+            sprite.scale.set(scale, scale, 1);
+
+            // Apply white color tint
+            sprite.material.color.setHex(0xFFFFFF);
+            sprite.material.opacity = 0.9;
+            sprite.material.needsUpdate = true;
+
+            console.log(`♻️ Demolition ghost spawned using EntityPool`);
+
+        } else {
+            // FALLBACK: Manual creation
+            const texture = this.coloredGhostSystem?.createGhostTexture() || this.createFallbackTexture();
+            const material = new THREE.SpriteMaterial({
+                map: texture,
+                transparent: true,
+                opacity: 0.9,
+                color: 0xFFFFFF
+            });
+
+            sprite = new THREE.Sprite(material);
+            sprite.scale.set(3.0, 3.0, 1);
+            sprite.position.set(x, y, z);
+
+            sprite.userData.isGhost = true;
+            sprite.userData.isEnemy = true;
+            sprite.userData.type = 'demolition_ghost';
+            sprite.userData.hp = demolitionData.hp;
+            sprite.userData.maxHp = demolitionData.hp;
+
+            this.scene.add(sprite);
+        }
 
         this.demolitionGhost = {
             sprite: sprite,
@@ -596,10 +652,10 @@ export class SpectralHuntSystem {
             floatOffset: Math.random() * Math.PI * 2,
             throwTimer: 5, // Throw every 5 seconds
             isAlive: true,
-            health: 10, // Takes 10 hits to kill!
-            maxHealth: 10
+            health: demolitionData.hp,
+            maxHealth: demolitionData.hp
         };
-        
+
         console.log(`💣👻 DEMOLITION GHOST spawned at (${x.toFixed(1)}, ${y.toFixed(1)}, ${z.toFixed(1)})`);
     }
     
@@ -719,10 +775,16 @@ export class SpectralHuntSystem {
         
         // Cleanup demolition ghost
         if (this.demolitionGhost) {
-            this.scene.remove(this.demolitionGhost.sprite);
-            this.demolitionGhost.sprite.material.dispose();
-            if (this.demolitionGhost.sprite.material.map) {
-                this.demolitionGhost.sprite.material.map.dispose();
+            if (this.entityPool) {
+                // ♻️ Return to pool
+                this.entityPool.release(this.demolitionGhost.sprite);
+            } else {
+                // FALLBACK: Manual cleanup
+                this.scene.remove(this.demolitionGhost.sprite);
+                this.demolitionGhost.sprite.material.dispose();
+                if (this.demolitionGhost.sprite.material.map) {
+                    this.demolitionGhost.sprite.material.map.dispose();
+                }
             }
             this.demolitionGhost = null;
         }
@@ -860,7 +922,8 @@ export class SpectralHuntSystem {
                         this.coloredGhostSystem = new ColoredGhostSystem(
                             this.scene,
                             this.voxelWorld,
-                            this
+                            this,
+                            this.entityPool
                         );
                     }
                     // Activate system so update loop runs!
