@@ -12259,7 +12259,30 @@ class NebulaVoxelApp {
                                 }
                             }
                         }
-                        
+
+                        // Check for demolition ghost (SpectralHuntSystem boss)
+                        if (this.spectralHuntSystem && this.spectralHuntSystem.demolitionGhost && this.spectralHuntSystem.demolitionGhost.isAlive) {
+                            const ghost = this.spectralHuntSystem.demolitionGhost;
+                            if (ghost.sprite === hit.object) {
+                                // Clicked on demolition ghost!
+                                const damage = this.getAttackDamage(this.hotbarSystem.getSelectedSlot());
+
+                                // Use unified combat system to apply damage
+                                const result = this.unifiedCombat.applyDamage(ghost.sprite, damage, 'player');
+
+                                if (result.hit) {
+                                    // Trigger animations and companion response
+                                    this.unifiedCombat.triggerPlayerAttackPose();
+
+                                    if (!result.killed) {
+                                        this.unifiedCombat.triggerCompanionResponse(ghost.sprite, damage);
+                                    }
+                                }
+
+                                return; // Don't continue to block harvesting
+                            }
+                        }
+
                         // Check for angry ghosts (AngryGhostSystem)
                         if (this.angryGhostSystem && this.angryGhostSystem.angryGhosts) {
                             for (const [ghostId, ghostData] of this.angryGhostSystem.angryGhosts) {

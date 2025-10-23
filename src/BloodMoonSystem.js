@@ -158,25 +158,31 @@ export class BloodMoonSystem {
         const hoursFromNoon = currentHour - 12;
         const speedMultiplier = 1.0 + (hoursFromNoon * 0.05);
         
-        console.log(`🩸 Hour ${currentHour}:00 - Spawning ${spawnCount} crawlers (${speedMultiplier.toFixed(2)}x speed)...`);
-        
+        console.log(`🩸 Hour ${currentHour}:00 - Spawning ${spawnCount} enemies (${speedMultiplier.toFixed(2)}x speed)...`);
+
+        // Get enemy pool for this bloodmoon
+        const enemyPool = this.getEnemyPoolForBloodmoon(week);
+
         // Get player position
         const playerPos = this.voxelWorld.player.position;
-        
+
         // Spawn enemies in a circle around player
         for (let i = 0; i < spawnCount; i++) {
+            // Pick random enemy from pool
+            const enemyId = this.pickRandomEnemy(enemyPool, week);
+
             // Random angle around player
             const angle = Math.random() * Math.PI * 2;
             const distance = this.config.spawnDistance + Math.random() * this.config.spawnDistanceVariation;
-            
+
             const x = playerPos.x + Math.cos(angle) * distance;
             const z = playerPos.z + Math.sin(angle) * distance;
-            
+
             // Get ground height at spawn location
             const y = this.voxelWorld.getGroundHeight(x, z) + this.config.spawnHeight;
-            
-            // Spawn zombie crawler with speed boost
-            this.spawnEnemy('zombie_crawler', x, y, z, speedMultiplier);
+
+            // Spawn enemy with speed boost
+            this.spawnEnemy(enemyId, x, y, z, speedMultiplier);
         }
         
         // Update last spawn hour
@@ -201,38 +207,115 @@ export class BloodMoonSystem {
         const maxEnemies = 100; // Cap at 100
         const finalCount = Math.min(enemyCount, maxEnemies);
         
-        console.log(`🩸 Spawning ${finalCount} zombie crawlers for Week ${week}...`);
-        
+        console.log(`🩸 Spawning ${finalCount} enemies for Bloodmoon ${week}...`);
+
+        // Get enemy pool for this bloodmoon
+        const enemyPool = this.getEnemyPoolForBloodmoon(week);
+
         // Get player position (same as Animal system)
         const playerPos = this.voxelWorld.player.position;
         console.log(`🩸 Player position: (${playerPos.x.toFixed(1)}, ${playerPos.y.toFixed(1)}, ${playerPos.z.toFixed(1)})`);
-        
+
         // Spawn enemies in a circle around player
         for (let i = 0; i < finalCount; i++) {
+            // Pick random enemy from pool
+            const enemyId = this.pickRandomEnemy(enemyPool, week);
+
             // Random angle around player
             const angle = (Math.PI * 2 * i) / finalCount + (Math.random() * 0.5 - 0.25);
             const distance = this.config.spawnDistance + Math.random() * this.config.spawnDistanceVariation;
-            
+
             const x = playerPos.x + Math.cos(angle) * distance;
             const z = playerPos.z + Math.sin(angle) * distance;
-            
+
             // Get ground height at spawn location
             const y = this.voxelWorld.getGroundHeight(x, z) + this.config.spawnHeight;
-            
-            console.log(`🩸 Attempting to spawn zombie ${i+1}/${finalCount} at (${x.toFixed(1)}, ${y.toFixed(1)}, ${z.toFixed(1)})`);
-            
-            // Spawn zombie crawler (only enemy type for now)
-            const enemy = this.spawnEnemy('zombie_crawler', x, y, z);
+
+            console.log(`🩸 Attempting to spawn ${enemyId} ${i+1}/${finalCount} at (${x.toFixed(1)}, ${y.toFixed(1)}, ${z.toFixed(1)})`);
+
+            // Spawn enemy
+            const enemy = this.spawnEnemy(enemyId, x, y, z);
             if (enemy) {
-                console.log(`✅ Zombie ${i+1} spawned successfully`);
+                console.log(`✅ ${enemyId} ${i+1} spawned successfully`);
             } else {
-                console.error(`❌ Failed to spawn zombie ${i+1}`);
+                console.error(`❌ Failed to spawn ${enemyId} ${i+1}`);
             }
         }
         
         console.log(`🩸 Spawned ${this.activeEnemies.size} enemies`);
     }
     
+    /**
+     * Get enemy pool for current bloodmoon based on difficulty progression
+     * Bloodmoon 1: Tier 1 only
+     * Bloodmoon 2: Tier 1-2
+     * Bloodmoon 3: Tier 2-3
+     * Bloodmoon 4+: Higher tiers unlock
+     */
+    getEnemyPoolForBloodmoon(bloodmoonNumber) {
+        if (!this.entityDatabase || !this.entityDatabase.monsters) {
+            console.warn('🩸 Entity database not loaded');
+            return ['zombie_crawler']; // Fallback
+        }
+
+        // Determine max tier based on bloodmoon number
+        let maxTier = 1;
+        if (bloodmoonNumber >= 6) maxTier = 5;       // Bloodmoon 6+: All tiers
+        else if (bloodmoonNumber >= 5) maxTier = 4;  // Bloodmoon 5: Up to tier 4
+        else if (bloodmoonNumber >= 4) maxTier = 3;  // Bloodmoon 4: Up to tier 3
+        else if (bloodmoonNumber >= 3) maxTier = 3;  // Bloodmoon 3: Up to tier 3
+        else if (bloodmoonNumber >= 2) maxTier = 2;  // Bloodmoon 2: Up to tier 2
+        // Bloodmoon 1: maxTier = 1 (tier 1 only)
+
+        // Filter enemies by type=enemy and tier <= maxTier
+        const availableEnemies = [];
+        for (const [id, data] of Object.entries(this.entityDatabase.monsters)) {
+            // Skip companions, bosses, and friendly entities
+            if (data.type === 'enemy' && data.tier <= maxTier) {
+                // Skip enemies without sprites (incomplete)
+                if (data.sprite_ready && data.sprite_attack) {
+                    availableEnemies.push(id);
+                }
+            }
+        }
+
+        console.log(`🩸 Bloodmoon ${bloodmoonNumber}: Max tier ${maxTier}, ${availableEnemies.length} enemy types available`);
+        return availableEnemies.length > 0 ? availableEnemies : ['zombie_crawler'];
+    }
+
+    /**
+     * Pick random enemy from pool with weighted selection
+     * Lower tiers are more common, higher tiers are rare
+     */
+    pickRandomEnemy(enemyPool, bloodmoonNumber) {
+        if (enemyPool.length === 0) return 'zombie_crawler';
+        if (enemyPool.length === 1) return enemyPool[0];
+
+        // Get tier for each enemy
+        const enemiesWithTiers = enemyPool.map(id => ({
+            id,
+            tier: this.entityDatabase.monsters[id]?.tier || 1
+        }));
+
+        // Weight: lower tiers more common
+        // Tier 1: 40% chance
+        // Tier 2: 30% chance
+        // Tier 3: 20% chance
+        // Tier 4: 8% chance
+        // Tier 5: 2% chance
+        const tierWeights = { 1: 40, 2: 30, 3: 20, 4: 8, 5: 2 };
+        const weightedPool = [];
+
+        for (const enemy of enemiesWithTiers) {
+            const weight = tierWeights[enemy.tier] || 10;
+            for (let i = 0; i < weight; i++) {
+                weightedPool.push(enemy.id);
+            }
+        }
+
+        return weightedPool[Math.floor(Math.random() * weightedPool.length)];
+    }
+
     /**
      * Spawn individual enemy
      * @param {number} speedMultiplier - Speed boost from time of day (default 1.0)
@@ -269,19 +352,25 @@ export class BloodMoonSystem {
             depthWrite: false,
         });
         
+        // 🎯 Zombie crawlers are weak - 1 hit kill (they have no legs!)
+        const crawlerHP = entityId === 'zombie_crawler' ? 1 : entityData.hp;
+
         // Create sprite
         const sprite = new THREE.Sprite(material);
         sprite.scale.set(1.5, 1.5, 1); // Size
         sprite.position.set(x, y, z);
-        
+
+        // Add user data for targeting/outline system
+        sprite.userData.isEnemy = true;
+        sprite.userData.type = entityId; // 'zombie_crawler', etc.
+        sprite.userData.hp = crawlerHP;
+        sprite.userData.maxHp = crawlerHP;
+
         // Add to scene
         this.scene.add(sprite);
-        
+
         // Create enemy data
         const enemyId = `bloodmoon_${this.nextEnemyId++}`;
-        
-        // 🎯 Zombie crawlers are weak - 1 hit kill (they have no legs!)
-        const crawlerHP = entityId === 'zombie_crawler' ? 1 : entityData.hp;
         
         const enemyData = {
             id: enemyId,

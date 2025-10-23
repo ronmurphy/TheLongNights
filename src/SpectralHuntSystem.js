@@ -580,15 +580,24 @@ export class SpectralHuntSystem {
         const sprite = new THREE.Sprite(material);
         sprite.scale.set(3.0, 3.0, 1); // 1.5x the normal 2.0 size
         sprite.position.set(x, y, z);
+
+        // Add user data for targeting/outline system
+        sprite.userData.isGhost = true;
+        sprite.userData.isEnemy = true;
+        sprite.userData.type = 'demolition_ghost';
+        sprite.userData.hp = 10;
+        sprite.userData.maxHp = 10;
+
         this.scene.add(sprite);
-        
+
         this.demolitionGhost = {
             sprite: sprite,
             baseY: y,
             floatOffset: Math.random() * Math.PI * 2,
             throwTimer: 5, // Throw every 5 seconds
             isAlive: true,
-            hp: 10 // Takes 10 hits to kill!
+            health: 10, // Takes 10 hits to kill!
+            maxHealth: 10
         };
         
         console.log(`💣👻 DEMOLITION GHOST spawned at (${x.toFixed(1)}, ${y.toFixed(1)}, ${z.toFixed(1)})`);
@@ -730,9 +739,12 @@ export class SpectralHuntSystem {
      * Calculate current day (1-7, cycling)
      */
     calculateCurrentDay() {
-        // Get total days elapsed since world creation
-        const totalDays = Math.floor((this.voxelWorld.totalGameTime || 0) / 24);
-        return (totalDays % 7) + 1; // Cycles 1-7
+        // Get current day from VoxelWorld's day/night cycle
+        if (this.voxelWorld.dayNightCycle && this.voxelWorld.dayNightCycle.dayOfWeek) {
+            return this.voxelWorld.dayNightCycle.dayOfWeek; // Already 1-7
+        }
+        // Fallback: Day 1
+        return 1;
     }
     
     /**
