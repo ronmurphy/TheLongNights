@@ -9463,7 +9463,7 @@ class NebulaVoxelApp {
         this.renderProfileManager = new RenderProfileManager(this);
         this.renderProfileManager.initialize();
 
-        // �🔍 Initialize LOD Debug Overlay (toggle with 'L' key)
+        // 🔍 Initialize LOD Debug Overlay (toggle with 'L' key)
         this.lodDebugOverlay = new LODDebugOverlay(this);
 
         // 🌫️ Update fog now that LOD manager exists (fixes fog distance calculation)
@@ -14094,14 +14094,64 @@ class NebulaVoxelApp {
                             <div style="color: #FFE4B5; font-size: 11px; margin-top: 6px; font-style: italic;">Custom textures and detailed graphics</div>
                         </div>
 
-                        <!-- Emoji Style Picker -->
-                        <div id="emoji-chooser-container" style="
+                        <!-- Render Profile Selector -->
+                        <div style="
                             background: rgba(0, 0, 0, 0.3);
                             border: 1px solid #654321;
                             border-radius: 6px;
                             padding: 16px;
                             margin-bottom: 12px;
-                        "></div>
+                        ">
+                            <div style="color: #F5E6D3; font-size: 13px; margin-bottom: 12px; font-weight: bold;">🎯 Render Profile</div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
+                                <button class="modal-profile-btn" data-profile="POTATO" style="
+                                    padding: 16px 12px;
+                                    background: linear-gradient(180deg, ${this.renderProfileManager?.getCurrentProfile() === 'POTATO' ? '#5a8a4a' : '#6a6a6a'}, ${this.renderProfileManager?.getCurrentProfile() === 'POTATO' ? '#4a7a3a' : '#5a5a5a'});
+                                    color: #F5E6D3;
+                                    border: 2px solid ${this.renderProfileManager?.getCurrentProfile() === 'POTATO' ? '#3d5d2d' : '#4a4a4a'};
+                                    border-radius: 6px;
+                                    cursor: pointer;
+                                    font-size: 24px;
+                                    text-align: center;
+                                    box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+                                    transition: all 0.2s;
+                                " title="Potato Mode - Maximum Performance">
+                                    🥔
+                                    <div style="font-size: 10px; margin-top: 4px; font-family: 'Georgia', serif;">Performance</div>
+                                </button>
+                                <button class="modal-profile-btn" data-profile="BALANCED" style="
+                                    padding: 16px 12px;
+                                    background: linear-gradient(180deg, ${this.renderProfileManager?.getCurrentProfile() === 'BALANCED' ? '#5a8a4a' : '#6a6a6a'}, ${this.renderProfileManager?.getCurrentProfile() === 'BALANCED' ? '#4a7a3a' : '#5a5a5a'});
+                                    color: #F5E6D3;
+                                    border: 2px solid ${this.renderProfileManager?.getCurrentProfile() === 'BALANCED' ? '#3d5d2d' : '#4a4a4a'};
+                                    border-radius: 6px;
+                                    cursor: pointer;
+                                    font-size: 24px;
+                                    text-align: center;
+                                    box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+                                    transition: all 0.2s;
+                                " title="Balanced - Recommended">
+                                    ⚙️
+                                    <div style="font-size: 10px; margin-top: 4px; font-family: 'Georgia', serif;">Balanced</div>
+                                </button>
+                                <button class="modal-profile-btn" data-profile="GAMING" style="
+                                    padding: 16px 12px;
+                                    background: linear-gradient(180deg, ${this.renderProfileManager?.getCurrentProfile() === 'GAMING' ? '#5a8a4a' : '#6a6a6a'}, ${this.renderProfileManager?.getCurrentProfile() === 'GAMING' ? '#4a7a3a' : '#5a5a5a'});
+                                    color: #F5E6D3;
+                                    border: 2px solid ${this.renderProfileManager?.getCurrentProfile() === 'GAMING' ? '#3d5d2d' : '#4a4a4a'};
+                                    border-radius: 6px;
+                                    cursor: pointer;
+                                    font-size: 24px;
+                                    text-align: center;
+                                    box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+                                    transition: all 0.2s;
+                                " title="Gaming - Maximum Quality">
+                                    ✨
+                                    <div style="font-size: 10px; margin-top: 4px; font-family: 'Georgia', serif;">Quality</div>
+                                </button>
+                            </div>
+                            <div style="color: #FFE4B5; font-size: 11px; margin-top: 8px; font-style: italic; text-align: center;">Choose render optimization profile</div>
+                        </div>
 
                         <!-- Graphics Info -->
                         <div style="
@@ -14485,6 +14535,7 @@ class NebulaVoxelApp {
 
         // Time indicator click handler (opens menu)
         this.timeIndicator.onclick = () => {
+            this.hideUI();
             modal.style.display = 'block';
         };
 
@@ -14498,6 +14549,9 @@ class NebulaVoxelApp {
         const modalGPUBtn = modal.querySelector("#modal-gpu-btn");
         const modalCloseBtn = modal.querySelector("#modal-close-btn");
         const gpuDisplay = modal.querySelector("#gpu-display");
+
+        // Render profile buttons
+        const modalProfileBtns = modal.querySelectorAll(".modal-profile-btn");
 
         // Music controls
         const modalMusicVolumeSlider = modal.querySelector("#modal-music-volume");
@@ -14724,7 +14778,28 @@ class NebulaVoxelApp {
         if (modalRenderDistanceBtn) modalRenderDistanceBtn.onclick = cycleRenderDistance;
         if (modalEnhancedGraphicsBtn) modalEnhancedGraphicsBtn.onclick = toggleEnhancedGraphics;
         if (modalGPUBtn) modalGPUBtn.onclick = cycleGPUPreference;
-        if (modalCloseBtn) modalCloseBtn.onclick = () => modal.style.display = 'none';
+        if (modalCloseBtn) modalCloseBtn.onclick = () => {
+            modal.style.display = 'none';
+            this.showUI();
+        };
+
+        // Render profile button handlers
+        modalProfileBtns.forEach(btn => {
+            btn.onclick = () => {
+                const profile = btn.dataset.profile;
+                if (this.renderProfileManager) {
+                    this.renderProfileManager.applyProfile(profile, true);
+                    // Update button states
+                    modalProfileBtns.forEach(b => {
+                        const isActive = b.dataset.profile === profile;
+                        b.style.background = isActive ? 
+                            'linear-gradient(180deg, #5a8a4a, #4a7a3a)' : 
+                            'linear-gradient(180deg, #6a6a6a, #5a5a5a)';
+                        b.style.borderColor = isActive ? '#3d5d2d' : '#4a4a4a';
+                    });
+                }
+            };
+        });
 
         // 📚 Help system - Load markdown files
         const helpContentArea = modal.querySelector('#help-content-area');
