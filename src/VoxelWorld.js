@@ -41,6 +41,7 @@ import { RandyMStructureDesigner } from './ui/RandyMStructureDesigner.js';
 import { NPCManager } from './entities/NPC.js';
 import { ChunkLODManager } from './rendering/ChunkLODManager.js';
 import { ChunkRenderManager } from './rendering/ChunkRenderManager.js';
+import { RenderProfileManager } from './RenderProfileManager.js';
 import { LODDebugOverlay } from './rendering/LODDebugOverlay.js';
 import ChristmasSystem from './ChristmasSystem.js';
 import { FarmingSystem } from './FarmingSystem.js';
@@ -9457,6 +9458,10 @@ class NebulaVoxelApp {
         // � Initialize ChunkRenderManager with vertical culling optimization
         this.chunkRenderManager = new ChunkRenderManager(this);
         console.log('🚀 ChunkRenderManager initialized - Vertical culling enabled!');
+
+        // 🎨 Initialize RenderProfileManager and apply BALANCED profile
+        this.renderProfileManager = new RenderProfileManager(this);
+        this.renderProfileManager.initialize();
 
         // �🔍 Initialize LOD Debug Overlay (toggle with 'L' key)
         this.lodDebugOverlay = new LODDebugOverlay(this);

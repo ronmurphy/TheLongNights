@@ -336,11 +336,8 @@ export class ChunkRenderManager {
             maxVisibleY = Math.max(maxVisibleY, surfaceY + this.visibilityBuffer);
         }
 
-        // Ensure reasonable bounds
-        const playerY = this.currentPlayerY;
-        minVisibleY = Math.max(minVisibleY, playerY - this.undergroundDepth * 2); // Max 2x normal depth
-        maxVisibleY = Math.min(maxVisibleY, playerY + this.abovegroundHeight);
-
+        // Adaptive bounds use detected surfaces WITHOUT vertical culling limits
+        // This allows seeing tall trees from below or deep pits from above
         return { 
             minY: minVisibleY, 
             maxY: maxVisibleY,
@@ -430,8 +427,9 @@ export class ChunkRenderManager {
             const blockZ = Math.floor(pos.z);
             const blockKey = `${blockX},${blockY},${blockZ}`;
             
-            if (world[blockKey] && world[blockKey].type !== 'air') {
-                // Found a surface! Record its Y position
+            const block = world[blockKey];
+            if (block && block.type !== 'air' && block.type !== 'water' && block.type !== 'glass') {
+                // Found a solid surface! Record its Y position
                 this.detectedSurfaces.set(rayId, blockY);
                 break;
             }
