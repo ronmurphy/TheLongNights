@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { StructureGenerator } from './StructureGenerator.js';
+import { TutorialRuinGenerator } from './TutorialRuinGenerator.js';
 
 /**
  * 🌍 BiomeWorldGen - Advanced Multi-Layer Biome Generation System
@@ -43,6 +44,9 @@ export class BiomeWorldGen {
 
         // 🏛️ STRUCTURE GENERATOR - Ruins and structures
         this.structureGenerator = new StructureGenerator(this.worldSeed, voxelWorld.BILLBOARD_ITEMS, voxelWorld);
+
+        // 🎓 TUTORIAL RUIN GENERATOR - Starter dungeon at (0, 100)
+        this.tutorialRuinGenerator = new TutorialRuinGenerator(voxelWorld);
 
         this.initializeBiomes();
         this.initializeNoiseGenerators();
@@ -1305,6 +1309,20 @@ export class BiomeWorldGen {
 
         // 🏛️ GENERATE STRUCTURES (ruins, chambers, etc.) - Called after all terrain & decorations
         // Reuse chunkBiome from earlier (already calculated at line 1027)
+
+        // 🎓 TUTORIAL RUIN: Check if this chunk should contain the tutorial dungeon
+        if (this.tutorialRuinGenerator && this.tutorialRuinGenerator.shouldGenerateTutorialRuin(chunkX, chunkZ)) {
+            // Only generate tutorial ruin once (on first relevant chunk generation)
+            const tutorialGenerated = localStorage.getItem('tutorialRuinGenerated');
+            if (!tutorialGenerated) {
+                console.log(`🎓 Generating Tutorial Ruin in chunk (${chunkX}, ${chunkZ})`);
+                this.tutorialRuinGenerator.generateTutorialRuin(
+                    addBlockFn,
+                    (x, z) => this.findGroundHeight(x, z)
+                );
+                localStorage.setItem('tutorialRuinGenerated', 'true');
+            }
+        }
 
         // 🏛️ Generate structures (ruins) for this chunk
         if (this.structureGenerator) {

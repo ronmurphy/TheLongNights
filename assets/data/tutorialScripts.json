@@ -60,6 +60,43 @@
         },
         {
           "text": "Oh, and see that sun icon in the top-left? That shows the time of day - the image changes as time passes! Click on it to open the Explorer's Menu where you can save your game, adjust settings, and more.",
+          "delay": 2000
+        },
+        {
+          "text": "Wait... I see something strange in the distance. To the north.",
+          "delay": 2000
+        },
+        {
+          "text": "It looks like... an old structure? Some kind of ruin, maybe?",
+          "delay": 2000
+        },
+        {
+          "text": "I've marked it on your map! Press M to open your Explorer's Journal and you'll see a red waypoint pointing the way.",
+          "delay": 2000
+        },
+        {
+          "text": "We should investigate while it's still daylight. Ruins can be dangerous at night, but there might be treasure inside!",
+          "delay": 0
+        }
+      ]
+    },
+
+    "ruin_entrance": {
+      "id": "ruin_entrance",
+      "title": "Mysterious Ruin",
+      "trigger": "onRuinEntered",
+      "once": true,
+      "messages": [
+        {
+          "text": "This place is ancient... I wonder who built it?",
+          "delay": 1500
+        },
+        {
+          "text": "Stay alert. There might be enemies inside, and I see some kind of puzzle mechanisms.",
+          "delay": 2000
+        },
+        {
+          "text": "Those glowing pedestals... try walking INTO the stone blocks to push them onto the pedestals. That might unlock doors!",
           "delay": 0
         }
       ]

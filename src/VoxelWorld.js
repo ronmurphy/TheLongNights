@@ -5458,7 +5458,7 @@ class NebulaVoxelApp {
             ctx.textBaseline = 'bottom';
 
             // Single line with essential info
-            const explorerInfo = `📍 Regions: ${this.exploredChunks.size}  |  🗺️ Position: (${Math.floor(this.player.position.x)}, ${Math.floor(this.player.position.z)})  |  Press M to close`;
+            const explorerInfo = `📍 Regions: ${this.exploredChunks.size}  |  🗺️ Position: (${Math.floor(this.player.position.x)}, ${Math.floor(this.player.position.z)})`;
             ctx.fillText(explorerInfo, 30, canvas.height - 15);
 
             // Reset text alignment
