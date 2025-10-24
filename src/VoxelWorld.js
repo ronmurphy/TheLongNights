@@ -384,6 +384,25 @@ class NebulaVoxelApp {
         this.playerCompanionUI = new PlayerCompanionUI(this);
         console.log('🖼️ Player + Companion UI initialized');
 
+        // 💚 Update companion panel with active companion data (if exists)
+        this.companionCodex.loadDiscoveredCompanions();
+        if (this.companionCodex.activeCompanion) {
+            // Load companion data async, then update UI
+            this.companionCodex.loadCompanionData().then(() => {
+                const playerData = JSON.parse(localStorage.getItem('NebulaWorld_playerData') || '{}');
+                const companionHP = playerData.companionHP?.[this.companionCodex.activeCompanion];
+                if (companionHP) {
+                    const companionData = this.companionCodex.getCompanionData(this.companionCodex.activeCompanion);
+                    if (companionData) {
+                        companionData.currentHP = companionHP.currentHP;
+                        companionData.maxHP = companionHP.maxHP;
+                        this.playerCompanionUI.updateCompanion(companionData);
+                        console.log(`💚 Loaded active companion: ${this.companionCodex.activeCompanion} (${companionHP.currentHP}/${companionHP.maxHP} HP)`);
+                    }
+                }
+            });
+        }
+
         // 🐈‍⬛ Initialize Sargem Quest Editor (dev tool, StarNode-based)
         this.sargemEditor = new SargemQuestEditor(this);
 
@@ -3493,6 +3512,7 @@ class NebulaVoxelApp {
                 border-radius: 20px;
                 z-index: 50000;
                 display: none;
+                flex-direction: column;
                 box-shadow: 0 0 40px rgba(0, 0, 0, 0.9), inset 0 0 20px rgba(101, 67, 33, 0.4);
                 backdrop-filter: blur(2px);
                 transition: all 0.4s ease;
@@ -3618,11 +3638,11 @@ class NebulaVoxelApp {
             // Create book layout container
             const bookContainer = document.createElement('div');
             bookContainer.style.cssText = `
-                width: 100%;
-                height: calc(100% - 80px);
+                flex: 1;
                 display: flex;
                 padding: 20px;
                 gap: 20px;
+                overflow: hidden;
             `;
 
             // Left page - Pin Management
@@ -3673,7 +3693,7 @@ class NebulaVoxelApp {
                 background: linear-gradient(45deg, #F5E6D3, #E8D5B7);
                 border: 3px solid #8B4513;
                 border-radius: 5px 15px 15px 5px;
-                padding: 20px;
+                padding: 10px;
                 box-shadow: inset -2px 0 10px rgba(139, 69, 19, 0.3);
                 position: relative;
             `;
@@ -3693,63 +3713,19 @@ class NebulaVoxelApp {
             // Create pin management interface (left page content)
             this.createPinManagementInterface(leftPage);
 
-            // Header with title and close button
+            // Header with title (UNIFIED STYLE - matches Codex/Vanquished)
             const header = document.createElement('div');
             header.style.cssText = `
-                height: 60px;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding: 0 30px;
-                border-bottom: 4px solid #654321;
-                background: linear-gradient(180deg, rgba(139, 90, 43, 0.9), rgba(101, 67, 33, 0.9));
-                border-radius: 15px 15px 0 0;
-                box-shadow: inset 0 -3px 6px rgba(0, 0, 0, 0.4);
-            `;
-
-            const title = document.createElement('h1');
-            title.textContent = '📖 Explorer\'s Journal - Charted Territories & Waypoints';
-            title.style.cssText = `
-                color: #2F1B14;
-                margin: 0;
-                font-family: 'Georgia', serif;
-                font-size: 24px;
-                text-shadow: 2px 2px 3px rgba(245, 230, 211, 0.8);
-                font-weight: bold;
-                letter-spacing: 1.5px;
+                padding: 20px;
                 text-align: center;
-                flex: 1;
-            `;
-
-            const closeBtn = document.createElement('button');
-            closeBtn.textContent = '📚 Close Journal';
-            closeBtn.style.cssText = `
-                background: linear-gradient(135deg, #8B4513, #A0522D);
                 color: #F5E6D3;
-                border: 3px solid #654321;
-                border-radius: 10px;
-                padding: 10px 20px;
-                cursor: pointer;
-                font-size: 16px;
-                font-weight: bold;
                 font-family: 'Georgia', serif;
-                transition: all 0.3s;
-                box-shadow: 0 3px 6px rgba(0, 0, 0, 0.4);
+                border-bottom: 3px solid #8B4513;
             `;
-            closeBtn.onmouseover = () => {
-                closeBtn.style.background = 'linear-gradient(135deg, #A0522D, #CD853F)';
-                closeBtn.style.transform = 'translateY(-2px)';
-                closeBtn.style.boxShadow = '0 5px 10px rgba(0, 0, 0, 0.4)';
-            };
-            closeBtn.onmouseout = () => {
-                closeBtn.style.background = 'linear-gradient(135deg, #8B4513, #A0522D)';
-                closeBtn.style.transform = 'translateY(0)';
-                closeBtn.style.boxShadow = '0 3px 6px rgba(0, 0, 0, 0.4)';
-            };
-            closeBtn.onclick = () => this.closeWorldMap();
-
-            header.appendChild(title);
-            header.appendChild(closeBtn);
+            header.innerHTML = `
+                <h1 style="margin: 0; font-size: 36px; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);">📖 Explorer's Journal</h1>
+                <p style="margin: 5px 0 0 0; font-size: 16px; color: #E8D5B7;">Charted Territories & Waypoints</p>
+            `;
 
             // Assemble the book
             bookContainer.appendChild(leftPage);
@@ -3757,8 +3733,47 @@ class NebulaVoxelApp {
             bookContainer.appendChild(rightPage);
             rightPage.appendChild(worldMapCanvas);
 
+            // Footer with close button (UNIFIED STYLE - matches Codex/Vanquished)
+            const footer = document.createElement('div');
+            footer.style.cssText = `
+                padding: 15px 20px;
+                text-align: center;
+                border-top: 3px solid #8B4513;
+            `;
+
+            const closeButton = document.createElement('button');
+            closeButton.textContent = 'Close Journal';
+            closeButton.style.cssText = `
+                padding: 12px 40px;
+                font-size: 18px;
+                font-family: 'Georgia', serif;
+                background: linear-gradient(135deg, #D4AF37 0%, #F4E4A6 50%, #D4AF37 100%);
+                color: #2C1810;
+                border: 3px solid #8B7355;
+                border-radius: 8px;
+                cursor: pointer;
+                font-weight: bold;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+                transition: all 0.2s ease;
+            `;
+
+            closeButton.addEventListener('mouseover', () => {
+                closeButton.style.transform = 'scale(1.05)';
+            });
+
+            closeButton.addEventListener('mouseout', () => {
+                closeButton.style.transform = 'scale(1)';
+            });
+
+            closeButton.addEventListener('click', () => {
+                this.closeWorldMap();
+            });
+
+            footer.appendChild(closeButton);
+
             this.worldMapModal.appendChild(header);
             this.worldMapModal.appendChild(bookContainer);
+            this.worldMapModal.appendChild(footer);
 
             // Add to DOM (must be document.body for proper z-index stacking)
             document.body.appendChild(this.worldMapModal);
@@ -4227,16 +4242,18 @@ class NebulaVoxelApp {
             this.controlsEnabled = false;
             console.log('🔒 Disabled input controls for Explorer\'s Journal');
 
-            this.worldMapModal.style.display = 'block';
+            this.worldMapModal.style.display = 'flex';
             // Trigger animation
             setTimeout(() => {
                 this.worldMapModal.style.transform = 'scale(1)';
                 this.worldMapModal.style.opacity = '1';
-            }, 10);
 
-            // Render the world map
-            this.renderWorldMap();
-            console.log('🗺️ World map opened - showing explored regions');
+                // Render the world map AFTER the modal has fully displayed
+                setTimeout(() => {
+                    this.renderWorldMap();
+                    console.log('🗺️ World map opened - showing explored regions');
+                }, 100);
+            }, 10);
         };
 
         // 🗺️ Close world map with animation
@@ -4436,6 +4453,11 @@ class NebulaVoxelApp {
                 font-family: 'Georgia', serif;
             `;
 
+            // Enable mouse wheel scrolling (prevent event from propagating to game)
+            leftPage.addEventListener('wheel', (e) => {
+                e.stopPropagation();
+            }, { passive: true });
+
             // Get kill stats
             const stats = this.enemyKillTracker.getStats();
             const enemyTypes = this.enemyKillTracker.getEnemyTypesKilled();
@@ -4582,6 +4604,11 @@ class NebulaVoxelApp {
                 font-family: 'Georgia', serif;
             `;
 
+            // Enable mouse wheel scrolling (prevent event from propagating to game)
+            rightPage.addEventListener('wheel', (e) => {
+                e.stopPropagation();
+            }, { passive: true });
+
             // Render first enemy details
             if (selectedEnemy) {
                 const firstEnemy = enemyTypes[0];
@@ -4681,7 +4708,14 @@ class NebulaVoxelApp {
                     </div>
 
                     <div style="text-align: center; margin: 20px 0;">
-                        <div style="font-size: 64px; margin: 20px 0;">💀</div>
+                        <div style="margin: 20px auto; width: 200px; height: 200px; display: flex; align-items: center; justify-content: center; border: 3px solid #8B4513; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); background: #F5E6D3;">
+                            <img
+                                id="enemy-portrait-${enemyType}"
+                                alt="${enemyData.name || enemyType}"
+                                style="max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 5px;"
+                            />
+                            <div id="enemy-fallback-${enemyType}" style="font-size: 96px; display: none;">💀</div>
+                        </div>
                         <div style="font-size: 36px; font-weight: bold; color: ${isCapped ? '#8B0000' : '#4A3728'};">
                             ${killCount} ${isCapped ? '(MAXED OUT)' : ''}
                         </div>
@@ -4735,6 +4769,35 @@ class NebulaVoxelApp {
                         "Every enemy slain is remembered..."
                     </div>
                 `;
+
+                // Try loading portrait image (.jpeg first, then .png, fallback to skull emoji)
+                const portraitImg = document.getElementById(`enemy-portrait-${enemyType}`);
+                const fallbackDiv = document.getElementById(`enemy-fallback-${enemyType}`);
+
+                const tryLoadPortrait = (extension) => {
+                    return new Promise((resolve) => {
+                        const img = new Image();
+                        img.onload = () => resolve(true);
+                        img.onerror = () => resolve(false);
+                        img.src = `art/entities/${enemyType}.${extension}`;
+                    });
+                };
+
+                // Try .jpeg first
+                const jpegLoaded = await tryLoadPortrait('jpeg');
+                if (jpegLoaded) {
+                    portraitImg.src = `art/entities/${enemyType}.jpeg`;
+                } else {
+                    // Try .png
+                    const pngLoaded = await tryLoadPortrait('png');
+                    if (pngLoaded) {
+                        portraitImg.src = `art/entities/${enemyType}.png`;
+                    } else {
+                        // Fallback to skull emoji
+                        portraitImg.style.display = 'none';
+                        fallbackDiv.style.display = 'block';
+                    }
+                }
 
             } catch (error) {
                 console.error('Failed to load enemy data:', error);
@@ -5388,27 +5451,15 @@ class NebulaVoxelApp {
             ctx.textAlign = 'center';
             ctx.fillText('🧭', centerX, centerY - 15);
 
-            // Draw info text in explorer's journal style
+            // Draw info text - clean and minimal
             ctx.fillStyle = '#2F1B14';
-            ctx.font = 'italic 14px Georgia';
+            ctx.font = 'bold 16px Georgia';
             ctx.textAlign = 'left';
+            ctx.textBaseline = 'bottom';
 
-            // Add journal-style annotations
-            ctx.fillText(`📍 Regions Charted: ${this.exploredChunks.size}`, 30, canvas.height - 50);
-            ctx.fillText(`🗺️ Current Position: (${Math.floor(this.player.position.x)}, ${Math.floor(this.player.position.z)})`, 30, canvas.height - 30);
-
-            // Add date stamp for authenticity
-            const date = new Date();
-            ctx.font = 'italic 12px Georgia';
-            ctx.fillStyle = 'rgba(47, 27, 20, 0.6)';
-            ctx.fillText(`Expedition Day: ${date.toLocaleDateString()}`, 30, canvas.height - 10);
-
-            // Add legend in bottom right
-            ctx.textAlign = 'right';
-            ctx.font = 'italic 11px Georgia';
-            ctx.fillStyle = '#654321';
-            ctx.fillText('🌲 Forests  ⚔️ Treasure  🐕 Companion  🍎 Discoveries', canvas.width - 30, canvas.height - 30);
-            ctx.fillText('🗺️ Press M to close journal', canvas.width - 30, canvas.height - 10);
+            // Single line with essential info
+            const explorerInfo = `📍 Regions: ${this.exploredChunks.size}  |  🗺️ Position: (${Math.floor(this.player.position.x)}, ${Math.floor(this.player.position.z)})  |  Press M to close`;
+            ctx.fillText(explorerInfo, 30, canvas.height - 15);
 
             // Reset text alignment
             ctx.textAlign = 'left';
@@ -8129,6 +8180,16 @@ class NebulaVoxelApp {
         window.bloodmoonTest = () => {
             this.dayNightCycle.dayOfWeek = 7;
             this.dayNightCycle.currentTime = 22;
+            
+            // 🎵 Manually trigger blood moon music transition to prevent overlap
+            if (this.musicSystem && this.musicSystemReady && !this.musicSystem.isBloodMoonActive) {
+                console.log('🎵 bloodmoonTest(): Starting blood moon music transition');
+                this.musicSystem.startBloodMoon();
+            }
+            
+            // Set blood moon flag to prevent day/night music from interfering
+            this.dayNightCycle.bloodMoonActive = true;
+            
             console.log('🩸 Bloodmoon Test: Set to Day 7, Time 22:00 (10 PM)');
             console.log('🩸 Bloodmoon starts at 22:00 and ends at 02:00');
             this.updateStatus('🩸 Bloodmoon Test: Day 7 @ 10 PM', 'success');

@@ -277,8 +277,48 @@ export class CompanionCodex {
         `;
         codexTab.textContent = '📘';
 
+        // Vanquished bookmark tab
+        const vanquishedTab = document.createElement('div');
+        vanquishedTab.className = 'bookmark-tab';
+        vanquishedTab.title = 'Vanquished Foes (V)';
+        vanquishedTab.style.cssText = `
+            width: 40px;
+            height: 80px;
+            background: linear-gradient(90deg, #8B4513, #A0522D);
+            border: 3px solid #654321;
+            border-right: none;
+            border-radius: 8px 0 0 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 24px;
+            transition: all 0.2s ease;
+            box-shadow: -2px 2px 8px rgba(0, 0, 0, 0.5);
+        `;
+        vanquishedTab.textContent = '💀';
+
+        vanquishedTab.addEventListener('mouseover', () => {
+            vanquishedTab.style.left = '5px';
+            vanquishedTab.style.background = 'linear-gradient(90deg, #A0522D, #CD853F)';
+        });
+
+        vanquishedTab.addEventListener('mouseout', () => {
+            vanquishedTab.style.left = '0';
+            vanquishedTab.style.background = 'linear-gradient(90deg, #8B4513, #A0522D)';
+        });
+
+        vanquishedTab.addEventListener('click', () => {
+            this.hide(false); // Don't re-engage pointer lock, we're switching tabs
+            // Open vanquished panel
+            if (this.voxelWorld && this.voxelWorld.showVanquishedPanel) {
+                setTimeout(() => this.voxelWorld.showVanquishedPanel(), 100);
+            }
+        });
+
         bookmarkTabs.appendChild(mapTab);
         bookmarkTabs.appendChild(codexTab);
+        bookmarkTabs.appendChild(vanquishedTab);
         this.codexElement.appendChild(bookmarkTabs);
 
         // Header with title and close button
@@ -319,6 +359,11 @@ export class CompanionCodex {
             overflow-y: auto;
             font-family: 'Georgia', serif;
         `;
+
+        // Enable mouse wheel scrolling (prevent event from propagating to game)
+        leftPage.addEventListener('wheel', (e) => {
+            e.stopPropagation();
+        }, { passive: true });
 
         // Book spine separator
         const bookSpine = document.createElement('div');
@@ -1035,6 +1080,18 @@ export class CompanionCodex {
         // 🖼️ Refresh companion portrait to show new active companion
         if (this.voxelWorld.companionPortrait) {
             this.voxelWorld.companionPortrait.refresh();
+        }
+
+        // 💚 Update companion UI panel with HP hearts
+        if (this.voxelWorld.playerCompanionUI) {
+            const companionData = this.getCompanionData(companionId);
+            const companionHP = playerData.companionHP[companionId];
+            if (companionData && companionHP) {
+                companionData.currentHP = companionHP.currentHP;
+                companionData.maxHP = companionHP.maxHP;
+                this.voxelWorld.playerCompanionUI.updateCompanion(companionData);
+                console.log(`💚 Updated companion panel: ${companionHP.currentHP}/${companionHP.maxHP} HP`);
+            }
         }
     }
 

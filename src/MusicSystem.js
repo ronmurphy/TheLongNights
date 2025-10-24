@@ -219,6 +219,12 @@ export class MusicSystem {
             return;
         }
 
+        // 🩸 PRIORITY: Don't override blood moon music with day/night music
+        if (this.isBloodMoonActive) {
+            console.log(`🩸 Blood moon music active - skipping day/night update at ${timeOfDay.toFixed(1)}h`);
+            return;
+        }
+
         // Determine if it's day or night
         // Day: 8am-5pm (8-17), Night: 5pm-8am (17-24, 0-8)
         const isDaytime = timeOfDay >= 8 && timeOfDay < 19;
