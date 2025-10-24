@@ -8371,6 +8371,7 @@ class NebulaVoxelApp {
         console.log('  clearSeed() - clears saved seed and generates new random world on refresh');
         console.log('  setSeed(12345) - sets a specific seed for the world');
         console.log('  setVerticalCulling(enabled, heightLimit, depth, height) - configure Y-axis culling');
+        console.log('  setAdaptiveVisibility(enabled, rays, buffer, rate) - intelligent surface detection');
         console.log('  Type showCommands() to see all available commands');
 
         // 📋 HELP UTILITY: Show all available commands
@@ -10954,7 +10955,8 @@ class NebulaVoxelApp {
                 const playerY = this.player.position.y;
                 const previousPlayerY = this.chunkRenderManager.currentPlayerY;
                 
-                this.chunkRenderManager.update(playerChunkX, playerChunkZ, playerY);
+                // Pass world data for adaptive visibility scanning
+                this.chunkRenderManager.update(playerChunkX, playerChunkZ, playerY, this.world);
                 
                 // 🔄 Update block visibility when player Y position changes significantly
                 if (this.chunkRenderManager.verticalCullingEnabled && 
@@ -15473,6 +15475,7 @@ class NebulaVoxelApp {
             console.log('  voxelWorld.getLODStats() - Get LOD stats');
             console.log('  voxelWorld.toggleVerticalCulling() - Toggle Y-axis culling');
             console.log('  voxelWorld.setVerticalCulling(enabled, heightLimit, depth, height) - Configure Y-axis culling');
+            console.log('  voxelWorld.setAdaptiveVisibility(enabled, rays, buffer, rate) - Intelligent surface detection');
             console.log('  voxelWorld.getVerticalCullingStats() - Get vertical culling stats');
             console.log('  voxelWorld.testVerticalCulling() - Show performance comparison');
             console.log('  voxelWorld.openTutorialEditor() - Open tutorial editor');
@@ -15621,6 +15624,37 @@ class NebulaVoxelApp {
         return newState;
     }
 
+    // 🎯 ADAPTIVE VISIBILITY SYSTEM - New intelligent raycast-based culling
+    setAdaptiveVisibility(enabled = true, rayCount = 32, buffer = 1, scanRate = 10) {
+        if (!this.chunkRenderManager) {
+            console.warn('❌ ChunkRenderManager not initialized');
+            return;
+        }
+        this.chunkRenderManager.setAdaptiveVisibility(enabled, rayCount, buffer, scanRate);
+        
+        // 🔄 Update visibility of existing blocks immediately
+        if (this.chunkRenderManager.verticalCullingEnabled) {
+            this.chunkRenderManager.updateExistingBlocksVisibility(this.world, this.scene);
+        }
+        
+        console.log('🎯 Adaptive visibility configured successfully!');
+    }
+
+    toggleAdaptiveVisibility() {
+        if (!this.chunkRenderManager) {
+            console.warn('❌ ChunkRenderManager not initialized');
+            return false;
+        }
+        const newState = this.chunkRenderManager.toggleAdaptiveVisibility();
+        
+        // 🔄 Update visibility of existing blocks immediately
+        if (this.chunkRenderManager.verticalCullingEnabled) {
+            this.chunkRenderManager.updateExistingBlocksVisibility(this.world, this.scene);
+        }
+        
+        return newState;
+    }
+
     getVerticalCullingStats() {
         if (!this.chunkRenderManager) {
             console.warn('❌ ChunkRenderManager not initialized');
@@ -15683,8 +15717,10 @@ class NebulaVoxelApp {
         this.chunkRenderManager.enableVerticalCulling = oldEnabled;
         
         console.log('\n🎮 Try these commands:');
-        console.log('  voxelWorld.setVerticalCulling(true, false, 1) - Only 1 block below feet');
+        console.log('  voxelWorld.setVerticalCulling(true, false, 4) - 4 blocks below feet (default)');
         console.log('  voxelWorld.setVerticalCulling(true, true, 2, 5) - 2 below, 5 above');
+        console.log('  voxelWorld.setAdaptiveVisibility(true) - Enable intelligent surface detection');
+        console.log('  voxelWorld.setAdaptiveVisibility(true, 64, 2, 15) - High quality (64 rays, 15Hz)');
         console.log('  voxelWorld.toggleVerticalCulling() - Turn on/off');
     }
 

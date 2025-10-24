@@ -34,10 +34,18 @@ export class ChunkRenderManager {
         // 🚀 Vertical rendering optimization settings
         this.verticalCullingEnabled = false;    // Enable Y-axis depth limiting
         this.enableVerticalHeightLimit = false; // Optional upward height limit
-        this.undergroundDepth = 2;              // Blocks below player's feet to render
+        this.undergroundDepth = 4;              // Blocks below player's feet to render (increased from 2)
         this.abovegroundHeight = 8;             // Blocks above player (when height limit enabled)
         this.playerHeight = 1.7;                // Player height in blocks
         this.currentPlayerY = null;             // Track current player Y position
+        
+        // 🎯 ADAPTIVE VISIBILITY CULLING - New intelligent system
+        this.adaptiveVisibilityEnabled = false;  // Enable raycast-based surface detection
+        this.visibilityRayCount = 32;            // Number of rays to cast for surface detection
+        this.visibilityBuffer = 1;               // Extra blocks to render beyond detected surface
+        this.lastVisibilityScan = 0;             // Timestamp of last visibility scan
+        this.visibilityScanInterval = 100;       // Minimum ms between scans (10 FPS)
+        this.detectedSurfaces = new Map();       // Cache of detected surface positions
 
         // GPU tier settings (auto-detected)
         this.gpuTier = 'medium'; // 'low', 'medium', 'high'
@@ -85,9 +93,14 @@ export class ChunkRenderManager {
     /**
      * Main update loop - called every frame
      */
-    update(playerChunkX, playerChunkZ, playerY = null) {
+    update(playerChunkX, playerChunkZ, playerY = null, world = null) {
         // Store player Y position for vertical culling
         this.currentPlayerY = playerY;
+
+        // 🎯 Perform adaptive visibility scanning if enabled
+        if (this.adaptiveVisibilityEnabled && world) {
+            this.performVisibilityScan(world);
+        }
 
         // Update frustum for culling
         this.frustumMatrix.multiplyMatrices(
@@ -231,10 +244,10 @@ export class ChunkRenderManager {
      * 🚀 Configure vertical rendering optimization
      * @param {boolean} enableCulling - Enable Y-axis depth limiting
      * @param {boolean} enableHeightLimit - Enable upward height limit (optional)
-     * @param {number} undergroundDepth - Blocks below player's feet to render (default: 2)
+     * @param {number} undergroundDepth - Blocks below player's feet to render (default: 4)
      * @param {number} abovegroundHeight - Blocks above player when height limit enabled (default: 8)
      */
-    setVerticalCulling(enableCulling = true, enableHeightLimit = false, undergroundDepth = 2, abovegroundHeight = 8) {
+    setVerticalCulling(enableCulling = true, enableHeightLimit = false, undergroundDepth = 4, abovegroundHeight = 8) {
         this.verticalCullingEnabled = enableCulling;
         this.enableVerticalHeightLimit = enableHeightLimit;
         this.undergroundDepth = Math.max(1, undergroundDepth); // At least 1 block below
@@ -244,7 +257,41 @@ export class ChunkRenderManager {
         if (enableCulling) {
             console.log(`   📉 Underground depth: ${this.undergroundDepth} blocks below feet`);
             console.log(`   📈 Height limit: ${enableHeightLimit ? `${this.abovegroundHeight} blocks above` : 'DISABLED'}`);
+            console.log(`   🎯 Adaptive visibility: ${this.adaptiveVisibilityEnabled ? 'ENABLED' : 'DISABLED'}`);
         }
+    }
+
+    /**
+     * 🎯 Configure adaptive visibility culling system
+     * @param {boolean} enabled - Enable raycast-based surface detection
+     * @param {number} rayCount - Number of rays to cast (more = more accurate, less performance)
+     * @param {number} buffer - Extra blocks to render beyond detected surfaces
+     * @param {number} scanRate - Scans per second (higher = more responsive, less performance)
+     */
+    setAdaptiveVisibility(enabled = true, rayCount = 32, buffer = 1, scanRate = 10) {
+        this.adaptiveVisibilityEnabled = enabled;
+        this.visibilityRayCount = Math.max(8, Math.min(64, rayCount)); // Clamp 8-64
+        this.visibilityBuffer = Math.max(0, Math.min(5, buffer)); // Clamp 0-5
+        this.visibilityScanInterval = Math.max(50, 1000 / scanRate); // Convert rate to interval
+
+        if (enabled) {
+            console.log(`🎯 Adaptive Visibility: ENABLED`);
+            console.log(`   🔍 Ray count: ${this.visibilityRayCount}`);
+            console.log(`   📏 Surface buffer: ${this.visibilityBuffer} blocks`);
+            console.log(`   ⚡ Scan rate: ${scanRate} Hz`);
+        } else {
+            console.log(`🎯 Adaptive Visibility: DISABLED`);
+            this.detectedSurfaces.clear();
+        }
+    }
+
+    /**
+     * 🎯 Toggle adaptive visibility on/off
+     */
+    toggleAdaptiveVisibility() {
+        const newState = !this.adaptiveVisibilityEnabled;
+        this.setAdaptiveVisibility(newState);
+        return newState;
     }
 
     /**
@@ -256,6 +303,12 @@ export class ChunkRenderManager {
             return null;
         }
 
+        // Use adaptive visibility if enabled and available
+        if (this.adaptiveVisibilityEnabled && this.detectedSurfaces.size > 0) {
+            return this.calculateAdaptiveBounds();
+        }
+
+        // Fallback to fixed depth culling
         const playerY = this.currentPlayerY;
         const minY = playerY - this.undergroundDepth;
         const maxY = this.enableVerticalHeightLimit ? 
@@ -263,6 +316,126 @@ export class ChunkRenderManager {
             32; // Default world height
 
         return { minY, maxY };
+    }
+
+    /**
+     * 🎯 Calculate adaptive bounds based on detected visible surfaces
+     * @returns {Object} Adaptive vertical bounds
+     */
+    calculateAdaptiveBounds() {
+        if (!this.camera || this.detectedSurfaces.size === 0) {
+            return this.getFallbackBounds();
+        }
+
+        let minVisibleY = Infinity;
+        let maxVisibleY = -Infinity;
+
+        // Find the range of visible surface Y positions
+        for (const [direction, surfaceY] of this.detectedSurfaces.entries()) {
+            minVisibleY = Math.min(minVisibleY, surfaceY - this.visibilityBuffer);
+            maxVisibleY = Math.max(maxVisibleY, surfaceY + this.visibilityBuffer);
+        }
+
+        // Ensure reasonable bounds
+        const playerY = this.currentPlayerY;
+        minVisibleY = Math.max(minVisibleY, playerY - this.undergroundDepth * 2); // Max 2x normal depth
+        maxVisibleY = Math.min(maxVisibleY, playerY + this.abovegroundHeight);
+
+        return { 
+            minY: minVisibleY, 
+            maxY: maxVisibleY,
+            adaptive: true
+        };
+    }
+
+    /**
+     * 🎯 Get fallback bounds when adaptive system unavailable
+     */
+    getFallbackBounds() {
+        const playerY = this.currentPlayerY;
+        return {
+            minY: playerY - this.undergroundDepth,
+            maxY: this.enableVerticalHeightLimit ? 
+                playerY + this.abovegroundHeight : 32
+        };
+    }
+
+    /**
+     * 🎯 ADAPTIVE VISIBILITY SCANNING - Raycast from camera to detect visible surfaces
+     * This scans the camera's view directions to find ground, cliffs, and other surfaces
+     */
+    performVisibilityScan(world) {
+        const now = Date.now();
+        if (now - this.lastVisibilityScan < this.visibilityScanInterval) {
+            return; // Skip scan if too recent
+        }
+
+        if (!this.camera || !this.adaptiveVisibilityEnabled) {
+            return;
+        }
+
+        this.lastVisibilityScan = now;
+        this.detectedSurfaces.clear();
+
+        const cameraPosition = this.camera.position;
+        const renderDistance = this.maxRenderDistance * 8; // Convert chunks to blocks
+
+        // Cast rays in multiple directions around camera
+        for (let i = 0; i < this.visibilityRayCount; i++) {
+            const angle = (i / this.visibilityRayCount) * Math.PI * 2;
+            
+            // Horizontal rays (looking around at player level)
+            const horizontalDir = new THREE.Vector3(
+                Math.cos(angle),
+                0,
+                Math.sin(angle)
+            );
+            this.castVisibilityRay(world, cameraPosition, horizontalDir, renderDistance, `horizontal_${i}`);
+
+            // Downward rays (looking for ground)
+            const downwardDir = new THREE.Vector3(
+                Math.cos(angle) * 0.3,
+                -0.8,
+                Math.sin(angle) * 0.3
+            ).normalize();
+            this.castVisibilityRay(world, cameraPosition, downwardDir, renderDistance, `downward_${i}`);
+
+            // Upward rays (looking for ceilings/overhangs)
+            if (i % 4 === 0) { // Fewer upward rays
+                const upwardDir = new THREE.Vector3(
+                    Math.cos(angle) * 0.2,
+                    0.7,
+                    Math.sin(angle) * 0.2
+                ).normalize();
+                this.castVisibilityRay(world, cameraPosition, upwardDir, renderDistance, `upward_${i}`);
+            }
+        }
+
+        console.log(`🎯 Visibility scan: ${this.detectedSurfaces.size} surfaces detected`);
+    }
+
+    /**
+     * 🎯 Cast a single visibility ray to detect surfaces
+     */
+    castVisibilityRay(world, origin, direction, maxDistance, rayId) {
+        const step = 0.5; // Check every 0.5 blocks
+        const pos = origin.clone();
+        
+        for (let distance = step; distance <= maxDistance; distance += step) {
+            pos.addScaledVector(direction, step);
+            
+            // Check if there's a block at this position
+            const blockX = Math.floor(pos.x);
+            const blockY = Math.floor(pos.y);
+            const blockZ = Math.floor(pos.z);
+            const blockKey = `${blockX},${blockY},${blockZ}`;
+            
+            if (world[blockKey] && world[blockKey].type !== 'air') {
+                // Found a surface! Record its Y position
+                this.detectedSurfaces.set(rayId, blockY);
+                break;
+            }
+        }
     }
 
     /**
@@ -329,6 +502,7 @@ export class ChunkRenderManager {
      * Get render stats
      */
     getStats() {
+        const bounds = this.getVerticalBounds();
         return {
             ...this.stats,
             gpuTier: this.gpuTier,
@@ -337,7 +511,13 @@ export class ChunkRenderManager {
             verticalCulling: this.verticalCullingEnabled,
             verticalHeightLimit: this.enableVerticalHeightLimit,
             undergroundDepth: this.undergroundDepth,
-            abovegroundHeight: this.abovegroundHeight
+            abovegroundHeight: this.abovegroundHeight,
+            adaptiveVisibility: this.adaptiveVisibilityEnabled,
+            detectedSurfaces: this.detectedSurfaces.size,
+            visibilityRayCount: this.visibilityRayCount,
+            visibilityBuffer: this.visibilityBuffer,
+            currentBounds: bounds,
+            isAdaptiveBounds: bounds?.adaptive || false
         };
     }
 }
