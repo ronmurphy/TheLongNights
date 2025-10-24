@@ -40,6 +40,7 @@ import { DevControlPanel } from './ui/DevControlPanel.js';
 import { RandyMStructureDesigner } from './ui/RandyMStructureDesigner.js';
 import { NPCManager } from './entities/NPC.js';
 import { ChunkLODManager } from './rendering/ChunkLODManager.js';
+import { ChunkRenderManager } from './rendering/ChunkRenderManager.js';
 import { LODDebugOverlay } from './rendering/LODDebugOverlay.js';
 import ChristmasSystem from './ChristmasSystem.js';
 import { FarmingSystem } from './FarmingSystem.js';
@@ -584,18 +585,35 @@ class NebulaVoxelApp {
                 cube.geometry.computeBoundsTree();
             }
             
-            this.scene.add(cube);
+            // 🚀 VERTICAL CULLING OPTIMIZATION: Check if block should be rendered
+            let shouldRender = true;
+            if (this.chunkRenderManager && this.chunkRenderManager.verticalCullingEnabled) {
+                const bounds = this.chunkRenderManager.getVerticalBounds();
+                if (bounds) {
+                    shouldRender = y >= bounds.minY && y <= bounds.maxY;
+                }
+            }
+
+            if (shouldRender) {
+                this.scene.add(cube);
+            }
 
             // Create billboard sprite for special items
             let billboard = null;
-            if (this.shouldUseBillboard(type)) {
+            if (this.shouldUseBillboard(type) && shouldRender) {
                 billboard = this.createBillboard(x, y, z, type);
                 if (billboard) {
                     this.scene.add(billboard);
                 }
             }
 
-            this.world[key] = { type, mesh: cube, playerPlaced, billboard };
+            this.world[key] = { 
+                type, 
+                mesh: cube, 
+                playerPlaced, 
+                billboard,
+                rendered: shouldRender // Track if block is visually rendered
+            };
 
             // 🌊 Track ALL water blocks for minimap (to show rivers and lakes clearly)
             if (type === 'water' && !playerPlaced) {
@@ -8352,6 +8370,7 @@ class NebulaVoxelApp {
         console.log('    Shapes: square, rectangle, lshape, tshape, cross, ushape, circle');
         console.log('  clearSeed() - clears saved seed and generates new random world on refresh');
         console.log('  setSeed(12345) - sets a specific seed for the world');
+        console.log('  setVerticalCulling(enabled, heightLimit, depth, height) - configure Y-axis culling');
         console.log('  Type showCommands() to see all available commands');
 
         // 📋 HELP UTILITY: Show all available commands
@@ -9434,7 +9453,11 @@ class NebulaVoxelApp {
         this.lodManager = new ChunkLODManager(this);
         console.log('🎨 LOD Manager initialized - Visual Horizon enabled!');
 
-        // 🔍 Initialize LOD Debug Overlay (toggle with 'L' key)
+        // � Initialize ChunkRenderManager with vertical culling optimization
+        this.chunkRenderManager = new ChunkRenderManager(this);
+        console.log('🚀 ChunkRenderManager initialized - Vertical culling enabled!');
+
+        // �🔍 Initialize LOD Debug Overlay (toggle with 'L' key)
         this.lodDebugOverlay = new LODDebugOverlay(this);
 
         // 🌫️ Update fog now that LOD manager exists (fixes fog distance calculation)
@@ -10924,6 +10947,21 @@ class NebulaVoxelApp {
             if (this.workerInitialized && this.frameCount % 60 === 0) {
                 const maxCacheRadius = this.renderDistance * 2; // 2x render distance
                 this.workerManager.cleanupDistantChunks(playerChunkX, playerChunkZ, maxCacheRadius);
+            }
+
+            // 🚀 Update ChunkRenderManager for vertical culling optimization
+            if (this.chunkRenderManager) {
+                const playerY = this.player.position.y;
+                const previousPlayerY = this.chunkRenderManager.currentPlayerY;
+                
+                this.chunkRenderManager.update(playerChunkX, playerChunkZ, playerY);
+                
+                // 🔄 Update block visibility when player Y position changes significantly
+                if (this.chunkRenderManager.verticalCullingEnabled && 
+                    previousPlayerY !== null && 
+                    Math.abs(playerY - previousPlayerY) > 0.5) {
+                    this.chunkRenderManager.updateExistingBlocksVisibility(this.world, this.scene);
+                }
             }
 
             // 🎨 Update LOD chunks (visual horizon beyond render distance)
@@ -15433,6 +15471,10 @@ class NebulaVoxelApp {
             console.log('  voxelWorld.toggleLOD() - Toggle LOD system');
             console.log('  voxelWorld.setVisualDistance(n) - Set LOD distance');
             console.log('  voxelWorld.getLODStats() - Get LOD stats');
+            console.log('  voxelWorld.toggleVerticalCulling() - Toggle Y-axis culling');
+            console.log('  voxelWorld.setVerticalCulling(enabled, heightLimit, depth, height) - Configure Y-axis culling');
+            console.log('  voxelWorld.getVerticalCullingStats() - Get vertical culling stats');
+            console.log('  voxelWorld.testVerticalCulling() - Show performance comparison');
             console.log('  voxelWorld.openTutorialEditor() - Open tutorial editor');
         }
     } // End of constructor
@@ -15546,6 +15588,104 @@ class NebulaVoxelApp {
         const stats = this.lodManager.getStats();
         console.table(stats);
         return stats;
+    }
+
+    // 🚀 VERTICAL CULLING SYSTEM - Debug and configuration methods
+    setVerticalCulling(enableCulling = true, enableHeightLimit = false, undergroundDepth = 2, abovegroundHeight = 8) {
+        if (!this.chunkRenderManager) {
+            console.warn('❌ ChunkRenderManager not initialized');
+            return;
+        }
+        this.chunkRenderManager.setVerticalCulling(enableCulling, enableHeightLimit, undergroundDepth, abovegroundHeight);
+        
+        // 🔄 Update visibility of existing blocks immediately
+        this.chunkRenderManager.updateExistingBlocksVisibility(this.world, this.scene);
+        
+        // Update display
+        if (enableCulling) {
+            console.log('🎯 Vertical culling configured successfully!');
+        }
+    }
+
+    toggleVerticalCulling() {
+        if (!this.chunkRenderManager) {
+            console.warn('❌ ChunkRenderManager not initialized');
+            return false;
+        }
+        const newState = !this.chunkRenderManager.verticalCullingEnabled;
+        this.chunkRenderManager.setVerticalCulling(newState, this.chunkRenderManager.enableVerticalHeightLimit);
+        
+        // 🔄 Update visibility of existing blocks immediately
+        this.chunkRenderManager.updateExistingBlocksVisibility(this.world, this.scene);
+        
+        return newState;
+    }
+
+    getVerticalCullingStats() {
+        if (!this.chunkRenderManager) {
+            console.warn('❌ ChunkRenderManager not initialized');
+            return {};
+        }
+        const stats = this.chunkRenderManager.getStats();
+        console.table(stats);
+        return stats;
+    }
+
+    // 🚀 Test vertical culling by showing bounding box differences
+    testVerticalCulling() {
+        if (!this.chunkRenderManager) {
+            console.warn('❌ ChunkRenderManager not initialized');
+            return;
+        }
+
+        const playerChunkX = Math.floor(this.player.position.x / this.chunkSize);
+        const playerChunkZ = Math.floor(this.player.position.z / this.chunkSize);
+        const playerY = this.player.position.y;
+
+        console.log('🎯 Vertical Culling Test');
+        console.log('━'.repeat(50));
+        console.log(`Player Position: (${this.player.position.x.toFixed(1)}, ${playerY.toFixed(1)}, ${this.player.position.z.toFixed(1)})`);
+        console.log(`Player Chunk: (${playerChunkX}, ${playerChunkZ})`);
+        console.log(`Player Feet Y: ${(playerY - this.chunkRenderManager.playerHeight).toFixed(1)}`);
+        
+        // Test current chunk with and without vertical culling
+        const testChunk = { x: playerChunkX, z: playerChunkZ };
+        
+        // Temporarily disable vertical culling to show old bounds
+        const oldEnabled = this.chunkRenderManager.enableVerticalCulling;
+        this.chunkRenderManager.enableVerticalCulling = false;
+        this.chunkRenderManager.currentPlayerY = playerY;
+        
+        // Show old bounding box
+        console.log('\n📦 WITHOUT Vertical Culling:');
+        const worldX = testChunk.x * this.chunkSize;
+        const worldZ = testChunk.z * this.chunkSize;
+        console.log(`  Bounding Box: Y ${0} to Y ${32} (32 blocks high)`);
+        console.log(`  Blocks rendered: ~${32 * 64} = ~2,048 blocks per chunk`);
+        
+        // Re-enable and show new bounding box
+        this.chunkRenderManager.enableVerticalCulling = true;
+        console.log('\n🚀 WITH Vertical Culling:');
+        const playerFeetY = playerY - this.chunkRenderManager.playerHeight;
+        const minY = Math.max(0, Math.floor(playerFeetY - this.chunkRenderManager.undergroundDepth));
+        const maxY = this.chunkRenderManager.enableVerticalHeightLimit 
+            ? Math.ceil(playerFeetY + this.chunkRenderManager.abovegroundHeight)
+            : 32;
+        const heightRange = maxY - minY;
+        
+        console.log(`  Bounding Box: Y ${minY} to Y ${maxY} (${heightRange} blocks high)`);
+        console.log(`  Blocks rendered: ~${heightRange * 64} = ~${heightRange * 64} blocks per chunk`);
+        
+        const reduction = ((32 - heightRange) / 32 * 100).toFixed(1);
+        console.log(`  🎉 Performance gain: ${reduction}% fewer blocks!`);
+        
+        // Restore original setting
+        this.chunkRenderManager.enableVerticalCulling = oldEnabled;
+        
+        console.log('\n🎮 Try these commands:');
+        console.log('  voxelWorld.setVerticalCulling(true, false, 1) - Only 1 block below feet');
+        console.log('  voxelWorld.setVerticalCulling(true, true, 2, 5) - 2 below, 5 above');
+        console.log('  voxelWorld.toggleVerticalCulling() - Turn on/off');
     }
 
     // Create mobile virtual joysticks
