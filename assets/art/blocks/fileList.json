@@ -7,6 +7,7 @@
   "birch_wood-sides": ".jpeg",
   "birch_wood-top-bottom": ".jpeg",
   "christmas_tree-leaves": ".png",
+  "cobweb-all": ".png",
   "dead_wood-leaves": ".png",
   "dead_wood-sides": ".jpeg",
   "dead_wood-top-bottom": ".jpeg",
@@ -35,6 +36,7 @@
   "pumpkin-bottom": ".png",
   "pumpkin-sides": ".jpg",
   "pumpkin-top": ".jpg",
+  "ruin_ceiling_all": ".png",
   "ruin_door-all": ".png",
   "ruin_floor_all": ".png",
   "ruin_stone_all": ".png",
@@ -42,5 +44,6 @@
   "sandstone": ".jpg",
   "snow": ".jpeg",
   "stone": ".jpeg",
+  "teleport_pad-all": ".png",
   "tilled_soil-all": ".png"
 }

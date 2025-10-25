@@ -80,8 +80,15 @@ export class ChunkSerializer {
      */
     static serializeChunk(chunkData, chunkX, chunkZ) {
         const { blocks, trees } = chunkData;
-        const blockCount = blocks.length;
+
+        // 🚫 FILTER OUT BEDROCK: Bedrock is generated from seed, never save it!
+        // This prevents cached bedrock from appearing where it shouldn't
+        const serializableBlocks = blocks.filter(block => block.type !== 'bedrock');
+
+        const blockCount = serializableBlocks.length;
         const treeCount = trees ? trees.length : 0;
+
+        console.log(`📦 Serializing chunk (${chunkX}, ${chunkZ}): ${blocks.length} blocks → ${blockCount} saved (${blocks.length - blockCount} bedrock excluded)`);
 
         // Calculate total size
         const headerSize = ChunkSerializer.HEADER_SIZE;
@@ -111,8 +118,8 @@ export class ChunkSerializer {
         // Reserved (8 bytes)
         offset += 8;
 
-        // Write block data
-        for (const block of blocks) {
+        // Write block data (only serializable blocks, no bedrock)
+        for (const block of serializableBlocks) {
             const { x, y, z, type, color, flags } = block;
 
             // Position (3 bytes)

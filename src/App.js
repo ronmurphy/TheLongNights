@@ -74,6 +74,16 @@ window.addEventListener('DOMContentLoaded', () => {
     };
     console.log('🔊 sfxSystem and playSFX() available globally');
 
+    // Add global teleport command with animation
+    window['teleport'] = (x, y, z) => {
+      if (app.teleportPadSystem) {
+        app.teleportPadSystem.teleportPlayer(x, y, z);
+      } else {
+        console.error('⚠️ TeleportPadSystem not available!');
+      }
+    };
+    console.log('🌀 teleport(x, y, z) available globally');
+
     // === MAIN MENU SYSTEM ===
     // Show main menu with New Game / Load Game / Dev Mode options
     const mainMenu = new MainMenu(

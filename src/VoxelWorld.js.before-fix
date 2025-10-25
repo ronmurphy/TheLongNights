@@ -584,12 +584,6 @@ class NebulaVoxelApp {
                 // This prevents confusing overlapping canopies when trees are harvested
                 if (this.isLeafBlock(type) && this.isLeafBlock(existingBlock.type)) {
                     return; // Don't place overlapping leaves
-
-                // 🚫 CRITICAL: Never overwrite player-placed blocks with worker-generated blocks
-                // This prevents ruins, crafted objects, and player builds from being destroyed
-                if (existingBlock.playerPlaced && !playerPlaced) {
-                    return; // Don't overwrite player-placed blocks with generated terrain
-                }
                 }
                 // For other block types, allow overwriting (existing behavior)
                 if (existingBlock.mesh) {

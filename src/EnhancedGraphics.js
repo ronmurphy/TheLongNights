@@ -424,7 +424,9 @@ export class EnhancedGraphics {
                     'bedrock', 'dirt', 'grass', 'sand', 'snow', 'stone', 'pumpkin', 'iron', 'gold',
                     'oak_wood', 'pine_wood', 'birch_wood', 'palm_wood', 'dead_wood', 'douglas_fir', 'christmas_tree',
                     'oak_wood-leaves', 'pine_wood-leaves', 'birch_wood-leaves', 'palm_wood-leaves', 'dead_wood-leaves', 'douglas_fir-leaves', 'christmas_tree-leaves',
-                    'gift_wrapped', 'gift_wrapped-all', 'tilled_soil'
+                    'gift_wrapped', 'gift_wrapped-all', 'tilled_soil',
+                    // Tutorial ruin blocks
+                    'ruin_stone_all', 'ruin_floor_all', 'ruin_ceiling_all', 'ruin_door', 'pedestal', 'movable_block', 'cobweb', 'teleport_pad'
                 ],
                 tools: [
                     'backpack', 'backpack_2', 'machete', 'machete_2', 'stick', 'stick_2', 'stone_hammer', 'workbench', 'pumpkin', 
